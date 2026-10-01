@@ -94,7 +94,9 @@ struct QuickMenuTests {
     @Test func arrowsMoveInTwoColumnsAndConfirmSelects() {
         var menu = QuickMenu(content: content)
         #expect(menu.page.highlighted == -1)                                   // the main action is the default
-        #expect({ var fresh = QuickMenu(content: content); return fresh.handle(.confirm) }() == .show)   // opens the AI page
+        var fresh = QuickMenu(content: content)
+        let opened: QuickMenu.Outcome = fresh.handle(.confirm)
+        #expect(opened == QuickMenu.Outcome.show)   // opens the AI page
         _ = menu.handle(.down)      // main action → first item
         _ = menu.handle(.down)      // 0 → 2 (next row)
         _ = menu.handle(.next)      // 2 → 3
