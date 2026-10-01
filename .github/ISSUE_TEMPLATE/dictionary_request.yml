@@ -1,0 +1,59 @@
+name: Dictionary Request / 词库请求
+description: Suggest a dictionary package or terminology correction / 建议词库包或术语修正
+title: "[Dictionary] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Package management and aime_tech_2026 are Roadmap. Public availability does not establish redistribution permission.
+        词库管理与 aime_tech_2026 仍属 Roadmap；公开可下载不代表允许再分发。
+        Never upload a personal word-frequency database or private text corpus. / 禁止上传个人词频库或私人语料。
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Before requesting / 提交前确认
+      options:
+        - label: I searched existing requests and removed private data. / 已搜索现有请求并移除私人数据。
+          required: true
+  - type: dropdown
+    id: request_type
+    attributes:
+      label: Request type / 请求类型
+      options:
+        - New package / 新词库包
+        - Package update / 词库更新
+        - Terminology addition or correction / 术语新增或修正
+    validations:
+      required: true
+  - type: input
+    id: dictionary_name
+    attributes:
+      label: Dictionary name / 词库名称
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: Upstream and revision / 上游与版本
+      description: Repository URL and proposed tag/commit or release asset; for original terms, provide public references and say they are original. / 仓库 URL 与建议 tag、commit 或发布文件；原创词条请注明原创并附公开参考。
+    validations:
+      required: true
+  - type: textarea
+    id: license
+    attributes:
+      label: License and attribution / 许可证与署名
+      description: Link the exact license and data provenance. If unknown, state that explicitly; inclusion waits for verification. / 提供许可证链接与数据来源；未知请明确说明，核实前不会引入。
+    validations:
+      required: true
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use case and sample terms / 使用场景与示例词条
+      description: Describe language/domain, schema compatibility, and a few public or synthetic examples. / 说明语言或领域、方案兼容性，并附少量公开或合成示例。
+    validations:
+      required: true
+  - type: textarea
+    id: packaging
+    attributes:
+      label: Package details / 包信息
+      description: Optional size, file layout, dependencies/Lua scripts, and upstream SHA-256 if published. Never invent a checksum. / 可选大小、文件结构、依赖或 Lua 脚本、上游已公布的 SHA-256；不要编造校验值。

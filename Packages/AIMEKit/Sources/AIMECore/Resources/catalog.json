@@ -1,0 +1,1438 @@
+{
+  "version": 1,
+  "groups": [
+    {
+      "id": "general",
+      "title": "输入习惯",
+      "icon": "keyboard"
+    },
+    {
+      "id": "switching",
+      "title": "中英切换",
+      "icon": "globe"
+    },
+    {
+      "id": "spelling",
+      "title": "模糊音与拼写",
+      "icon": "textformat.abc"
+    },
+    {
+      "id": "keys",
+      "title": "快捷键",
+      "icon": "command"
+    },
+    {
+      "id": "appearance",
+      "title": "外观",
+      "icon": "paintpalette"
+    },
+    {
+      "id": "switches",
+      "title": "开关默认值",
+      "icon": "switch.2"
+    },
+    {
+      "id": "advanced",
+      "title": "高级",
+      "icon": "wrench.and.screwdriver"
+    }
+  ],
+  "settings": [
+    {
+      "id": "menu.page_size",
+      "group": "general",
+      "title": "候选词个数",
+      "description": "每页显示的候选数量（1–10），同时决定数字选词键个数。",
+      "file": "default",
+      "keypath": "menu/page_size",
+      "type": "int",
+      "min": 1,
+      "max": 10,
+      "default": 5,
+      "doc": "#menu"
+    },
+    {
+      "id": "general.schema_list",
+      "group": "general",
+      "title": "输入方案列表",
+      "description": "启用的输入方案及顺序，对应 default.yaml 的 schema_list。改动后需重新部署。",
+      "file": "default",
+      "keypath": "schema_list",
+      "type": "custom",
+      "default": [
+        "rime_ice"
+      ],
+      "doc": "#schema-元信息"
+    },
+    {
+      "id": "switcher.hotkeys",
+      "group": "general",
+      "title": "方案选单快捷键",
+      "description": "唤出「方案选单」的热键列表。出厂默认 Control+grave / Control+Shift+grave / F4。",
+      "file": "default",
+      "keypath": "switcher/hotkeys",
+      "type": "hotkeyList",
+      "default": [
+        "Control+grave",
+        "Control+Shift+grave",
+        "F4"
+      ],
+      "doc": "#switcher"
+    },
+    {
+      "id": "switcher.save_options",
+      "group": "general",
+      "title": "记忆的开关",
+      "description": "列入的开关状态会被记忆（重启/切换方案后保持），未列入的开关每次回到默认值。",
+      "file": "default",
+      "keypath": "switcher/save_options",
+      "type": "switchList",
+      "default": [
+        "full_shape",
+        "ascii_punct",
+        "traditionalization",
+        "emoji"
+      ],
+      "doc": "#switcher"
+    },
+    {
+      "id": "switcher.fold_options",
+      "group": "general",
+      "title": "折叠方案选单开关",
+      "description": "开关较多时在方案选单中折叠显示。",
+      "file": "default",
+      "keypath": "switcher/fold_options",
+      "type": "bool",
+      "default": true,
+      "doc": "#switcher"
+    },
+    {
+      "id": "switcher.caption",
+      "group": "general",
+      "title": "方案选单标题",
+      "description": "方案选单窗口顶部显示的标题文字。",
+      "file": "default",
+      "keypath": "switcher/caption",
+      "type": "enum",
+      "default": "「方案选单」",
+      "doc": "#switcher",
+      "options": [
+        {
+          "value": "「方案选单」",
+          "title": "「方案选单」"
+        },
+        {
+          "value": "〔方案选单〕",
+          "title": "〔方案选单〕"
+        },
+        {
+          "value": "方案选单",
+          "title": "方案选单"
+        },
+        {
+          "value": "切换输入方案",
+          "title": "切换输入方案"
+        }
+      ]
+    },
+    {
+      "id": "traditionalize.opencc_config",
+      "group": "general",
+      "title": "繁体标准",
+      "description": "输出繁体时使用的字形与用词：通用繁体、台湾正体、台湾正体（含常用词，如「软件→軟體」）或香港繁体。由 OpenCC 在本机转换。",
+      "file": "schema",
+      "keypath": "traditionalize/opencc_config",
+      "type": "enum",
+      "options": [
+        { "value": "s2t.json", "title": "通用繁体" },
+        { "value": "s2tw.json", "title": "台湾正体" },
+        { "value": "s2twp.json", "title": "台湾正体（含常用词）" },
+        { "value": "s2hk.json", "title": "香港繁体" }
+      ],
+      "default": "s2t.json",
+      "doc": "#simplifier"
+    },
+    {
+      "id": "translator.enable_word_completion",
+      "group": "general",
+      "title": "长词自动补全",
+      "description": "输入超过 4 音节时自动补全长词（需 librime > 1.11.2）。雾凇拼音默认开启。",
+      "file": "schema",
+      "keypath": "translator/enable_word_completion",
+      "type": "bool",
+      "default": true,
+      "doc": "#translators-常用参数"
+    },
+    {
+      "id": "translator.spelling_hints",
+      "group": "general",
+      "title": "拼写提示位数",
+      "description": "候选注释中保留的拼写提示长度，0 为关闭。错音提示（corrector.lua）依赖此项。",
+      "file": "schema",
+      "keypath": "translator/spelling_hints",
+      "type": "int",
+      "min": 0,
+      "max": 20,
+      "default": 8,
+      "doc": "#translators-常用参数"
+    },
+    {
+      "id": "translator.always_show_comments",
+      "group": "general",
+      "title": "总是显示编码注释",
+      "description": "即使候选没有注释也显示其拼写编码。",
+      "file": "schema",
+      "keypath": "translator/always_show_comments",
+      "type": "bool",
+      "default": true,
+      "doc": "#translators-常用参数"
+    },
+    {
+      "id": "translator.initial_quality",
+      "group": "general",
+      "title": "主翻译器初始权重",
+      "description": "主词典候选的初始权重，决定与各次翻译器（英文、自定义短语等）的相对排序。",
+      "file": "schema",
+      "keypath": "translator/initial_quality",
+      "type": "double",
+      "default": 1.2,
+      "doc": "#translators-常用参数",
+      "min": 0,
+      "max": 5,
+      "step": 0.1
+    },
+    {
+      "id": "translator.contextual_suggestions",
+      "group": "general",
+      "title": "语言模型上下文建议",
+      "description": "启用 octagram 语法模型的上下文选词（需 .gram 模型文件与 __include: octagram）。",
+      "file": "schema",
+      "keypath": "translator/contextual_suggestions",
+      "type": "bool",
+      "default": false,
+      "doc": "#translators-常用参数"
+    },
+    {
+      "id": "grammar.language",
+      "group": "general",
+      "title": "语言模型名称",
+      "description": "octagram 语法模型名，对应用户目录下的 <名称>.gram 文件（如 wanxiang-lts-zh-hans）。",
+      "file": "schema",
+      "keypath": "grammar/language",
+      "type": "gramModel",
+      "default": "",
+      "doc": "#translators-常用参数"
+    },
+    {
+      "id": "ascii_state.scope",
+      "group": "switching",
+      "title": "中英状态共享",
+      "description": "切换应用或窗口时，中文 / 英文状态如何延续。「应用」页里设为默认英文的应用始终单独记忆：首次进入为英文，之后保持你在其中的选择。",
+      "file": "frontend",
+      "keypath": "ascii_state/scope",
+      "type": "enum",
+      "options": [
+        {
+          "value": "global",
+          "title": "所有应用共享（推荐）"
+        },
+        {
+          "value": "app",
+          "title": "每个应用分别记忆"
+        },
+        {
+          "value": "window",
+          "title": "每个输入框独立"
+        }
+      ],
+      "default": "global",
+      "doc": "#ascii_state"
+    },
+    {
+      "id": "ascii_composer.good_old_caps_lock",
+      "group": "switching",
+      "title": "Caps Lock 传统行为",
+      "description": "开启：Caps Lock 直接切换西文（老式大写锁）。关闭：Caps Lock 进入首字母大写模式，回车上屏后自动回中文。",
+      "file": "default",
+      "keypath": "ascii_composer/good_old_caps_lock",
+      "type": "bool",
+      "default": true,
+      "doc": "#ascii_composer"
+    },
+    {
+      "id": "ascii_composer.caps_lock",
+      "group": "switching",
+      "title": "Caps Lock 键行为",
+      "description": "按下 Caps Lock 时的动作。",
+      "file": "default",
+      "keypath": "ascii_composer/switch_key/Caps_Lock",
+      "type": "enum",
+      "options": [
+        {
+          "value": "inline_ascii",
+          "title": "临时西文（内联，回车后回中文）"
+        },
+        {
+          "value": "commit_text",
+          "title": "上屏文字并切西文"
+        },
+        {
+          "value": "commit_code",
+          "title": "上屏输入码并切西文"
+        },
+        {
+          "value": "clear",
+          "title": "清空输入并切西文"
+        },
+        {
+          "value": "noop",
+          "title": "不处理（交还系统）"
+        }
+      ],
+      "default": "clear",
+      "doc": "#ascii_composer"
+    },
+    {
+      "id": "ascii_composer.shift_l",
+      "group": "switching",
+      "title": "左 Shift 键行为",
+      "description": "按下左 Shift 时的动作。",
+      "file": "default",
+      "keypath": "ascii_composer/switch_key/Shift_L",
+      "type": "enum",
+      "options": [
+        {
+          "value": "inline_ascii",
+          "title": "临时西文（内联，回车后回中文）"
+        },
+        {
+          "value": "commit_text",
+          "title": "上屏文字并切西文"
+        },
+        {
+          "value": "commit_code",
+          "title": "上屏输入码并切西文"
+        },
+        {
+          "value": "clear",
+          "title": "清空输入并切西文"
+        },
+        {
+          "value": "noop",
+          "title": "不处理"
+        }
+      ],
+      "default": "inline_ascii",
+      "doc": "#ascii_composer"
+    },
+    {
+      "id": "ascii_composer.shift_r",
+      "group": "switching",
+      "title": "右 Shift 键行为",
+      "description": "按下右 Shift 时的动作。",
+      "file": "default",
+      "keypath": "ascii_composer/switch_key/Shift_R",
+      "type": "enum",
+      "options": [
+        {
+          "value": "inline_ascii",
+          "title": "临时西文（内联，回车后回中文）"
+        },
+        {
+          "value": "commit_text",
+          "title": "上屏文字并切西文"
+        },
+        {
+          "value": "commit_code",
+          "title": "上屏输入码并切西文"
+        },
+        {
+          "value": "clear",
+          "title": "清空输入并切西文"
+        },
+        {
+          "value": "noop",
+          "title": "不处理"
+        }
+      ],
+      "default": "commit_text",
+      "doc": "#ascii_composer"
+    },
+    {
+      "id": "ascii_composer.control_l",
+      "group": "switching",
+      "title": "左 Control 键行为",
+      "description": "按下左 Control 时的动作（通常 noop）。",
+      "file": "default",
+      "keypath": "ascii_composer/switch_key/Control_L",
+      "type": "enum",
+      "options": [
+        {
+          "value": "inline_ascii",
+          "title": "临时西文"
+        },
+        {
+          "value": "commit_text",
+          "title": "上屏文字并切西文"
+        },
+        {
+          "value": "commit_code",
+          "title": "上屏输入码并切西文"
+        },
+        {
+          "value": "clear",
+          "title": "清空输入并切西文"
+        },
+        {
+          "value": "noop",
+          "title": "不处理"
+        }
+      ],
+      "default": "noop",
+      "doc": "#ascii_composer"
+    },
+    {
+      "id": "ascii_composer.control_r",
+      "group": "switching",
+      "title": "右 Control 键行为",
+      "description": "按下右 Control 时的动作（通常 noop）。",
+      "file": "default",
+      "keypath": "ascii_composer/switch_key/Control_R",
+      "type": "enum",
+      "options": [
+        {
+          "value": "inline_ascii",
+          "title": "临时西文"
+        },
+        {
+          "value": "commit_text",
+          "title": "上屏文字并切西文"
+        },
+        {
+          "value": "commit_code",
+          "title": "上屏输入码并切西文"
+        },
+        {
+          "value": "clear",
+          "title": "清空输入并切西文"
+        },
+        {
+          "value": "noop",
+          "title": "不处理"
+        }
+      ],
+      "default": "noop",
+      "doc": "#ascii_composer"
+    },
+    {
+      "id": "spelling.fuzzy.zh_z",
+      "group": "spelling",
+      "title": "模糊音：zh/ch/sh → z/c/s",
+      "description": "平舌音也能打出翘舌音的字（zi 也能出「知」）。",
+      "file": "schema",
+      "keypath": "speller/algebra",
+      "type": "bool",
+      "default": false,
+      "algebra": [
+        "derive/^([zcs])h/$1/"
+      ],
+      "doc": "#speller"
+    },
+    {
+      "id": "spelling.fuzzy.z_zh",
+      "group": "spelling",
+      "title": "模糊音：z/c/s → zh/ch/sh",
+      "description": "翘舌音也能打出平舌音的字（zhi 也能出「资」）。",
+      "file": "schema",
+      "keypath": "speller/algebra",
+      "type": "bool",
+      "default": false,
+      "algebra": [
+        "derive/^([zcs])([^h])/$1h$2/"
+      ],
+      "doc": "#speller"
+    },
+    {
+      "id": "spelling.fuzzy.n_l",
+      "group": "spelling",
+      "title": "模糊音：n → l",
+      "description": "l 开头的拼写也能出 n 声母的字。",
+      "file": "schema",
+      "keypath": "speller/algebra",
+      "type": "bool",
+      "default": false,
+      "algebra": [
+        "derive/^n/l/"
+      ],
+      "doc": "#speller"
+    },
+    {
+      "id": "spelling.fuzzy.l_n",
+      "group": "spelling",
+      "title": "模糊音：l → n",
+      "description": "n 开头的拼写也能出 l 声母的字。",
+      "file": "schema",
+      "keypath": "speller/algebra",
+      "type": "bool",
+      "default": false,
+      "algebra": [
+        "derive/^l/n/"
+      ],
+      "doc": "#speller"
+    },
+    {
+      "id": "spelling.fuzzy.f_h",
+      "group": "spelling",
+      "title": "模糊音：f → h",
+      "description": "h 开头的拼写也能出 f 声母的字。",
+      "file": "schema",
+      "keypath": "speller/algebra",
+      "type": "bool",
+      "default": false,
+      "algebra": [
+        "derive/^f/h/"
+      ],
+      "doc": "#speller"
+    },
+    {
+      "id": "spelling.fuzzy.h_f",
+      "group": "spelling",
+      "title": "模糊音：h → f",
+      "description": "f 开头的拼写也能出 h 声母的字。",
+      "file": "schema",
+      "keypath": "speller/algebra",
+      "type": "bool",
+      "default": false,
+      "algebra": [
+        "derive/^h/f/"
+      ],
+      "doc": "#speller"
+    },
+    {
+      "id": "spelling.fuzzy.en_eng",
+      "group": "spelling",
+      "title": "模糊音：en ↔ eng",
+      "description": "前后鼻音 en/eng 不分（含 in/ing，可再细分）。",
+      "file": "schema",
+      "keypath": "speller/algebra",
+      "type": "bool",
+      "default": false,
+      "algebra": [
+        "derive/([ei])n$/$1ng/",
+        "derive/([ei])ng$/$1n/"
+      ],
+      "doc": "#speller"
+    },
+    {
+      "id": "spelling.fuzzy.an_ang",
+      "group": "spelling",
+      "title": "模糊音：an ↔ ang",
+      "description": "前后鼻音 an/ang 不分（含 ian/iang、uan/uang）。",
+      "file": "schema",
+      "keypath": "speller/algebra",
+      "type": "bool",
+      "default": false,
+      "algebra": [
+        "derive/([iu])an$/$1ang/",
+        "derive/([iu])ang$/$1an/",
+        "derive/an$/ang/",
+        "derive/ang$/an/"
+      ],
+      "doc": "#speller"
+    },
+    {
+      "id": "spelling.jianpin",
+      "group": "spelling",
+      "title": "超级简拼",
+      "description": "多字词可只输入各字声母（如 zhrmghg 出「中华人民共和国」）。",
+      "file": "schema",
+      "keypath": "speller/algebra",
+      "type": "bool",
+      "default": true,
+      "algebra": [
+        "erase/^hm$/",
+        "erase/^m$/",
+        "erase/^n$/",
+        "erase/^ng$/",
+        "abbrev/^([a-z]).+$/$1/",
+        "abbrev/^([zcs]h).+$/$1/"
+      ],
+      "doc": "#speller"
+    },
+    {
+      "id": "spelling.uv_compat",
+      "group": "spelling",
+      "title": "v/u 智能容错",
+      "description": "ju/jv、nue/nve 等写法互通（v 键代 ü）。",
+      "file": "schema",
+      "keypath": "speller/algebra",
+      "type": "bool",
+      "default": true,
+      "algebra": [
+        "derive/^([nl])ve$/$1ue/",
+        "derive/^([jqxy])u/$1v/",
+        "derive/^([nl])ue$/$1ve/",
+        "derive/^([jqxy])v/$1u/"
+      ],
+      "doc": "#speller"
+    },
+    {
+      "id": "spelling.auto_correct",
+      "group": "spelling",
+      "title": "常见错别字拼自动纠错",
+      "description": "纠正常见误拼（如 wia→wai、nag→ang 类），雾凇拼音内置规则集。",
+      "file": "schema",
+      "keypath": "speller/algebra",
+      "type": "bool",
+      "default": true,
+      "algebra": [
+        "derive/^([wghk])ai$/$1ia/",
+        "derive/([wrtypsdfghklzcbnm])ang$/$1nag/",
+        "derive/([qwrtypsdfghjklzxcbnm])([aeio])ng$/$1ng/",
+        "derive/(.+)ong$/$1on/"
+      ],
+      "doc": "#speller"
+    },
+    {
+      "id": "key_binder.select_first_character",
+      "group": "keys",
+      "title": "以词定字：取首字键",
+      "description": "候选词上屏时按此键只取第一个字（需 lua_processor@select_character）。默认 [。",
+      "file": "default",
+      "keypath": "key_binder/select_first_character",
+      "type": "hotkey",
+      "default": "bracketleft",
+      "doc": "#key_binder"
+    },
+    {
+      "id": "key_binder.select_last_character",
+      "group": "keys",
+      "title": "以词定字：取尾字键",
+      "description": "候选词上屏时按此键只取最后一个字。默认 ]（本机改为 `）。",
+      "file": "default",
+      "keypath": "key_binder/select_last_character",
+      "type": "hotkey",
+      "default": "bracketright",
+      "doc": "#key_binder"
+    },
+    {
+      "id": "keys.paging_minus_equal",
+      "group": "keys",
+      "title": "用 - = 翻页",
+      "description": "有候选时按 - 上翻、= 下翻。",
+      "file": "default",
+      "keypath": "key_binder/bindings",
+      "type": "bool",
+      "default": true,
+      "bindings": [
+        {
+          "when": "paging",
+          "accept": "minus",
+          "send": "Page_Up"
+        },
+        {
+          "when": "has_menu",
+          "accept": "equal",
+          "send": "Page_Down"
+        }
+      ],
+      "doc": "#key_binder",
+      "items": [
+        {
+          "when": "paging",
+          "accept": "minus",
+          "send": "Page_Up"
+        },
+        {
+          "when": "has_menu",
+          "accept": "equal",
+          "send": "Page_Down"
+        }
+      ]
+    },
+    {
+      "id": "keys.paging_comma_period",
+      "group": "keys",
+      "title": "用 , . 翻页",
+      "description": "翻页状态下按 , 上翻、. 下翻。",
+      "file": "default",
+      "keypath": "key_binder/bindings",
+      "type": "bool",
+      "default": false,
+      "bindings": [
+        {
+          "when": "paging",
+          "accept": "comma",
+          "send": "Page_Up"
+        },
+        {
+          "when": "has_menu",
+          "accept": "period",
+          "send": "Page_Down"
+        }
+      ],
+      "doc": "#key_binder",
+      "items": [
+        {
+          "when": "paging",
+          "accept": "comma",
+          "send": "Page_Up"
+        },
+        {
+          "when": "has_menu",
+          "accept": "period",
+          "send": "Page_Down"
+        }
+      ]
+    },
+    {
+      "id": "keys.paging_brackets",
+      "group": "keys",
+      "title": "用 [ ] 翻页",
+      "description": "翻页状态下按 [ 上翻、] 下翻（与以词定字键冲突时需二选一）。",
+      "file": "default",
+      "keypath": "key_binder/bindings",
+      "type": "bool",
+      "default": false,
+      "bindings": [
+        {
+          "when": "paging",
+          "accept": "bracketleft",
+          "send": "Page_Up"
+        },
+        {
+          "when": "has_menu",
+          "accept": "bracketright",
+          "send": "Page_Down"
+        }
+      ],
+      "doc": "#key_binder",
+      "items": [
+        {
+          "when": "paging",
+          "accept": "bracketleft",
+          "send": "Page_Up"
+        },
+        {
+          "when": "has_menu",
+          "accept": "bracketright",
+          "send": "Page_Down"
+        }
+      ]
+    },
+    {
+      "id": "keys.tab_move_by_word",
+      "group": "keys",
+      "title": "Tab 按词移动光标",
+      "description": "输入中按 Tab 光标右移一个音节、Shift+Tab 左移一个音节。",
+      "file": "default",
+      "keypath": "key_binder/bindings",
+      "type": "bool",
+      "default": true,
+      "bindings": [
+        {
+          "when": "composing",
+          "accept": "Shift+Tab",
+          "send": "Shift+Left"
+        },
+        {
+          "when": "composing",
+          "accept": "Tab",
+          "send": "Shift+Right"
+        }
+      ],
+      "doc": "#key_binder",
+      "items": [
+        {
+          "when": "composing",
+          "accept": "Tab",
+          "send": "Shift+Right"
+        }
+      ]
+    },
+    {
+      "id": "keys.toggle_ascii_punct",
+      "group": "keys",
+      "title": "中英标点切换热键",
+      "description": "随时按 Control+Shift+3 切换中/英标点。",
+      "file": "default",
+      "keypath": "key_binder/bindings",
+      "type": "bool",
+      "default": true,
+      "bindings": [
+        {
+          "when": "always",
+          "accept": "Control+Shift+3",
+          "toggle": "ascii_punct"
+        }
+      ],
+      "doc": "#key_binder",
+      "items": [
+        {
+          "when": "always",
+          "accept": "Control+Shift+3",
+          "toggle": "ascii_punct"
+        }
+      ]
+    },
+    {
+      "id": "keys.toggle_traditionalization",
+      "group": "keys",
+      "title": "简繁切换热键",
+      "description": "随时按 Control+Shift+4 切换简体/繁体输出。",
+      "file": "default",
+      "keypath": "key_binder/bindings",
+      "type": "bool",
+      "default": true,
+      "bindings": [
+        {
+          "when": "always",
+          "accept": "Control+Shift+4",
+          "toggle": "traditionalization"
+        }
+      ],
+      "doc": "#key_binder",
+      "items": [
+        {
+          "when": "always",
+          "accept": "Control+Shift+4",
+          "toggle": "traditionalization"
+        }
+      ]
+    },
+    {
+      "id": "appearance.color_scheme",
+      "group": "appearance",
+      "title": "配色方案（浅色模式）",
+      "description": "浅色外观使用的配色方案名，对应 preset_color_schemes 中的键。",
+      "file": "frontend",
+      "keypath": "style/color_scheme",
+      "type": "string",
+      "default": "native",
+      "doc": "#style"
+    },
+    {
+      "id": "appearance.color_scheme_dark",
+      "group": "appearance",
+      "title": "配色方案（深色模式）",
+      "description": "深色外观使用的配色方案名；留空则深浅色共用 color_scheme。",
+      "file": "frontend",
+      "keypath": "style/color_scheme_dark",
+      "type": "string",
+      "default": "",
+      "doc": "#style"
+    },
+    {
+      "id": "appearance.candidate_list_layout",
+      "group": "appearance",
+      "title": "候选排列方式",
+      "description": "stacked 竖排列表 / linear 横排一行。",
+      "file": "frontend",
+      "keypath": "style/aime/candidate_list_layout",
+      "type": "enum",
+      "options": [
+        {
+          "value": "stacked",
+          "title": "竖排"
+        },
+        {
+          "value": "linear",
+          "title": "横排"
+        }
+      ],
+      "default": "stacked",
+      "doc": "#style"
+    },
+    {
+      "id": "appearance.inline_preedit",
+      "group": "appearance",
+      "title": "内联预编辑",
+      "description": "输入码直接显示在 App 光标处而非候选窗内。",
+      "file": "frontend",
+      "keypath": "style/aime/inline_preedit",
+      "type": "bool",
+      "default": true,
+      "doc": "#style"
+    },
+    {
+      "id": "appearance.inline_candidate",
+      "group": "appearance",
+      "title": "首选候选内联预上屏",
+      "description": "把第一候选直接内联显示在编辑区（类似系统输入法）。",
+      "file": "frontend",
+      "keypath": "style/aime/inline_candidate",
+      "type": "bool",
+      "default": false,
+      "doc": "#style"
+    },
+    {
+      "id": "appearance.corner_radius",
+      "group": "appearance",
+      "title": "候选窗圆角",
+      "description": "候选窗四角圆角半径（点）。优先于配色方案自带的圆角，设为 0 即直角。",
+      "file": "frontend",
+      "keypath": "style/aime/corner_radius",
+      "type": "double",
+      "min": 0,
+      "max": 20,
+      "default": 10,
+      "doc": "#style"
+    },
+    {
+      "id": "appearance.hilited_corner_radius",
+      "group": "appearance",
+      "title": "高亮候选圆角",
+      "description": "高亮候选背景块的圆角半径。优先于配色方案自带的圆角。",
+      "file": "frontend",
+      "keypath": "style/aime/hilited_corner_radius",
+      "type": "double",
+      "min": 0,
+      "max": 20,
+      "default": 6,
+      "doc": "#style"
+    },
+    {
+      "id": "appearance.max_width",
+      "group": "appearance",
+      "title": "候选窗最大宽度",
+      "description": "只在出现长候选（长短语、地址）时起作用：超过这个宽度自动换行，单个候选过长以省略号截断（上屏的仍是完整内容）。普通候选一页始终排成一行。",
+      "file": "frontend",
+      "keypath": "style/aime/max_width",
+      "type": "enum",
+      "options": [
+        {
+          "value": 480,
+          "title": "紧凑（480）"
+        },
+        {
+          "value": 640,
+          "title": "标准（640）"
+        },
+        {
+          "value": 800,
+          "title": "宽（800）"
+        },
+        {
+          "value": 0,
+          "title": "仅受屏幕限制"
+        }
+      ],
+      "default": 640,
+      "doc": "#style"
+    },
+    {
+      "id": "appearance.border_height",
+      "group": "appearance",
+      "title": "边框高度",
+      "description": "候选窗上下边框高度，负值为向内收缩。",
+      "file": "frontend",
+      "keypath": "style/aime/border_height",
+      "type": "double",
+      "default": -2,
+      "doc": "#style",
+      "min": 0,
+      "max": 20
+    },
+    {
+      "id": "appearance.border_width",
+      "group": "appearance",
+      "title": "边框宽度",
+      "description": "候选窗左右边框宽度，负值为向内收缩。",
+      "file": "frontend",
+      "keypath": "style/aime/border_width",
+      "type": "double",
+      "default": -2,
+      "doc": "#style",
+      "min": 0,
+      "max": 20
+    },
+    {
+      "id": "appearance.line_spacing",
+      "group": "appearance",
+      "title": "候选行距",
+      "description": "相邻候选行之间的间距（点）。",
+      "file": "frontend",
+      "keypath": "style/aime/line_spacing",
+      "type": "double",
+      "min": 0,
+      "default": 5,
+      "doc": "#style",
+      "max": 20
+    },
+    {
+      "id": "appearance.spacing",
+      "group": "appearance",
+      "title": "候选间距",
+      "description": "横排模式下相邻候选之间的间距（点）。",
+      "file": "frontend",
+      "keypath": "style/aime/spacing",
+      "type": "double",
+      "min": 0,
+      "default": 8,
+      "doc": "#style",
+      "max": 30
+    },
+    {
+      "id": "appearance.base_offset",
+      "group": "appearance",
+      "title": "文字基线偏移",
+      "description": "微调候选文字垂直位置（点），用于字体垂直居中修正。",
+      "file": "frontend",
+      "keypath": "style/aime/base_offset",
+      "type": "double",
+      "default": 0,
+      "doc": "#style",
+      "min": -10,
+      "max": 10
+    },
+    {
+      "id": "appearance.alpha",
+      "group": "appearance",
+      "title": "整体不透明度",
+      "description": "候选窗整体不透明度（0–1）。",
+      "file": "frontend",
+      "keypath": "style/aime/alpha",
+      "type": "double",
+      "min": 0,
+      "max": 1,
+      "default": 1,
+      "doc": "#style"
+    },
+    {
+      "id": "appearance.translucency",
+      "group": "appearance",
+      "title": "半透明毛玻璃",
+      "description": "候选窗使用半透明材质。",
+      "file": "frontend",
+      "keypath": "style/aime/translucency",
+      "type": "bool",
+      "default": false,
+      "doc": "#style"
+    },
+    {
+      "id": "appearance.font_face",
+      "group": "appearance",
+      "title": "候选字体",
+      "description": "候选文字体名（PostScript 名称），留空用系统默认。",
+      "file": "frontend",
+      "keypath": "style/aime/font_face",
+      "type": "font",
+      "default": "Avenir",
+      "doc": "#style"
+    },
+    {
+      "id": "appearance.font_point",
+      "group": "appearance",
+      "title": "候选字号",
+      "description": "候选文字的大小。",
+      "file": "frontend",
+      "keypath": "style/aime/font_point",
+      "type": "double",
+      "default": 16,
+      "doc": "#style",
+      "options": [
+        {
+          "value": 14,
+          "title": "小"
+        },
+        {
+          "value": 16,
+          "title": "标准"
+        },
+        {
+          "value": 18,
+          "title": "大"
+        },
+        {
+          "value": 21,
+          "title": "较大"
+        },
+        {
+          "value": 24,
+          "title": "特大"
+        }
+      ]
+    },
+    {
+      "id": "appearance.label_font_face",
+      "group": "appearance",
+      "title": "序号字体",
+      "description": "候选序号标签的字体，留空跟随候选字体。",
+      "file": "frontend",
+      "keypath": "style/aime/label_font_face",
+      "type": "font",
+      "default": "",
+      "doc": "#style"
+    },
+    {
+      "id": "appearance.label_font_point",
+      "group": "appearance",
+      "title": "序号字号",
+      "description": "候选序号的大小。",
+      "file": "frontend",
+      "keypath": "style/aime/label_font_point",
+      "type": "double",
+      "default": 12,
+      "doc": "#style",
+      "options": [
+        {
+          "value": 10,
+          "title": "小"
+        },
+        {
+          "value": 12,
+          "title": "标准"
+        },
+        {
+          "value": 14,
+          "title": "大"
+        },
+        {
+          "value": 16,
+          "title": "较大"
+        },
+        {
+          "value": 18,
+          "title": "特大"
+        }
+      ]
+    },
+    {
+      "id": "appearance.comment_font_face",
+      "group": "appearance",
+      "title": "注释字体",
+      "description": "候选注释（拼写提示等）的字体，留空跟随候选字体。",
+      "file": "frontend",
+      "keypath": "style/aime/comment_font_face",
+      "type": "font",
+      "default": "",
+      "doc": "#style"
+    },
+    {
+      "id": "appearance.comment_font_point",
+      "group": "appearance",
+      "title": "注释字号",
+      "description": "候选注释（拼音提示等）的大小。",
+      "file": "frontend",
+      "keypath": "style/aime/comment_font_point",
+      "type": "double",
+      "default": 12,
+      "doc": "#style",
+      "options": [
+        {
+          "value": 10,
+          "title": "小"
+        },
+        {
+          "value": 12,
+          "title": "标准"
+        },
+        {
+          "value": 14,
+          "title": "大"
+        },
+        {
+          "value": 16,
+          "title": "较大"
+        },
+        {
+          "value": 18,
+          "title": "特大"
+        }
+      ]
+    },
+    {
+      "id": "appearance.candidate_format",
+      "group": "appearance",
+      "title": "候选格式串",
+      "description": "候选显示模板，如 \"%c　%@\"（%c=候选，%@=注释）；旧式 [label] 占位符已废弃。",
+      "file": "frontend",
+      "keypath": "style/aime/candidate_format",
+      "type": "enum",
+      "default": "[label]. [candidate] [comment]",
+      "doc": "#style",
+      "options": [
+        {
+          "value": "[label] [candidate] [comment]",
+          "title": "1 候选 注释"
+        },
+        {
+          "value": "[label]. [candidate] [comment]",
+          "title": "1. 候选 注释"
+        },
+        {
+          "value": "[label] [candidate]",
+          "title": "1 候选（隐藏注释）"
+        },
+        {
+          "value": "[candidate] [comment]",
+          "title": "候选 注释（隐藏序号）"
+        }
+      ]
+    },
+    {
+      "id": "appearance.custom.back_color",
+      "group": "appearance",
+      "title": "自定义配色：窗口背景",
+      "description": "写入 preset_color_schemes/aime_custom。颜色为 Squirrel 0xAABBGGRR（BGR 顺序）格式。",
+      "file": "frontend",
+      "keypath": "preset_color_schemes/aime_custom/back_color",
+      "type": "color",
+      "default": "0xFFFFFF",
+      "doc": "#preset_color_schemes"
+    },
+    {
+      "id": "appearance.custom.border_color",
+      "group": "appearance",
+      "title": "自定义配色：边框",
+      "description": "0xAABBGGRR 格式。",
+      "file": "frontend",
+      "keypath": "preset_color_schemes/aime_custom/border_color",
+      "type": "color",
+      "default": "0x000000",
+      "doc": "#preset_color_schemes"
+    },
+    {
+      "id": "appearance.custom.text_color",
+      "group": "appearance",
+      "title": "自定义配色：预编辑文字",
+      "description": "内联输入码文字颜色，0xAABBGGRR 格式。",
+      "file": "frontend",
+      "keypath": "preset_color_schemes/aime_custom/text_color",
+      "type": "color",
+      "default": "0x000000",
+      "doc": "#preset_color_schemes"
+    },
+    {
+      "id": "appearance.custom.candidate_text_color",
+      "group": "appearance",
+      "title": "自定义配色：候选文字",
+      "description": "0xAABBGGRR 格式。",
+      "file": "frontend",
+      "keypath": "preset_color_schemes/aime_custom/candidate_text_color",
+      "type": "color",
+      "default": "0x000000",
+      "doc": "#preset_color_schemes"
+    },
+    {
+      "id": "appearance.custom.label_color",
+      "group": "appearance",
+      "title": "自定义配色：候选序号",
+      "description": "0xAABBGGRR 格式。",
+      "file": "frontend",
+      "keypath": "preset_color_schemes/aime_custom/label_color",
+      "type": "color",
+      "default": "0x808080",
+      "doc": "#preset_color_schemes"
+    },
+    {
+      "id": "appearance.custom.comment_text_color",
+      "group": "appearance",
+      "title": "自定义配色：注释文字",
+      "description": "0xAABBGGRR 格式。",
+      "file": "frontend",
+      "keypath": "preset_color_schemes/aime_custom/comment_text_color",
+      "type": "color",
+      "default": "0x808080",
+      "doc": "#preset_color_schemes"
+    },
+    {
+      "id": "appearance.custom.hilited_candidate_back_color",
+      "group": "appearance",
+      "title": "自定义配色：高亮候选背景",
+      "description": "0xAABBGGRR 格式。",
+      "file": "frontend",
+      "keypath": "preset_color_schemes/aime_custom/hilited_candidate_back_color",
+      "type": "color",
+      "default": "0xE3E3E3",
+      "doc": "#preset_color_schemes"
+    },
+    {
+      "id": "appearance.custom.hilited_candidate_text_color",
+      "group": "appearance",
+      "title": "自定义配色：高亮候选文字",
+      "description": "0xAABBGGRR 格式。",
+      "file": "frontend",
+      "keypath": "preset_color_schemes/aime_custom/hilited_candidate_text_color",
+      "type": "color",
+      "default": "0x000000",
+      "doc": "#preset_color_schemes"
+    },
+    {
+      "id": "appearance.custom.hilited_candidate_label_color",
+      "group": "appearance",
+      "title": "自定义配色：高亮候选序号",
+      "description": "0xAABBGGRR 格式。",
+      "file": "frontend",
+      "keypath": "preset_color_schemes/aime_custom/hilited_candidate_label_color",
+      "type": "color",
+      "default": "0x808080",
+      "doc": "#preset_color_schemes"
+    },
+    {
+      "id": "appearance.custom.hilited_comment_text_color",
+      "group": "appearance",
+      "title": "自定义配色：高亮候选注释",
+      "description": "0xAABBGGRR 格式。",
+      "file": "frontend",
+      "keypath": "preset_color_schemes/aime_custom/hilited_comment_text_color",
+      "type": "color",
+      "default": "0x808080",
+      "doc": "#preset_color_schemes"
+    },
+    {
+      "id": "switches.emoji",
+      "group": "switches",
+      "title": "Emoji 候选默认开启",
+      "description": "部署后 emoji 开关的初始状态（对应 switches 列表第 4 项的 reset）。",
+      "file": "schema",
+      "keypath": "switches/@name=emoji/reset",
+      "type": "bool",
+      "default": true,
+      "doc": "#switches"
+    },
+    {
+      "id": "switches.traditionalization",
+      "group": "switches",
+      "title": "繁体输出默认开启",
+      "description": "部署后简繁开关的初始状态（switches 列表第 3 项）。",
+      "file": "schema",
+      "keypath": "switches/@name=traditionalization/reset",
+      "type": "bool",
+      "default": false,
+      "doc": "#switches"
+    },
+    {
+      "id": "switches.full_shape",
+      "group": "switches",
+      "title": "全角字符默认开启",
+      "description": "部署后全角/半角开关的初始状态（switches 列表第 5 项）。",
+      "file": "schema",
+      "keypath": "switches/@name=full_shape/reset",
+      "type": "bool",
+      "default": false,
+      "doc": "#switches"
+    },
+    {
+      "id": "switches.ascii_punct",
+      "group": "switches",
+      "title": "英文标点默认开启",
+      "description": "部署后中英标点开关的初始状态（switches 列表第 2 项）。",
+      "file": "schema",
+      "keypath": "switches/@name=ascii_punct/reset",
+      "type": "bool",
+      "default": false,
+      "doc": "#switches"
+    },
+    {
+      "id": "switches.search_single_char",
+      "group": "switches",
+      "title": "辅码查词单字优先默认开启",
+      "description": "search.lua 辅码模式下是否单字优先（switches 列表第 6 项）。",
+      "file": "schema",
+      "keypath": "switches/@name=search_single_char/reset",
+      "type": "bool",
+      "default": false,
+      "doc": "#switches"
+    },
+    {
+      "id": "punctuator.digit_separators",
+      "group": "advanced",
+      "title": "数字内标点分隔符",
+      "description": "数字中间出现这些符号时不转换为中文标点（如输入 3.14 直接得 3.14）。",
+      "file": "default",
+      "keypath": "punctuator/digit_separators",
+      "type": "enum",
+      "default": ",.:",
+      "doc": "#punctuator",
+      "options": [
+        {
+          "value": ",.:",
+          "title": "数字间英文标点 , . :"
+        },
+        {
+          "value": "",
+          "title": "关闭"
+        }
+      ]
+    },
+    {
+      "id": "menu.alternative_select_keys",
+      "group": "advanced",
+      "title": "第二组选词键",
+      "description": "除数字键外的备用选词键序列（逐字符）。",
+      "file": "default",
+      "keypath": "menu/alternative_select_keys",
+      "type": "enum",
+      "default": "ASDFGHJKL",
+      "doc": "#menu",
+      "options": [
+        {
+          "value": "",
+          "title": "不使用"
+        },
+        {
+          "value": "ASDFGHJKL",
+          "title": "ASDFGHJKL（主键盘中排）"
+        },
+        {
+          "value": "asdfghjkl",
+          "title": "asdfghjkl"
+        },
+        {
+          "value": "qwertyuio",
+          "title": "qwertyuio"
+        }
+      ]
+    },
+    {
+      "id": "recognizer.punct_prefix",
+      "group": "advanced",
+      "title": "符号模式前缀（v 模式）",
+      "description": "触发符号表的输入模式正则，默认 v 开头；双拼方案建议大写 V 避免与编码冲突。",
+      "file": "schema",
+      "keypath": "recognizer/patterns/punct",
+      "type": "string",
+      "default": "^v([0-9]|10|[A-Za-z]+)$",
+      "doc": "#recognizer"
+    },
+    {
+      "id": "advanced.custom_phrase_path",
+      "group": "advanced",
+      "title": "自定义短语表名",
+      "description": "table_translator@custom_phrase 读取的用户词典名（对应 <名称>.txt，Tab 分隔 词汇/编码/权重）。",
+      "file": "schema",
+      "keypath": "custom_phrase/user_dict",
+      "type": "string",
+      "default": "custom_phrase",
+      "doc": "#词典"
+    },
+    {
+      "id": "advanced.chord_duration",
+      "group": "advanced",
+      "title": "和弦按键时长",
+      "description": "判定组合键（和弦）的时间窗口（秒）。",
+      "file": "frontend",
+      "keypath": "chord_duration",
+      "type": "double",
+      "min": 0,
+      "max": 1,
+      "default": 0.1,
+      "doc": "#style"
+    },
+    {
+      "id": "advanced.app_options",
+      "group": "advanced",
+      "title": "应用级选项",
+      "description": "按 App 覆盖行为，每项格式 bundleId:ascii_mode=true,vim_mode=true（可用键 ascii_mode/ascii_punct/inline/no_inline/vim_mode）。",
+      "file": "frontend",
+      "keypath": "app_options",
+      "type": "custom",
+      "default": [
+        "com.apple.Terminal:ascii_mode=true,no_inline=true",
+        "com.microsoft.VSCode:ascii_mode=true,vim_mode=true"
+      ],
+      "doc": "#app_options"
+    }
+  ]
+}

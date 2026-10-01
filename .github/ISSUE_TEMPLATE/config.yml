@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation and Roadmap / 文档与路线图
+    url: https://github.com/zoolapp/aime#readme
+    about: Check implementation status and setup requirements first. / 请先查看实现状态与环境要求。
+  - name: Security policy / 安全政策
+    url: https://github.com/zoolapp/aime/security/policy
+    about: Follow the private reporting instructions; do not disclose vulnerabilities publicly. / 按私密报告流程反馈，不要公开漏洞细节。
+  - name: Maintainer contact / 维护者联系入口
+    url: https://github.com/foru17
+    about: If a private reporting channel is unavailable, request one without sharing sensitive details. / 无私密渠道时，请先请求渠道，不要附敏感细节。

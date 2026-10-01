@@ -1,0 +1,23 @@
+name: Dictionaries
+
+on:
+  push:
+    paths:
+      - 'dicts/**'
+      - 'scripts/build-dicts.swift'
+  pull_request:
+    paths:
+      - 'dicts/**'
+      - 'scripts/build-dicts.swift'
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: macos-26
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate dictionaries
+        run: swift scripts/build-dicts.swift --check

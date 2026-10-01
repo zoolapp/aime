@@ -1,0 +1,162 @@
+172 lines — need 160. Duplicates in pinyin column? uniq -d on column 1 (词条) shows 搭子 and 栓Q duplicated? Wait — awk -F'\t' '{print $1}' ... shows duplicates of the word itself. "搭子" appears twice? I wrote 搭子 once... Oh "搭子文化"? No I removed it. Hmm, "栓Q" appears once. Wait maybe the issue: I wrote "搭子" at line 2 and... let me check. Actually maybe duplicates come from lines where tab parsing differs. Let me grep.2:搭子	da zi	internet_slang	92
+22:栓Q	shuan q	internet_slang	78
+显眼包	xian yan bao	internet_slang	90
+搭子	da zi	internet_slang	92
+情绪价值	qing xu jia zhi	internet_slang	93
+松弛感	song chi gan	internet_slang	90
+city不city	city bu city	internet_slang	85
+班味	ban wei	internet_slang	88
+硬控	ying kong	internet_slang	85
+偷感	tou gan	internet_slang	82
+遥遥领先	yao yao ling xian	internet_slang	90
+泼天的富贵	po tian de fu gui	internet_slang	85
+老登	lao deng	internet_slang	80
+牛马	niu ma	internet_slang	88
+已读乱回	yi du luan hui	internet_slang	85
+浓人	nong ren	internet_slang	80
+淡人	dan ren	internet_slang	80
+精神内耗	jing shen nei hao	internet_slang	85
+摆烂	bai lan	internet_slang	88
+躺平	tang ping	internet_slang	85
+破防	po fang	internet_slang	85
+绝绝子	jue jue zi	internet_slang	78
+芭比Q了	ba bi q le	internet_slang	78
+栓Q	shuan q	internet_slang	78
+尊嘟假嘟	zun du jia du	internet_slang	78
+泰裤辣	tai ku la	internet_slang	80
+公主请上车	gong zhu qing shang che	internet_slang	78
+脆皮大学生	cui pi da xue sheng	internet_slang	78
+特种兵旅游	te zhong bing lv you	internet_slang	80
+多巴胺穿搭	duo ba an chuan da	internet_slang	78
+美拉德	mei la de	internet_slang	75
+新中式	xin zhong shi	internet_slang	78
+发疯文学	fa feng wen xue	internet_slang	80
+废话文学	fei hua wen xue	internet_slang	75
+吗喽	ma lou	internet_slang	75
+打工人	da gong ren	internet_slang	85
+干饭人	gan fan ren	internet_slang	78
+尾款人	wei kuan ren	internet_slang	70
+早C晚A	zao c wan a	internet_slang	72
+小镇做题家	xiao zhen zuo ti jia	internet_slang	75
+哈基米	ha ji mi	internet_slang	78
+爷青回	ye qing hui	internet_slang	75
+塌房	ta fang	internet_slang	80
+那咋了	na za le	internet_slang	80
+如何呢又能怎	ru he ne you neng zen	internet_slang	75
+包的	bao de	internet_slang	80
+已老实求放过	yi lao shi qiu fang guo	internet_slang	75
+电子榨菜	dian zi zha cai	internet_slang	80
+电子布洛芬	dian zi bu luo fen	internet_slang	75
+抽象	chou xiang	internet_slang	78
+钝感力	dun gan li	internet_slang	70
+边界感	bian jie gan	internet_slang	72
+社恐	she kong	internet_slang	78
+社牛	she niu	internet_slang	78
+i人	i ren	internet_slang	80
+e人	e ren	internet_slang	80
+报复性熬夜	bao fu xing ao ye	internet_slang	70
+佛系	fo xi	internet_slang	70
+内卷	nei juan	internet_slang	80
+卷王	juan wang	internet_slang	72
+开摆	kai bai	internet_slang	70
+摸鱼	mo yu	internet_slang	80
+搬砖	ban zhuan	internet_slang	72
+上岸	shang an	internet_slang	78
+下头	xia tou	internet_slang	75
+上头	shang tou	internet_slang	72
+磕到了	ke dao le	internet_slang	70
+去班味	qu ban wei	internet_slang	78
+拉满	la man	internet_slang	70
+小红书	xiao hong shu	platform	95
+抖音	dou yin	platform	95
+快手	kuai shou	platform	90
+B站	b zhan	platform	90
+哔哩哔哩	bi li bi li	platform	90
+微博	wei bo	platform	90
+即刻	ji ke	platform	75
+知乎	zhi hu	platform	88
+X	x	platform	80
+Threads	threads	platform	78
+Bluesky	bluesky	platform	72
+微信	wei xin	platform	95
+视频号	shi pin hao	platform	85
+朋友圈	peng you quan	platform	85
+公众号	gong zhong hao	platform	80
+豆瓣	dou ban	platform	80
+贴吧	tie ba	platform	78
+网易云音乐	wang yi yun yin yue	platform	80
+QQ音乐	qq yin yue	platform	78
+爱奇艺	ai qi yi	platform	80
+腾讯视频	teng xun shi pin	platform	82
+优酷	you ku	platform	78
+芒果TV	mang guo tv	platform	75
+西瓜视频	xi gua shi pin	platform	72
+今日头条	jin ri tou tiao	platform	85
+得物	de wu	platform	78
+闲鱼	xian yu	platform	82
+Soul	soul	platform	72
+钉钉	ding ding	platform	80
+飞书	fei shu	platform	82
+企业微信	qi ye wei xin	platform	78
+斗鱼	dou yu	platform	70
+虎牙	hu ya	platform	70
+老福特	lao fu te	platform	68
+Lofter	lofter	platform	68
+AcFun	acfun	platform	70
+支付宝	zhi fu bao	platform	90
+淘宝	tao bao	platform	92
+天猫	tian mao	platform	85
+京东	jing dong	platform	90
+拼多多	pin duo duo	platform	90
+美团	mei tuan	platform	90
+饿了么	e le me	platform	82
+滴滴	di di	platform	82
+高德地图	gao de di tu	platform	78
+华为	hua wei	brand	95
+鸿蒙	hong meng	brand	90
+HarmonyOS	harmonyos	brand	85
+小米	xiao mi	brand	92
+小米SU7	xiaomisu7	brand	85
+小米汽车	xiao mi qi che	brand	85
+理想汽车	li xiang qi che	brand	85
+蔚来	wei lai	brand	82
+小鹏	xiao peng	brand	82
+比亚迪	bi ya di	brand	92
+大疆	da jiang	brand	88
+Vision Pro	visionpro	brand	80
+iPhone	iphone	brand	90
+Temu	temu	brand	82
+SHEIN	shein	brand	80
+OPPO	oppo	brand	82
+vivo	vivo	brand	82
+荣耀	rong yao	brand	80
+一加	yi jia	brand	75
+红米	hong mi	brand	78
+Redmi	redmi	brand	75
+特斯拉	te si la	brand	88
+极氪	ji ke	brand	80
+问界	wen jie	brand	85
+智界	zhi jie	brand	78
+享界	xiang jie	brand	72
+阿维塔	a wei ta	brand	72
+零跑	ling pao	brand	72
+哪吒汽车	ne zha qi che	brand	70
+仰望	yang wang	brand	72
+方程豹	fang cheng bao	brand	70
+腾势	teng shi	brand	70
+吉利	ji li	brand	78
+奇瑞	qi rui	brand	72
+五菱	wu ling	brand	75
+华为Mate70	huaweimate70	brand	78
+Pura70	pura70	brand	72
+鸿蒙智行	hong meng zhi xing	brand	78
+字节跳动	zi jie tiao dong	brand	88
+腾讯	teng xun	brand	92
+阿里巴巴	a li ba ba	brand	90
+百度	bai du	brand	85
+网易	wang yi	brand	82
+米哈游	mi ha you	brand	80
+泡泡玛特	pao pao ma te	brand	78
+蜜雪冰城	mi xue bing cheng	brand	82
+瑞幸咖啡	rui xing ka fei	brand	80
+海底捞	hai di lao	brand	75

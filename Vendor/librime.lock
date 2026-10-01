@@ -1,0 +1,5 @@
+# librime prebuilt pin — see docs/decisions/0001-librime-prebuilt-engine.md
+LIBRIME_VERSION=1.17.0
+LIBRIME_COMMIT=33e7814
+11d8dc663c6ec06d5ccb6111ba664a9e7b631b703ac6acd07cffbac664021850  rime-33e7814-macOS-universal.tar.bz2
+dfe6047e87be271963d7466bd1a6e3d9e660c30e5e73e4bb94e8782c0a6ac8df  rime-deps-33e7814-macOS-universal.tar.bz2

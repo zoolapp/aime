@@ -1,0 +1,4 @@
+#!/bin/bash
+# Stop a running AIME so the bundle can be replaced.
+/usr/bin/pkill -f "/Library/Input Methods/AIME.app/Contents/MacOS/AIME" 2>/dev/null || true
+exit 0

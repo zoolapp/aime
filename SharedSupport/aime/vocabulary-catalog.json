@@ -1,0 +1,53 @@
+{
+  "version": 2,
+  "name": "AIME 在线词库",
+  "homepage": "https://aime.zool.app/dictionaries/",
+  "updated": "2026-10-01",
+  "feeds": [
+    {
+      "id": "ai-companies-products",
+      "name": "AI 公司与产品",
+      "description": "OpenAI、Anthropic、DeepSeek、Claude、ChatGPT 等 AI 公司、模型与产品名，按正确大小写上屏。",
+      "category": "ai",
+      "entries": 160,
+      "url": "https://aime.zool.app/resources/2026-10-01/ai-companies-products.txt",
+      "version": "2026-10-01",
+      "updated": "2026-10-01",
+      "sha256": "00cc710d3740208e6efa8c03fe56f28231938fac2a2c38682a5e26e686edface",
+      "size": 3695,
+      "license": "CC-BY-4.0",
+      "attribution": "Luo Lei and contributors",
+      "format": "text-tab-pinyin-weight"
+    },
+    {
+      "id": "ai-terms-dev-tools",
+      "name": "AI 与开发术语",
+      "description": "大模型、智能体、提示词、RAG、向量数据库等 AI 与开发者常用术语。",
+      "category": "ai",
+      "entries": 160,
+      "url": "https://aime.zool.app/resources/2026-10-01/ai-terms-dev-tools.txt",
+      "version": "2026-10-01",
+      "updated": "2026-10-01",
+      "sha256": "19577d8976b6d3519899a96fb5c953ad432f6a3d5bf2cda2f5e37187a3dae62b",
+      "size": 4323,
+      "license": "CC-BY-4.0",
+      "attribution": "Luo Lei and contributors",
+      "format": "text-tab-pinyin-weight"
+    },
+    {
+      "id": "internet-brands-platforms",
+      "name": "互联网品牌与热词",
+      "description": "平台、品牌与 2026 年常见的互联网流行语。",
+      "category": "internet",
+      "entries": 160,
+      "url": "https://aime.zool.app/resources/2026-10-01/internet-brands-platforms.txt",
+      "version": "2026-10-01",
+      "updated": "2026-10-01",
+      "sha256": "ea9036d0ee428c481d49509a1b68b927ae415ec479363889765d614da5556ea5",
+      "size": 3952,
+      "license": "CC-BY-4.0",
+      "attribution": "Luo Lei and contributors",
+      "format": "text-tab-pinyin-weight"
+    }
+  ]
+}

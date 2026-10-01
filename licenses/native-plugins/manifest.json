@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "scope": "Three native plugins in the observed librime 1.17.0 prebuilt engine. This is a partial source-license inventory, not distribution approval.",
+  "engineVersion": "1.17.0",
+  "engineCommitPrefix": "33e7814",
+  "engineArchive": "rime-33e7814-macOS-universal.tar.bz2",
+  "engineArchiveSha256": "11d8dc663c6ec06d5ccb6111ba664a9e7b631b703ac6acd07cffbac664021850",
+  "binaryHashScope": "Observed Vendor files before AIME re-signing; final installer hashes must be measured separately.",
+  "components": [
+    {
+      "component": "librime-lua",
+      "repository": "https://github.com/hchunhui/librime-lua",
+      "sourceCommit": "ec52e48ea18f11af37717a01c337f853215cf70b",
+      "sourceUrl": "https://github.com/hchunhui/librime-lua/tree/ec52e48ea18f11af37717a01c337f853215cf70b",
+      "licenseFamily": "BSD-3-Clause",
+      "upstreamLicenseUrl": "https://raw.githubusercontent.com/hchunhui/librime-lua/ec52e48ea18f11af37717a01c337f853215cf70b/LICENSE",
+      "licenseFile": "licenses/native-plugins/librime-lua.LICENSE.txt",
+      "licenseSha256": "c6bd4f58b13ae9d45c5e53adddeea5049114a25862797c6c6f64920431eea249",
+      "licenseGitBlobSha1": "3be95a67fc6bd90d7c769acdf897b3901605cf00",
+      "observedVendorBinary": "Vendor/librime/lib/rime-plugins/librime-lua.dylib",
+      "observedVendorBinarySha256": "9e5086f73b90481530bb2aa08a615044c90242eee4b98eef12fcdd1a1c391e68",
+      "bundlePath": "Contents/Frameworks/rime-plugins/librime-lua.dylib",
+      "correspondingSourcePackaged": false,
+      "transitiveLicenseAuditPassed": false
+    },
+    {
+      "component": "librime-octagram",
+      "repository": "https://github.com/lotem/librime-octagram",
+      "sourceCommit": "dfcc15115788c828d9dd7b4bff68067d3ce2ffb8",
+      "sourceUrl": "https://github.com/lotem/librime-octagram/tree/dfcc15115788c828d9dd7b4bff68067d3ce2ffb8",
+      "licenseFamily": "GPL-3.0",
+      "upstreamLicenseUrl": "https://raw.githubusercontent.com/lotem/librime-octagram/dfcc15115788c828d9dd7b4bff68067d3ce2ffb8/LICENSE",
+      "licenseFile": "licenses/native-plugins/librime-octagram.LICENSE.txt",
+      "licenseSha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+      "licenseGitBlobSha1": "94a9ed024d3859793618152ea559a168bbcbb5e2",
+      "observedVendorBinary": "Vendor/librime/lib/rime-plugins/librime-octagram.dylib",
+      "observedVendorBinarySha256": "5b2e07a8faa2ab68f551c9de2ce9c3a4925f533c1369a2cc598ee8c486f13a6c",
+      "bundlePath": "Contents/Frameworks/rime-plugins/librime-octagram.dylib",
+      "correspondingSourcePackaged": false,
+      "transitiveLicenseAuditPassed": false,
+      "licenseVersionQualifier": "Only/or-later qualifier not inferred from the full license text; review upstream source notices.",
+      "combinedWorkReviewPassed": false
+    },
+    {
+      "component": "librime-predict",
+      "repository": "https://github.com/rime/librime-predict",
+      "sourceCommit": "920bd41ebf6f9bf6855d14fbe80212e54e749791",
+      "sourceUrl": "https://github.com/rime/librime-predict/tree/920bd41ebf6f9bf6855d14fbe80212e54e749791",
+      "licenseFamily": "BSD-3-Clause",
+      "upstreamLicenseUrl": "https://raw.githubusercontent.com/rime/librime-predict/920bd41ebf6f9bf6855d14fbe80212e54e749791/LICENSE",
+      "licenseFile": "licenses/native-plugins/librime-predict.LICENSE.txt",
+      "licenseSha256": "9b1bbdf15a381884b47dfd9422e68f6382170b2841c476afc076f2d448c7a59f",
+      "licenseGitBlobSha1": "98b5bc347734e6da48cfb50e384589345e5b541b",
+      "observedVendorBinary": "Vendor/librime/lib/rime-plugins/librime-predict.dylib",
+      "observedVendorBinarySha256": "bacf19a2931fb83c4ebb9e14e231dd3d7fc110fd67526018fad0a514c68366a6",
+      "bundlePath": "Contents/Frameworks/rime-plugins/librime-predict.dylib",
+      "correspondingSourcePackaged": false,
+      "transitiveLicenseAuditPassed": false
+    }
+  ],
+  "completeLicensePackagingAuditPassed": false,
+  "completeCorrespondingSourceAuditPassed": false
+}

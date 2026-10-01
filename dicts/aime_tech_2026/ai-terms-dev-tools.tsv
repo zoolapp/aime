@@ -1,0 +1,160 @@
+大模型	da mo xing	ai_term	96
+智能体	zhi neng ti	ai_term	95
+多模态	duo mo tai	ai_term	94
+提示词	ti shi ci	ai_term	95
+检索增强生成	jian suo zeng qiang sheng cheng	ai_term	90
+向量数据库	xiang liang shu ju ku	ai_term	88
+具身智能	ju shen zhi neng	ai_term	88
+推理模型	tui li mo xing	ai_term	92
+思维链	si wei lian	ai_term	90
+上下文窗口	shang xia wen chuang kou	ai_term	90
+幻觉	huan jue	ai_term	86
+微调	wei tiao	ai_term	92
+蒸馏	zheng liu	ai_term	84
+算力	suan li	ai_term	90
+端侧模型	duan ce mo xing	ai_term	86
+混合专家	hun he zhuan jia	ai_term	88
+词元	ci yuan	ai_term	84
+对齐	dui qi	ai_term	86
+世界模型	shi jie mo xing	ai_term	88
+开源权重	kai yuan quan zhong	ai_term	84
+氛围编程	fen wei bian cheng	ai_term	86
+人工智能	ren gong zhi neng	ai_term	98
+生成式人工智能	sheng cheng shi ren gong zhi neng	ai_term	90
+机器学习	ji qi xue xi	ai_term	94
+深度学习	shen du xue xi	ai_term	94
+神经网络	shen jing wang luo	ai_term	90
+自然语言处理	zi ran yu yan chu li	ai_term	88
+计算机视觉	ji suan ji shi jue	ai_term	86
+强化学习	qiang hua xue xi	ai_term	88
+预训练	yu xun lian	ai_term	90
+指令微调	zhi ling wei tiao	ai_term	88
+提示工程	ti shi gong cheng	ai_term	90
+上下文学习	shang xia wen xue xi	ai_term	84
+嵌入向量	qian ru xiang liang	ai_term	86
+向量检索	xiang liang jian suo	ai_term	86
+知识库	zhi shi ku	ai_term	88
+知识图谱	zhi shi tu pu	ai_term	82
+长上下文	chang shang xia wen	ai_term	86
+注意力机制	zhu yi li ji zhi	ai_term	86
+分词器	fen ci qi	ai_term	86
+工具调用	gong ju diao yong	ai_term	90
+函数调用	han shu diao yong	ai_term	86
+多智能体	duo zhi neng ti	ai_term	88
+长期记忆	chang qi ji yi	ai_term	82
+安全对齐	an quan dui qi	ai_term	84
+奖励模型	jiang li mo xing	ai_term	84
+偏好优化	pian hao you hua	ai_term	82
+过拟合	guo ni he	ai_term	80
+梯度下降	ti du xia jiang	ai_term	80
+反向传播	fan xiang chuan bo	ai_term	80
+多头注意力	duo tou zhu yi li	ai_term	80
+键值缓存	jian zhi huan cun	ai_term	82
+推测解码	tui ce jie ma	ai_term	80
+量化	liang hua	ai_term	86
+知识蒸馏	zhi shi zheng liu	ai_term	84
+合成数据	he cheng shu ju	ai_term	82
+分布式训练	fen bu shi xun lian	ai_term	84
+参数量	can shu liang	ai_term	84
+上下文长度	shang xia wen chang du	ai_term	84
+推理加速	tui li jia su	ai_term	82
+模型压缩	mo xing ya suo	ai_term	80
+显存	xian cun	ai_term	84
+首字时延	shou zi shi yan	ai_term	80
+基础模型	ji chu mo xing	ai_term	90
+语言模型	yu yan mo xing	ai_term	90
+小模型	xiao mo xing	ai_term	82
+端侧推理	duan ce tui li	ai_term	82
+私有化部署	si you hua bu shu	ai_term	84
+本地部署	ben di bu shu	ai_term	84
+模型服务	mo xing fu wu	ai_term	82
+推理服务	tui li fu wu	ai_term	82
+令牌	ling pai	ai_term	78
+速率限制	su lv xian zhi	ai_term	76
+系统提示词	xi tong ti shi ci	ai_term	86
+用户提示词	yong hu ti shi ci	ai_term	80
+少样本学习	shao yang ben xue xi	ai_term	78
+零样本学习	ling yang ben xue xi	ai_term	78
+思维树	si wei shu	ai_term	76
+自我一致性	zi wo yi zhi xing	ai_term	72
+检索	jian suo	ai_term	80
+重排序	chong pai xu	ai_term	78
+召回	zhao hui	ai_term	76
+语义分块	yu yi fen kuai	ai_term	74
+文档解析	wen dang jie xi	ai_term	76
+多模态理解	duo mo tai li jie	ai_term	82
+文生图	wen sheng tu	ai_term	88
+文生视频	wen sheng shi pin	ai_term	86
+图生图	tu sheng tu	ai_term	80
+语音合成	yu yin he cheng	ai_term	82
+语音识别	yu yin shi bie	ai_term	84
+数字人	shu zi ren	ai_term	84
+智能客服	zhi neng ke fu	ai_term	80
+代码补全	dai ma bu quan	ai_term	86
+代码生成	dai ma sheng cheng	ai_term	86
+智能编程	zhi neng bian cheng	ai_term	84
+低代码	di dai ma	ai_term	80
+无代码	wu dai ma	ai_term	76
+工作流	gong zuo liu	ai_term	82
+编排	bian pai	ai_term	76
+插件	cha jian	ai_term	80
+LLM	llm	ai_term	96
+AGI	agi	ai_term	92
+RAG	rag	ai_term	94
+MCP	mcp	ai_term	90
+A2A	a2a	ai_term	82
+MoE	moe	ai_term	88
+RLHF	rlhf	ai_term	90
+LoRA	lora	ai_term	90
+GPU	gpu	ai_term	94
+TPU	tpu	ai_term	86
+NPU	npu	ai_term	86
+API	api	ai_term	96
+SDK	sdk	dev_tool	92
+CLI	cli	dev_tool	90
+token	token	ai_term	88
+Transformer	transformer	ai_term	90
+embedding	embedding	ai_term	86
+fine-tuning	finetuning	ai_term	84
+prompt	prompt	ai_term	90
+agent	agent	ai_term	88
+CUDA	cuda	dev_tool	88
+ONNX	onnx	ai_term	78
+JSON	json	dev_tool	90
+YAML	yaml	dev_tool	82
+HTTP	http	dev_tool	88
+REST	rest	ai_term	84
+GraphQL	graphql	dev_tool	82
+gRPC	grpc	dev_tool	80
+WebSocket	websocket	dev_tool	80
+OAuth	oauth	dev_tool	82
+GitHub Copilot	githubcopilot	ai_product	94
+VSCode	vscode	dev_tool	96
+Xcode	xcode	dev_tool	90
+Vercel	vercel	platform	90
+Cloudflare	cloudflare	platform	92
+Supabase	supabase	platform	86
+Docker	docker	dev_tool	94
+Kubernetes	kubernetes	dev_tool	92
+Rust	rust	dev_tool	90
+TypeScript	typescript	dev_tool	94
+SwiftUI	swiftui	dev_tool	88
+Next.js	nextjs	dev_tool	92
+Bun	bun	dev_tool	84
+Deno	deno	dev_tool	82
+GitHub	github	platform	96
+Git	git	dev_tool	96
+npm	npm	dev_tool	90
+pnpm	pnpm	dev_tool	84
+Node.js	nodejs	dev_tool	94
+Python	python	dev_tool	96
+React	react	dev_tool	94
+Vue	vue	dev_tool	88
+Tailwind	tailwind	dev_tool	86
+PostgreSQL	postgresql	dev_tool	88
+Redis	redis	dev_tool	88
+Nginx	nginx	dev_tool	84
+Linux	linux	platform	92
+macOS	macos	platform	90
+Figma	figma	dev_tool	86
+Cursor	cursor	ai_product	90

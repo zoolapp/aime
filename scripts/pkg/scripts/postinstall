@@ -1,0 +1,9 @@
+#!/bin/bash
+# Register, enable and select AIME for the user who ran the installer. Text Input
+# Sources is per user, so this must run as that user, not as root.
+login_user="$(/usr/bin/stat -f%Su /dev/console)"
+app="/Library/Input Methods/AIME.app"
+if [[ -n "$login_user" && "$login_user" != "root" ]]; then
+  /usr/bin/sudo -u "$login_user" "$app/Contents/MacOS/AIME" --install || true
+fi
+exit 0

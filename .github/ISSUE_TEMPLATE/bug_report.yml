@@ -1,0 +1,68 @@
+name: Bug Report / 缺陷反馈
+description: Report a reproducible AIME issue / 反馈可复现问题
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        AIME is pre-alpha; check the README's Roadmap before reporting missing features.
+        AIME 尚处于早期开发阶段，请先查看 README 中的 Roadmap。
+        Do not attach typed text, user-frequency databases, full RIME directories, or API keys.
+        不要上传输入内容、用户词频库、整个 RIME 目录或 API key。
+        For vulnerabilities, follow [SECURITY.md](https://github.com/zoolapp/aime/security/policy).
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Before reporting / 提交前确认
+      options:
+        - label: I searched existing issues and checked implementation status. / 已搜索现有 issue 并核对实现状态。
+          required: true
+        - label: I removed personal data and secrets from this report. / 已移除个人数据与凭据。
+          required: true
+  - type: input
+    id: version
+    attributes:
+      label: AIME version or commit / AIME 版本或 commit
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment / 环境
+      description: macOS version, Mac model/chip, installation method, Xcode and Swift versions if built locally. / macOS、机型与芯片、安装方式；本地构建请附 Xcode 和 Swift 版本。
+    validations:
+      required: true
+  - type: textarea
+    id: input_context
+    attributes:
+      label: Input context / 输入环境
+      description: Schema/dictionary version, affected app, and whether Squirrel import was used; use synthetic input only. / 方案与词库版本、受影响 App、是否导入鼠须管配置；仅使用合成输入。
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce / 复现步骤
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior / 预期行为
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior / 实际行为
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Sanitized diagnostics or screenshots / 脱敏诊断或截图
+      description: Optional minimal logs/configuration with synthetic values; do not upload entire personal files. / 可选，仅附使用合成值的最小日志或配置，不要上传完整个人文件。

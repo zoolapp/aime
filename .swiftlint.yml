@@ -1,0 +1,39 @@
+# Keep default rules except identifier-name checks for short RIME/C API names.
+# Configuration reference: https://github.com/realm/SwiftLint#configuration
+excluded:
+  - Vendor
+  - .build
+  - Packages/AIMEKit/.build
+  - DerivedData
+  - build
+
+disabled_rules:
+  - identifier_name
+
+opt_in_rules:
+  - empty_count
+  - empty_string
+  - sorted_imports
+
+line_length:
+  warning: 140
+  error: 200
+  ignores_urls: true
+
+function_body_length:
+  warning: 60
+  error: 100
+
+type_body_length:
+  warning: 350
+  error: 500
+
+file_length:
+  warning: 600
+  error: 1000
+
+nesting:
+  type_level: 2
+  function_level: 3
+
+reporter: xcode

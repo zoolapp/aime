@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up build (Xcode, XcodeGen, librime, dictionaries)
+        uses: ./.github/actions/setup-build
+
+      - name: Build package and stage plugins
+        run: |
+          swift build --package-path Packages/AIMEKit
+          bash scripts/stage-plugins.sh
+
+      - name: Test package
+        run: swift test --package-path Packages/AIMEKit
+
+      - name: Build release CLI and stage plugins
+        run: |
+          swift build --package-path Packages/AIMEKit -c release --product aime
+          # Release products have their own librime copy and need plugins beside it.
+          bash scripts/stage-plugins.sh
+
+      - name: Enforce benchmark latency
+        run: |
+          "$(swift build --package-path Packages/AIMEKit -c release --show-bin-path)/aime" bench \
+            --user-dir "$RUNNER_TEMP/aime-bench" \
+            --shared-dir build/SharedSupport \
+            --schema rime_ice --keys nihaoshijie --iterations 2000 --assert-p99-ms 5
+
+      - name: Validate dictionaries
+        run: swift scripts/build-dicts.swift --check
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build unsigned app
+        run: xcodebuild -project AIME.xcodeproj -scheme AIME -configuration Release -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO build
+
+      - name: Archive unsigned app
+        run: ditto -c -k --keepParent build/DerivedData/Build/Products/Release/AIME.app AIME-unsigned.zip
+
+      - name: Upload unsigned app
+        uses: actions/upload-artifact@v4
+        with:
+          name: AIME-unsigned
+          path: AIME-unsigned.zip
+          if-no-files-found: error
+          retention-days: 7

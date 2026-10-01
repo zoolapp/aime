@@ -1,0 +1,158 @@
+{
+  "version": 1,
+  "updated": "2026-09-29",
+  "packages": [
+    {
+      "id": "rime-ice",
+      "title": "雾凇拼音",
+      "summary": "功能齐全、长期维护的全拼/双拼方案与词库，AIME 默认方案。",
+      "homepage": "https://github.com/iDvel/rime-ice",
+      "license": "GPL-3.0",
+      "kind": "schema",
+      "schemas": [
+        "rime_ice",
+        "double_pinyin_flypy",
+        "melt_eng",
+        "radical_pinyin"
+      ],
+      "requires": [
+        "lua"
+      ],
+      "source": {
+        "type": "github-release",
+        "repo": "iDvel/rime-ice",
+        "tag": "2026.06.30",
+        "asset": "full.zip"
+      },
+      "sha256": "675d23b070be00e1b800f9a6db033ef98f4493cd5b568ed8aa3b3541769c46ac",
+      "size": 16050491,
+      "audience": "适合大多数人；不确定选哪个，就用它。",
+      "conflicts": [
+        "rime-frost"
+      ]
+    },
+    {
+      "id": "rime-ice-dicts",
+      "title": "雾凇拼音 · 仅词库",
+      "summary": "只更新 cn_dicts / en_dicts 词库文件，不动方案与配置。",
+      "homepage": "https://github.com/iDvel/rime-ice",
+      "license": "GPL-3.0",
+      "kind": "dictionary",
+      "schemas": [],
+      "requires": [],
+      "source": {
+        "type": "github-release",
+        "repo": "iDvel/rime-ice",
+        "tag": "2026.06.30",
+        "asset": "all_dicts.zip"
+      },
+      "sha256": "2507e50d45b727aac97f740f02fbbc66339b10f40991fc0a6833852fc2e60f3b",
+      "size": 15593608,
+      "addonFor": "rime-ice",
+      "audience": "自己改过雾凇配置、只想更新词库时使用。"
+    },
+    {
+      "id": "wanxiang-base",
+      "title": "万象拼音 · 标准版",
+      "summary": "带声调与语法模型的全拼/双拼方案，词库规模大、长句能力强。",
+      "homepage": "https://github.com/amzxyz/rime_wanxiang",
+      "license": "CC-BY-4.0",
+      "kind": "schema",
+      "schemas": [
+        "wanxiang"
+      ],
+      "requires": [
+        "lua",
+        "octagram"
+      ],
+      "source": {
+        "type": "github-release",
+        "repo": "amzxyz/rime_wanxiang",
+        "tag": "v18.0.15",
+        "asset": "rime-wanxiang-base.zip"
+      },
+      "sha256": "9f6cfaf4d9861846d1c0619713be9d1766c3588d6c5c0075b4c04f05c074f4b1",
+      "size": 35138284,
+      "family": "wanxiang",
+      "edition": "标准版",
+      "conflicts": [
+        "wanxiang-lite"
+      ],
+      "audience": "适合习惯打整句、在意长句准确率的人。"
+    },
+    {
+      "id": "wanxiang-lite",
+      "title": "万象拼音 · 轻量版",
+      "summary": "万象的精简词库版本，占用更小，部署更快。",
+      "homepage": "https://github.com/amzxyz/rime_wanxiang",
+      "license": "CC-BY-4.0",
+      "kind": "schema",
+      "schemas": [
+        "wanxiang"
+      ],
+      "requires": [
+        "lua"
+      ],
+      "source": {
+        "type": "github-release",
+        "repo": "amzxyz/rime_wanxiang",
+        "tag": "v18.0.15",
+        "asset": "rime-wanxiang-lite.zip"
+      },
+      "sha256": "4525579f2f0bec2e113190373700806af03ca8010ffd831860743f3820f9c65c",
+      "size": 32229221,
+      "family": "wanxiang",
+      "edition": "轻量版",
+      "conflicts": [
+        "wanxiang-base"
+      ],
+      "audience": "适合想试万象、又在意占用空间的人。"
+    },
+    {
+      "id": "rime-frost",
+      "title": "白霜拼音",
+      "summary": "基于雾凇、以大规模语料重排词频的拼音方案。",
+      "homepage": "https://github.com/gaboolic/rime-frost",
+      "license": "GPL-3.0",
+      "kind": "schema",
+      "schemas": [
+        "rime_frost"
+      ],
+      "requires": [
+        "lua"
+      ],
+      "source": {
+        "type": "github-release",
+        "repo": "gaboolic/rime-frost",
+        "tag": "1.0.4",
+        "asset": "rime-frost-schemas.zip"
+      },
+      "sha256": "4f4998ae83f63d757c0a4ace192f69d48265bddfabe231642b73e3739ed0f2f5",
+      "size": 44008360,
+      "conflicts": [
+        "rime-ice"
+      ],
+      "audience": "适合觉得雾凇候选顺序不顺手的人。"
+    },
+    {
+      "id": "rime-essay",
+      "title": "八股文 · 预设词汇与词频",
+      "summary": "Rime 官方共享词汇表 essay.txt，供 use_preset_vocabulary 的方案使用。",
+      "homepage": "https://github.com/rime/rime-essay",
+      "license": "LGPL-3.0",
+      "kind": "dictionary",
+      "schemas": [],
+      "requires": [],
+      "source": {
+        "type": "raw",
+        "url": "https://raw.githubusercontent.com/rime/rime-essay/054920de4f54c9e5994276a96a4fc2a35cb51aa3/essay.txt",
+        "filename": "essay.txt",
+        "tag": "054920d"
+      },
+      "sha256": "3e8512ebaa6657e35961b1f5762060717c647e3bf471d5e3b86e783b4e934ffb",
+      "size": 5887319,
+      "advanced": true,
+      "audience": "只有声明 use_preset_vocabulary 的方案才用得到，雾凇不需要。"
+    }
+  ]
+}

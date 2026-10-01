@@ -1,0 +1,160 @@
+OpenAI	openai	ai_company	98
+Anthropic	anthropic	ai_company	97
+xAI	xai	ai_company	96
+DeepMind	deepmind	ai_company	93
+谷歌	gu ge	ai_company	86
+Google	google	ai_company	88
+Meta	meta	ai_company	87
+微软	wei ruan	ai_company	86
+Microsoft	microsoft	ai_company	88
+Mistral	mistral	ai_company	90
+Hugging Face	huggingface	ai_company	92
+Perplexity	perplexity	ai_company	91
+Midjourney	midjourney	ai_company	92
+Stability AI	stabilityai	ai_company	84
+Cohere	cohere	ai_company	80
+Runway	runway	ai_company	88
+ElevenLabs	elevenlabs	ai_company	86
+Suno	suno	ai_company	85
+Groq	groq	ai_company	86
+NVIDIA	nvidia	ai_company	90
+英伟达	ying wei da	ai_company	88
+Anysphere	anysphere	ai_company	82
+Cognition	cognition	ai_company	80
+Character.AI	characterai	ai_company	84
+Trae	trae	ai_product	86
+Black Forest Labs	blackforestlabs	ai_company	83
+Luma AI	lumaai	ai_company	82
+Pika	pika	ai_company	80
+清影	qing ying	ai_product	82
+DeepSeek-R1	deepseekr1	ai_product	94
+深度求索	shen du qiu suo	ai_company	97
+DeepSeek	deepseek	ai_company	98
+月之暗面	yue zhi an mian	ai_company	96
+Moonshot	moonshot	ai_company	90
+智谱	zhi pu	ai_company	95
+Zhipu	zhipu	ai_company	92
+MiniMax	minimax	ai_company	94
+稀宇科技	xi yu ke ji	ai_company	80
+阶跃星辰	jie yue xing chen	ai_company	91
+StepFun	stepfun	ai_company	88
+零一万物	ling yi wan wu	ai_company	89
+百川智能	bai chuan zhi neng	ai_company	87
+Baichuan	baichuan	ai_company	85
+科大讯飞	ke da xun fei	ai_company	88
+iFlytek	iflytek	ai_company	83
+百度	bai du	ai_company	90
+Baidu	baidu	ai_company	86
+阿里巴巴	a li ba ba	ai_company	85
+Alibaba	alibaba	ai_company	86
+阿里云	a li yun	ai_company	87
+腾讯	teng xun	ai_company	88
+Tencent	tencent	ai_company	85
+字节跳动	zi jie tiao dong	ai_company	90
+ByteDance	bytedance	ai_company	88
+快手	kuai shou	ai_company	84
+Kuaishou	kuaishou	ai_company	80
+华为	hua wei	ai_company	86
+Huawei	huawei	ai_company	83
+昆仑万维	kun lun wan wei	ai_company	82
+商汤科技	shang tang ke ji	ai_company	81
+SenseTime	sensetime	ai_company	79
+面壁智能	mian bi zhi neng	ai_company	78
+生数科技	sheng shu ke ji	ai_company	83
+硅基流动	gui ji liu dong	ai_company	82
+SiliconFlow	siliconflow	ai_company	80
+密塔科技	mi ta ke ji	ai_company	76
+宇树科技	yu shu ke ji	ai_company	83
+Unitree	unitree	ai_company	81
+智元机器人	zhi yuan ji qi ren	ai_company	78
+小米	xiao mi	ai_company	79
+ChatGPT	chatgpt	ai_product	99
+GPT-4o	gpt4o	ai_product	94
+GPT-4.1	gpt41	ai_product	89
+GPT-5	gpt5	ai_product	97
+o1	o1	ai_product	86
+o3	o3	ai_product	90
+o4-mini	o4mini	ai_product	84
+Sora	sora	ai_product	93
+Codex	codex	ai_product	92
+Claude	claude	ai_product	98
+Claude Code	claudecode	ai_product	91
+Claude Opus	claudeopus	ai_product	90
+Claude Sonnet	claudesonnet	ai_product	89
+Gemini	gemini	ai_product	96
+Gemini Pro	geminipro	ai_product	86
+Veo	veo	ai_product	90
+NotebookLM	notebooklm	ai_product	91
+Gemma	gemma	ai_product	84
+Imagen	imagen	ai_product	82
+Llama	llama	ai_product	93
+Llama 3	llama3	ai_product	86
+Llama 4	llama4	ai_product	88
+Grok	grok	ai_product	95
+Grok 3	grok3	ai_product	84
+Grok 4	grok4	ai_product	90
+Copilot	copilot	ai_product	92
+GitHub Copilot	githubcopilot	ai_product	90
+Cursor	cursor	ai_product	94
+Windsurf	windsurf	ai_product	88
+Manus	manus	ai_product	90
+Devin	devin	ai_product	83
+v0	v0	ai_product	82
+Flux	flux	ai_product	88
+FLUX.1	flux1	ai_product	80
+Stable Diffusion	stablediffusion	ai_product	86
+SDXL	sdxl	ai_product	78
+Mixtral	mixtral	ai_product	80
+Codestral	codestral	ai_product	78
+Kimi K3	kimik3	ai_product	88
+Mistral Large	mistrallarge	ai_product	82
+通义千问	tong yi qian wen	ai_product	96
+Qwen	qwen	ai_product	95
+Qwen3	qwen3	ai_product	90
+Qwen2.5	qwen25	ai_product	84
+QwQ	qwq	ai_product	82
+通义万相	tong yi wan xiang	ai_product	86
+通义灵码	tong yi ling ma	ai_product	84
+豆包	dou bao	ai_product	96
+Doubao	doubao	ai_product	90
+Kimi	kimi	ai_product	97
+Kimi K2	kimik2	ai_product	90
+智谱清言	zhi pu qing yan	ai_product	92
+GLM	glm	ai_product	93
+GLM-4	glm4	ai_product	88
+ChatGLM	chatglm	ai_product	84
+AutoGLM	autoglm	ai_product	82
+文心一言	wen xin yi yan	ai_product	94
+DeepSeek-V3	deepseekv3	ai_product	93
+ERNIE	ernie	ai_product	82
+文心一格	wen xin yi ge	ai_product	76
+海螺	hai luo	ai_product	90
+Hailuo	hailuo	ai_product	86
+可灵	ke ling	ai_product	93
+Kling	kling	ai_product	90
+即梦	ji meng	ai_product	92
+Jimeng	jimeng	ai_product	84
+Dreamina	dreamina	ai_product	78
+元宝	yuan bao	ai_product	90
+腾讯元宝	teng xun yuan bao	ai_product	86
+混元	hun yuan	ai_product	90
+腾讯混元	teng xun hun yuan	ai_product	86
+Hunyuan	hunyuan	ai_product	84
+跃问	yue wen	ai_product	84
+讯飞星火	xun fei xing huo	ai_product	88
+文小言	wen xiao yan	ai_product	88
+天工	tian gong	ai_product	84
+Skywork	skywork	ai_product	78
+通义听悟	tong yi ting wu	ai_product	83
+日日新	ri ri xin	ai_product	76
+盘古	pan gu	ai_product	80
+书生浦语	shu sheng pu yu	ai_product	82
+InternLM	internlm	ai_product	83
+扣子	kou zi	ai_product	86
+Coze	coze	ai_product	84
+Dify	dify	ai_product	85
+秘塔搜索	mi ta sou suo	ai_product	82
+纳米搜索	na mi sou suo	ai_product	78
+星野	xing ye	ai_product	80
+Vidu	vidu	ai_product	84
+猫箱	mao xiang	ai_product	78

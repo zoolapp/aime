@@ -1,0 +1,133 @@
+name: AIME
+options:
+  bundleIdPrefix: app.zool.aime
+  developmentLanguage: zh-Hans
+  deploymentTarget:
+    macOS: "26.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+settings:
+  base:
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    SWIFT_EMIT_LOC_STRINGS: YES
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+    DEAD_CODE_STRIPPING: YES
+    ENABLE_HARDENED_RUNTIME: YES
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: PX694P4CGY
+    CODE_SIGN_IDENTITY: "-"
+    INFOPLIST_KEY_NSHumanReadableCopyright: "© 2026 ZOOL LLC. MIT License."
+  configs:
+    Debug:
+      CODE_SIGN_IDENTITY: Apple Development
+packages:
+  AIMEKit:
+    path: Packages/AIMEKit
+targets:
+  AIME:
+    type: application
+    platform: macOS
+    productName: AIME
+    sources:
+      - path: Apps/AIME
+      - path: Apps/Shared
+    dependencies:
+      - package: AIMEKit
+        product: RimeKit
+      - package: AIMEKit
+        product: AIMECore
+      - package: AIMEKit
+        product: AIMEPanel
+      - package: AIMEKit
+        product: AIMEAI
+      - sdk: InputMethodKit.framework
+      - sdk: Carbon.framework
+    info:
+      path: Apps/AIME/Info.plist
+      properties:
+        CFBundleDisplayName: AIME
+        CFBundleName: AIME
+        LSUIElement: true
+        LSBackgroundOnly: false
+        NSPrincipalClass: NSApplication
+        LSApplicationCategoryType: public.app-category.utilities
+        InputMethodConnectionName: app.zool.inputmethod.aime_Connection
+        InputMethodServerControllerClass: AIMEInputController
+        InputMethodServerDelegateClass: AIMEInputController
+        tsInputMethodIconFileKey: AIME.pdf
+        tsInputMethodCharacterRepertoireKey: [Hans, Hant, Latn]
+        TISInputSourceID: app.zool.inputmethod.aime
+        TICapsLockLanguageSwitchCapable: true
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        ComponentInputModeDict:
+          tsInputModeListKey:
+            app.zool.inputmethod.aime.hans:
+              TISInputSourceID: app.zool.inputmethod.aime.hans
+              TISIntendedLanguage: zh-Hans
+              tsInputModeScriptKey: smUnicodeScript
+              tsInputModeCharacterRepertoireKey: [Hans, Hant]
+              tsInputModeKeyEquivalentModifiersKey: 4608
+              tsInputModeMenuIconFileKey: AIME.pdf
+              tsInputModeAlternateMenuIconFileKey: AIME.pdf
+              tsInputModePaletteIconFileKey: AIME.pdf
+              tsInputModePrimaryInScriptKey: true
+              tsInputModeIsVisibleKey: true
+              tsInputModeDefaultStateKey: true
+          tsVisibleInputModeOrderedArrayKey: [app.zool.inputmethod.aime.hans]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.zool.inputmethod.aime
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks"
+        CODE_SIGN_ENTITLEMENTS: Apps/AIME/AIME.entitlements
+    postBuildScripts:
+      - name: Embed librime plugins and SharedSupport
+        script: bash "$SRCROOT/scripts/embed-runtime.sh"
+        basedOnDependencyAnalysis: false
+  AIME Settings:
+    type: application
+    platform: macOS
+    productName: AIME Settings
+    sources:
+      - path: Apps/AIMESettings
+      - path: Apps/Shared
+    dependencies:
+      - package: AIMEKit
+        product: AIMECore
+      - package: AIMEKit
+        product: AIMEPanel
+      - package: AIMEKit
+        product: AIMEAI
+    info:
+      path: Apps/AIMESettings/Info.plist
+      properties:
+        CFBundleDisplayName: AIME Settings
+        CFBundleName: AIME Settings
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSApplicationCategoryType: public.app-category.productivity
+        NSPrincipalClass: NSApplication
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.zool.aime.settings
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_ENTITLEMENTS: Apps/AIMESettings/AIMESettings.entitlements
+schemes:
+  AIME:
+    build:
+      targets:
+        AIME: all
+        AIME Settings: all
+    run:
+      config: Debug
+  AIME Settings:
+    build:
+      targets:
+        AIME Settings: all
+    run:
+      config: Debug

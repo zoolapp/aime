@@ -1,0 +1,42 @@
+name: Feature Request / 功能建议
+description: Propose a focused improvement / 提出聚焦的改进建议
+title: "[Feature] "
+body:
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Before requesting / 提交前确认
+      options:
+        - label: I searched existing issues and the README Roadmap. / 已搜索现有 issue 和 README Roadmap。
+          required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and use case / 问题与使用场景
+      description: Describe the user need without including private typing history. / 描述用户需求，不要包含私人输入记录。
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior / 建议行为
+      description: What should the user be able to do? / 用户应能完成什么操作？
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives / 备选方案
+      description: Existing configuration, workaround, or other approaches. / 现有配置、临时办法或其他方案。
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact and acceptance / 影响与验收
+      description: Who benefits, how to verify it, and privacy/performance implications. AI must never access live typing or user-frequency databases. / 受益人、验证方式及隐私和性能影响；AI 不得访问实时输入或用户词频库。
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: References / 参考资料
+      description: Optional mockups, documentation, or related issues. Do not paste GPL implementation code. / 可选原型、文档或相关 issue；不要粘贴 GPL 实现代码。

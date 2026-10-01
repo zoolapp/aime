@@ -1,0 +1,7 @@
+# AIME defaults for 雾凇拼音 (rime_ice). Applied before imported and generated
+# layers, so anything here can be overridden from AIME Settings.
+#
+# The 2026 AI / internet vocabulary (dicts/aime_tech_2026) and subscribed online
+# vocabularies are mounted into every enabled schema as `aime_online` by
+# SubscriptionManager.ensureTables() before each deploy.
+patch: {}

@@ -1,0 +1,204 @@
+{
+  "version": 3,
+  "rules": [
+    {
+      "id": "terminal",
+      "title": "终端",
+      "reason": "命令行以英文为主，进入时默认英文",
+      "options": {
+        "ascii_mode": true
+      },
+      "bundle_ids": [
+        "com.apple.Terminal",
+        "com.googlecode.iterm2",
+        "com.mitchellh.ghostty",
+        "dev.warp.Warp-Stable",
+        "net.kovidgoyal.kitty",
+        "org.alacritty",
+        "com.github.wez.wezterm",
+        "co.zeit.hyper",
+        "com.termius-dmg.mac",
+        "org.tabby",
+        "fun.tw93.kaku"
+      ]
+    },
+    {
+      "id": "vim",
+      "title": "Vim 类编辑器",
+      "reason": "Esc 回到普通模式时自动切回英文",
+      "options": {
+        "ascii_mode": true,
+        "vim_mode": true
+      },
+      "bundle_ids": [
+        "org.vim.MacVim",
+        "com.qvacua.VimR",
+        "com.neovide.neovide"
+      ]
+    },
+    {
+      "id": "editor",
+      "title": "代码编辑器与 AI IDE",
+      "reason": "写代码以英文为主，进入时默认英文",
+      "options": {
+        "ascii_mode": true
+      },
+      "bundle_ids": [
+        "com.microsoft.VSCode",
+        "com.microsoft.VSCodeInsiders",
+        "com.todesktop.230313mzl4w4u92",
+        "com.apple.dt.Xcode",
+        "dev.zed.Zed",
+        "com.sublimetext.4",
+        "com.sublimetext.3",
+        "com.exafunction.windsurf",
+        "com.google.android.studio",
+        "com.panic.Nova",
+        "com.vscodium",
+        "com.trae.app",
+        "cn.trae.app",
+        "com.google.antigravity",
+        "com.google.antigravity-ide",
+        "dev.kiro.desktop",
+        "com.tencent.codebuddy",
+        "com.voideditor.Void"
+      ],
+      "bundle_id_prefixes": [
+        "com.jetbrains."
+      ]
+    },
+    {
+      "id": "launcher",
+      "title": "启动器与搜索",
+      "reason": "多数时候输入应用名或命令",
+      "options": {
+        "ascii_mode": true
+      },
+      "bundle_ids": [
+        "com.raycast.macos",
+        "com.runningwithcrayons.Alfred",
+        "at.obdev.LaunchBar"
+      ],
+      "system_bundle_ids": [
+        "com.apple.Spotlight"
+      ]
+    },
+    {
+      "id": "ai",
+      "title": "AI 助手与对话",
+      "reason": "提问和对话多用中文，进入时默认中文",
+      "options": {
+        "ascii_mode": false
+      },
+      "bundle_ids": [
+        "com.openai.chat",
+        "com.openai.codex",
+        "com.anthropic.claudefordesktop",
+        "ai.perplexity.macv3",
+        "com.bot.pc.doubao",
+        "com.moonshot.kimichat",
+        "ai.manus.agents",
+        "com.kangfenmao.CherryStudio",
+        "app.chatwise",
+        "com.quora.poe.electron",
+        "app.msty.app",
+        "jan.ai.app",
+        "ai.elementlabs.lmstudio"
+      ]
+    },
+    {
+      "id": "chat",
+      "title": "聊天与协作",
+      "reason": "以中文交流为主，进入时默认中文",
+      "options": {
+        "ascii_mode": false
+      },
+      "bundle_ids": [
+        "com.tencent.xinWeChat",
+        "com.tencent.qq",
+        "com.tencent.tim",
+        "com.tencent.WeWorkMac",
+        "com.electron.lark",
+        "com.bytedance.macos.feishu",
+        "com.alibaba.DingTalkMac",
+        "com.apple.MobileSMS",
+        "ru.keepcoder.Telegram",
+        "org.telegram.desktop",
+        "com.tencent.meeting",
+        "com.tinyspeck.slackmacgap",
+        "com.hnc.Discord",
+        "net.whatsapp.WhatsApp",
+        "com.bytedance.lark"
+      ]
+    },
+    {
+      "id": "browser",
+      "title": "浏览器",
+      "reason": "搜索与网页输入以中文为主，进入时默认中文",
+      "options": {
+        "ascii_mode": false
+      },
+      "bundle_ids": [
+        "com.apple.Safari",
+        "com.google.Chrome",
+        "com.microsoft.edgemac",
+        "org.mozilla.firefox",
+        "company.thebrowser.Browser",
+        "company.thebrowser.dia",
+        "com.brave.Browser",
+        "com.operasoftware.Opera",
+        "com.vivaldi.Vivaldi",
+        "com.kagi.kagimacOS",
+        "app.zen-browser.zen",
+        "com.google.Chrome.canary",
+        "com.quark.desktop",
+        "ai.perplexity.comet"
+      ]
+    },
+    {
+      "id": "notes",
+      "title": "笔记与文档",
+      "reason": "写作以中文为主，进入时默认中文",
+      "options": {
+        "ascii_mode": false
+      },
+      "bundle_ids": [
+        "notion.id",
+        "md.obsidian",
+        "com.yuque.app",
+        "com.lukilabs.lukiapp",
+        "abnerworks.Typora",
+        "com.electron.logseq",
+        "app.projectmeta.projectmeta",
+        "com.yinxiang.Mac",
+        "com.apple.Notes",
+        "com.apple.iWork.Pages"
+      ]
+    },
+    {
+      "id": "content",
+      "title": "社区与内容",
+      "reason": "搜索和评论多用中文，进入时默认中文",
+      "options": {
+        "ascii_mode": false
+      },
+      "bundle_ids": [
+        "com.bytedance.douyin.desktop",
+        "com.netease.163music",
+        "com.baidu.BaiduNetdisk-mac"
+      ]
+    },
+    {
+      "id": "devtools",
+      "title": "其他开发工具",
+      "reason": "归类为开发者工具的应用；按需勾选",
+      "options": {
+        "ascii_mode": true
+      },
+      "categories": [
+        "public.app-category.developer-tools"
+      ],
+      "selected_by_default": false
+    }
+  ]
+}

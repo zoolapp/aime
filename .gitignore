@@ -1,0 +1,31 @@
+# macOS
+.DS_Store
+
+# Xcode / SwiftPM
+build/
+DerivedData/
+.build/
+.swiftpm/
+*.xcodeproj/
+!*.xcodeproj/project.xcworkspace/
+xcuserdata/
+*.xcuserstate
+
+# Vendored binaries — fetched by scripts/fetch-*.sh, pinned by *.lock
+Vendor/*
+!Vendor/*.lock
+!Vendor/README.md
+
+# Local artifacts
+.ui-acceptance/
+.env
+.env.*
+!.env.example
+.signing/
+*.log
+__pycache__/
+*.pyc
+dist/
+
+# SwiftPM binary target assembled by scripts/fetch-librime.sh
+Packages/AIMEKit/Frameworks/
