@@ -15,6 +15,13 @@ mkdir -p "$DEST"
 rm -rf "$DEST/AIME.app"
 ditto "$ROOT/build/Release/AIME.app" "$DEST/AIME.app"
 "$DEST/AIME.app/Contents/MacOS/AIME" --install || true
+# A copy installed by the .pkg (/Library) has the same bundle id: macOS may launch
+# either one and keeps showing cached icons. Development wants exactly one.
+if [[ -d "/Library/Input Methods/AIME.app" ]]; then
+  echo "warning: /Library/Input Methods/AIME.app (installed by the .pkg) also exists." >&2
+  echo "         Two copies share one bundle id; remove one, e.g.:" >&2
+  echo "         sudo rm -rf '/Library/Input Methods/AIME.app' '/Applications/AIME Settings.app'" >&2
+fi
 echo "==> done. If AIME is not selectable yet, add it in System Settings › Keyboard ›"
 echo "    Input Sources (log out and back in once after the first install)."
 echo "    CLI: \"$DEST/AIME.app/Contents/Helpers/aime\" doctor"

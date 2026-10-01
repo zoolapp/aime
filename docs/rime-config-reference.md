@@ -586,6 +586,12 @@ solarized_light:
 AIME 可视化：已收录（自定义方案 aime_custom 的核心颜色键）。
 catalog: appearance.custom.back_color, appearance.custom.border_color, appearance.custom.text_color, appearance.custom.candidate_text_color, appearance.custom.label_color, appearance.custom.comment_text_color, appearance.custom.hilited_candidate_back_color, appearance.custom.hilited_candidate_text_color, appearance.custom.hilited_candidate_label_color, appearance.custom.hilited_comment_text_color
 
+### AIME 主题包与 `aime-ime://theme` 导入
+
+AIME 在 `preset_color_schemes` 之上定义了可分享的主题包（13 个颜色键、`0xAARRGGBB`），官网
+<https://aime.zool.app/themes/> 可浏览与编辑。链接 `aime-ime://theme?v=1&d=<base64url>` 由「AIME 设置」确认后写入
+`aime/generated/` 的 `preset_color_schemes/<id>` 与 `style/color_scheme(_dark)`。格式与规则见 [themes.md](themes.md)。
+
 ## app_options 应用级选项
 
 按 App 的 Bundle ID 覆盖行为（default/custom 中均支持 patch）：

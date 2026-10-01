@@ -103,4 +103,12 @@ public struct CustomPhrases: Sendable, Equatable {
         phrases.append(phrase)
         return true
     }
+
+    /// Removes the exact text/code pair. Returns whether something was removed.
+    @discardableResult
+    public mutating func remove(text: String, code: String) -> Bool {
+        let before = phrases.count
+        phrases.removeAll { $0.text == text && $0.code == code }
+        return phrases.count != before
+    }
 }

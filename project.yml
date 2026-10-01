@@ -9,7 +9,7 @@ options:
 settings:
   base:
     MARKETING_VERSION: "0.1.0"
-    CURRENT_PROJECT_VERSION: "2"
+    CURRENT_PROJECT_VERSION: "3"
     SWIFT_VERSION: "6.0"
     SWIFT_STRICT_CONCURRENCY: complete
     SWIFT_EMIT_LOC_STRINGS: YES
@@ -111,6 +111,11 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSApplicationCategoryType: public.app-category.productivity
+        # aime-ime://theme?v=1&d=… links from aime.zool.app/themes (docs/themes.md).
+        CFBundleURLTypes:
+          - CFBundleURLName: app.zool.aime.theme
+            CFBundleURLSchemes: [aime-ime]
+            CFBundleTypeRole: Viewer
         NSPrincipalClass: NSApplication
     settings:
       base:

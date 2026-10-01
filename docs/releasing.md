@@ -39,7 +39,7 @@ bash scripts/release.sh v0.2.0   # → dist/release/AIME-0.2.0.{pkg,zip}、SHA25
 
 ## 3. 签名用的 secrets
 
-在仓库 Settings › Secrets and variables › Actions 中添加。**7 个必须全部配置**才会签名并公证；
+在仓库 Settings › Secrets and variables › Actions 中添加。**7 个必须全部配置**才会签名并公证（另需 `AIME_MANIFEST_KEY` 给 `latest.json` 签名，正式构建缺它会直接失败）；
 一个都没有则构建未签名预览版；只配了一部分时工作流报错，避免误发未签名版本。
 
 | Secret | 内容 |
@@ -51,6 +51,7 @@ bash scripts/release.sh v0.2.0   # → dist/release/AIME-0.2.0.{pkg,zip}、SHA25
 | `APPLE_NOTARY_KEY_ID` | App Store Connect API Key 的 Key ID |
 | `APPLE_NOTARY_ISSUER_ID` | App Store Connect API 的 Issuer ID |
 | `APPLE_NOTARY_KEY_P8_BASE64` | 下载的 `AuthKey_<KeyID>.p8`，base64 编码 |
+| `AIME_MANIFEST_KEY` | 给 `latest.json` 签名的 Ed25519 私钥（`swift scripts/sign-manifest.swift keygen` 生成；公钥写入 `AppUpdateChecker.manifestPublicKey`） |
 
 创建方法：
 
@@ -105,3 +106,22 @@ pkgutil --check-signature AIME-<version>.pkg     # 应显示 Developer ID Instal
 spctl --assess --type install --verbose=2 AIME-<version>.pkg
 xcrun stapler validate AIME-<version>.pkg
 ```
+
+
+## 公证还在排队时
+
+新团队的首次公证可能排几个小时。`release.sh` 最多等 `AIME_NOTARY_WAIT`（默认 20m）：超时不算失败，
+产物照常签名、上传（Release 标题注明「公证处理中」），提交 ID 写入 `NOTARY_PENDING.txt`。Apple 通过后：
+
+```bash
+gh run download <run-id> -R zoolapp/aime -D /tmp/aime-release
+bash scripts/finish-notarization.sh /tmp/aime-release/AIME-<版本>            # 装订票据、重算校验和、重签 latest.json
+bash scripts/finish-notarization.sh /tmp/aime-release/AIME-<版本> --publish  # 替换 GitHub Release 与 R2 上的文件
+```
+
+只有 Apple 判定 `Invalid` 才会让发布失败，并打印 `notarytool log`。
+
+## 更新清单
+
+每次发布产出 `latest.json` 与 `latest.json.sig`（Ed25519）。App 只信任签名有效的清单，不依赖托管方；
+`minimumSystemVersion` 高于用户系统时不提示更新。开发构建（ad-hoc 签名）不自动检查。

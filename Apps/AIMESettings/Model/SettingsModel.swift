@@ -164,6 +164,9 @@ final class SettingsModel {
         appScanPhase = .review
     }
 
+    /// Apps that already have options (shown as "kept" in onboarding).
+    var configuredAppCount: Int { _ = revision; return store.appOptions().count }
+
     func toggleAppSuggestion(_ id: String) {
         guard let index = appSuggestions.firstIndex(where: { $0.id == id }) else { return }
         appSuggestions[index].selected.toggle()
@@ -238,6 +241,63 @@ final class SettingsModel {
             }
         }
     }
+
+    // MARK: - Theme links (aime-ime://theme, docs/themes.md)
+
+    /// Links waiting for confirmation, shown one at a time.
+    private(set) var themeImports: [ThemePackage.Decoded] = []
+    private(set) var themeImportError: String?
+    private(set) var themeNotice: String?
+
+    /// Validates an `aime-ime://theme` link and queues it; nothing is written until the
+    /// user confirms in the import sheet.
+    func receiveThemeLink(_ url: URL) {
+        do {
+            let decoded = try ThemePackage.decode(url: url)
+            guard !themeImports.contains(where: { $0.package == decoded.package }) else { return }
+            themeImports.append(decoded)
+            themeImportError = nil
+        } catch {
+            themeImportError = error.localizedDescription
+        }
+    }
+
+    func themeImportPlan(_ package: ThemePackage) -> ThemeImportPlan {
+        ThemeImportPlan(package: package, frontend: previewFrontend,
+                        generatedPatch: (try? store.layers.generatedPatch(.frontend)) ?? [])
+    }
+
+    /// How a package would render with the user's own layout and font.
+    /// With `adoptLayout`, the theme's radii, padding and font sizes replace the user's
+    /// own panel settings, as they would after importing.
+    func theme(for package: ThemePackage, dark: Bool, adoptLayout: Bool = false) -> PanelTheme {
+        var frontend = previewFrontend
+        frontend.set(package.schemeValue, at: "preset_color_schemes/\(package.id)")
+        if adoptLayout, let layout = package.layout {
+            for (key, value) in layout { frontend.set(.double(value), at: "style/aime/\(key)") }
+        }
+        return PanelTheme(frontend: frontend, dark: dark, schemeOverride: package.id)
+    }
+
+    func confirmThemeImport(activate: Bool, target: ThemeImportPlan.Target, adoptLayout: Bool = false) {
+        guard let decoded = themeImports.first else { return }
+        let plan = themeImportPlan(decoded.package)
+        perform {
+            try store.layers.updateGenerated(.frontend) { patch in
+                plan.apply(to: &patch, activate: activate, target: target, adoptLayout: adoptLayout)
+            }
+        }
+        themeNotice = plan.isBuiltIn ? "已切换到内置主题「\(decoded.package.name)」"
+            : activate ? "已导入并启用「\(decoded.package.name)」" : "已导入「\(decoded.package.name)」，可在外观中选择"
+        themeImports.removeFirst()
+    }
+
+    func cancelThemeImport() {
+        if !themeImports.isEmpty { themeImports.removeFirst() }
+    }
+
+    func dismissThemeImportError() { themeImportError = nil }
+    func dismissThemeNotice() { themeNotice = nil }
 
     // MARK: - Deploy
 
@@ -572,10 +632,15 @@ final class SettingsModel {
 
     /// Pins a frequent word as the first candidate of its code in the current phrase table.
     /// The code follows the layout of the schemas that use that table (全拼 or 双拼).
-    func pinUsageWord(_ word: String) -> String? {
+    /// The code a pinned word gets in the active phrase table (双拼 tables use 双拼 codes).
+    private func pinCode(_ word: String) -> String? {
         guard let pinyin = VocabularyParser.pinyin(for: word) else { return nil }
         let layout = phraseTable.schemas.lazy.compactMap(DoublePinyin.layout(forSchema:)).first
-        let code = layout?.code(forPinyin: pinyin) ?? pinyin.replacingOccurrences(of: " ", with: "")
+        return layout?.code(forPinyin: pinyin) ?? pinyin.replacingOccurrences(of: " ", with: "")
+    }
+
+    func pinUsageWord(_ word: String) -> String? {
+        guard let code = pinCode(word) else { return nil }
         updatePhrases { _ = $0.add(.init(text: word, code: code)) }
         savePhrases()
         revision += 1
@@ -583,6 +648,16 @@ final class SettingsModel {
     }
 
     func isPinned(_ word: String) -> Bool { phrases.phrases.contains { $0.text == word } }
+
+    /// Removes the entry pinning added. A phrase the user wrote by hand under another
+    /// code is left alone (returns false so the view can point to 自定义短语).
+    func unpinUsageWord(_ word: String) -> Bool {
+        guard let code = pinCode(word), phrases.phrases.contains(where: { $0.text == word && $0.code == code }) else { return false }
+        updatePhrases { $0.remove(text: word, code: code) }
+        savePhrases()
+        revision += 1
+        return true
+    }
 
     // MARK: - Sync
 
@@ -664,13 +739,15 @@ final class SettingsModel {
     /// 0…1 while the installer downloads.
     private(set) var updateProgress: Double?
     private(set) var updateNotice: String?
-    var pendingUpdate: AppRelease? { updateState.pending(current: currentVersion) }
+    /// Ad-hoc development builds (install-dev.sh) are not offered releases.
+    let isDistributionBuild = AppVersion.isDistributionBuild()
+    var pendingUpdate: AppRelease? { isDistributionBuild ? updateState.pending(current: currentVersion) : nil }
 
     /// Reads the shared state and checks when a daily check is due (the input method
     /// usually has done it already).
     func refreshUpdates() async {
         updateState = AppUpdateState.load(paths)
-        if updateState.isDue() { await checkForUpdates(userInitiated: false) }
+        if isDistributionBuild, updateState.isDue() { await checkForUpdates(userInitiated: false) }
     }
 
     func checkForUpdates(userInitiated: Bool) async {
@@ -681,7 +758,9 @@ final class SettingsModel {
         do {
             let release = try await AppUpdateChecker().check(paths: paths, current: currentVersion)
             updateState = AppUpdateState.load(paths)
-            if userInitiated, release == nil { updateNotice = "已是最新版本" }
+            if userInitiated, !isDistributionBuild {
+                updateNotice = release.map { "开发版：最新正式版为 \($0.appVersion.description)" } ?? "开发版：没有更新的正式版"
+            } else if userInitiated, release == nil { updateNotice = "已是最新版本" }
         } catch {
             if userInitiated { updateNotice = "检查失败：\(error.localizedDescription)" }
         }

@@ -52,7 +52,7 @@ let package = Package(
         ),
 
         .testTarget(name: "RimeKitTests", dependencies: ["RimeKit"]),
-        .testTarget(name: "AIMECoreTests", dependencies: ["AIMECore", "RimeKit"]),
+        .testTarget(name: "AIMECoreTests", dependencies: ["AIMECore", "RimeKit"], exclude: ["Fixtures"]),
         .testTarget(name: "AIMEPanelTests", dependencies: ["AIMEPanel"]),
         .testTarget(name: "AIMEAITests", dependencies: ["AIMEAI"]),
     ]

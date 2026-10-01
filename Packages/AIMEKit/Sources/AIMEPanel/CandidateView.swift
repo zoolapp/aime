@@ -242,6 +242,10 @@ public final class CandidateView: NSView {
     }
 
     private var needsLayoutPass = true
+    /// Candidates drawn edge to edge (PanelTheme.HighlightShape.filled) and the insets
+    /// the layout used, so drawing can tell which highlight sides touch the panel edge.
+    private var filledHighlight = false
+    private var layoutInsets: (x: Double, y: Double) = (0, 0)
 
     private func invalidate() {
         needsLayoutPass = true
@@ -342,7 +346,13 @@ public final class CandidateView: NSView {
         items.removeAll(keepingCapacity: true)
         preeditLine = nil
 
-        let insetX = theme.borderWidth + 2, insetY = theme.borderHeight + 1
+        // Edge-to-edge highlights only for plain candidate pages; menus, boards and
+        // status lines keep a margin.
+        filledHighlight = theme.highlightShape == .filled && state.presentation == .candidates
+            && state.board == nil && state.status == nil && state.hero == nil
+        let insetX = filledHighlight ? theme.borderWidth : theme.borderWidth + 2
+        let insetY = filledHighlight ? theme.borderHeight : theme.borderHeight + 1
+        layoutInsets = (insetX, insetY)
         let padX = max(4, theme.hilitedCornerRadius * 0.9), padY = 3.0
         var cursorY = insetY
         var maxWidth = 0.0
@@ -410,7 +420,7 @@ public final class CandidateView: NSView {
             }
             let size = line.size()
             preeditLine = line
-            preeditRect = NSRect(x: insetX + padX, y: cursorY + 1, width: ceil(size.width), height: ceil(size.height))
+            preeditRect = NSRect(x: insetX + padX, y: cursorY + (filledHighlight ? 4 : 1), width: ceil(size.width), height: ceil(size.height))
             cursorY = preeditRect.maxY + theme.lineSpacing + 2
             maxWidth = preeditRect.maxX + padX
         }
@@ -656,6 +666,31 @@ public final class CandidateView: NSView {
         heroLayout?.rect.size.width = maxWidth - insetX
         if state.candidates.isEmpty, preeditLine != nil, heroLayout == nil { cursorY -= theme.lineSpacing + 2 }
         contentSize = NSSize(width: ceil(maxWidth + insetX), height: ceil(cursorY + insetY))
+        // Edge to edge, a vertical list's highlight spans the whole row.
+        if filledHighlight, mode == .stacked {
+            for index in items.indices { items[index].rect.size.width = contentSize.width - insetX * 2 - items[index].rect.minX + insetX }
+        }
+    }
+
+    /// The highlight behind a candidate. Filled: sides that touch the panel edge are
+    /// pushed past it so the panel's rounded clip forms those corners, and inner corners
+    /// use the configured radius (often 0). Inset: concentric with the panel corner when
+    /// close to it (PanelTheme.insetHighlightRadius).
+    func highlightPath(for rect: NSRect) -> NSBezierPath {
+        let panelRadius = min(theme.cornerRadius, contentSize.height / 2)
+        guard filledHighlight else {
+            let radius = theme.insetHighlightRadius(gap: min(layoutInsets.x, layoutInsets.y), panelRadius: panelRadius)
+            return NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius)
+        }
+        let bounds = NSRect(origin: .zero, size: contentSize)
+        let reach = panelRadius + 2, tolerance = 0.75
+        var r = rect
+        if r.minX <= layoutInsets.x + tolerance { r.size.width += r.minX + reach; r.origin.x = -reach }
+        if r.maxX >= bounds.maxX - layoutInsets.x - tolerance { r.size.width = bounds.maxX + reach - r.minX }
+        if r.minY <= layoutInsets.y + tolerance { r.size.height += r.minY + reach; r.origin.y = -reach }
+        if r.maxY >= bounds.maxY - layoutInsets.y - tolerance { r.size.height = bounds.maxY + reach - r.minY }
+        let radius = min(theme.configuredHilitedCornerRadius, r.height / 2, r.width / 2)
+        return NSBezierPath(roundedRect: r, xRadius: radius, yRadius: radius)
     }
 
     /// Tabs on top, a fixed `columns × visibleRows` grid (so the panel never resizes while
@@ -804,13 +839,17 @@ public final class CandidateView: NSView {
             nsColor(theme.effectiveBackColor).setFill()
             background.fill()
         }
-        if drawsBackground, theme.borderColor.alpha > 0 {
-            nsColor(theme.borderColor).setStroke()
-            background.lineWidth = 1
-            background.stroke()
+        // Highlights never poke out of the rounded background; edge-to-edge ones take
+        // its corners. The border is stroked last, over them.
+        NSGraphicsContext.saveGraphicsState()
+        defer {
+            NSGraphicsContext.restoreGraphicsState()
+            if drawsBackground, theme.borderColor.alpha > 0 {
+                nsColor(theme.borderColor).setStroke()
+                background.lineWidth = 1
+                background.stroke()
+            }
         }
-
-        // Highlights never poke out of the rounded background (small border insets).
         if drawsBackground { background.addClip() }
 
         if let preeditLine {
@@ -883,7 +922,7 @@ public final class CandidateView: NSView {
         for (index, item) in items.enumerated() {
             if index == state.highlightedIndex, theme.hilitedCandidateBackColor.alpha > 0 {
                 nsColor(theme.hilitedCandidateBackColor).setFill()
-                NSBezierPath(roundedRect: item.rect, xRadius: theme.hilitedCornerRadius, yRadius: theme.hilitedCornerRadius).fill()
+                highlightPath(for: item.rect).fill()
             }
             let size = item.textSize
             guard let context else { continue }

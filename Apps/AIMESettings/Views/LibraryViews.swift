@@ -157,7 +157,7 @@ private struct SmartSetupCard: View {
 
 /// One scanned app: tick, icon, name, and the mode it will start in — prefilled with the
 /// recommendation and editable before applying.
-private struct SuggestionRow: View {
+struct SuggestionRow: View {
     @Environment(SettingsModel.self) private var model
     let suggestion: AppRecommendations.Suggestion
 

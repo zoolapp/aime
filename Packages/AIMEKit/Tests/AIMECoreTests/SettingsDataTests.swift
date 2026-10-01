@@ -89,3 +89,14 @@ extension SettingsDataTests {
         #expect(CustomPhrases(parsing: output) == parsed)
     }
 }
+
+@Suite struct CustomPhraseRemovalTests {
+    @Test func removesOnlyTheExactPair() {
+        var phrases = CustomPhrases(parsing: "智能体\tzhinengti\n智能体\tznt\n你好\tnihao\n")
+        let removed = phrases.remove(text: "智能体", code: "zhinengti")
+        #expect(removed)
+        #expect(phrases.phrases.map(\.code) == ["znt", "nihao"])
+        let again = phrases.remove(text: "智能体", code: "zhinengti")
+        #expect(!again)
+    }
+}

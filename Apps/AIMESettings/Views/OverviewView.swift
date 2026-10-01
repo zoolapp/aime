@@ -223,7 +223,8 @@ struct VersionFooter: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Text("艾么输入法 \(model.currentVersion.description)").font(.caption).foregroundStyle(Theme.secondaryText)
+            Text("艾么输入法 \(model.currentVersion.description)\(model.isDistributionBuild ? "" : " · 开发版")")
+                .font(.caption).foregroundStyle(Theme.secondaryText)
             Spacer()
             if let notice = model.updateNotice, model.pendingUpdate == nil {
                 Text(notice).font(.caption).foregroundStyle(Theme.secondaryText)

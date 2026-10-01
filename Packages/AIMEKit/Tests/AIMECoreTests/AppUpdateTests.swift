@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import Testing
 @testable import AIMECore
@@ -59,5 +60,28 @@ import Testing
         #expect(AppUpdateChecker.isTrusted(pkgutilOutput: signed))
         #expect(!AppUpdateChecker.isTrusted(pkgutilOutput: signed.replacingOccurrences(of: "PX694P4CGY", with: "ABCDEFGHIJ")))
         #expect(!AppUpdateChecker.isTrusted(pkgutilOutput: "Package \"x.pkg\":\n   Status: no signature"))
+    }
+}
+
+@Suite struct ManifestSignatureTests {
+    @Test func acceptsOnlyAValidSignatureFromTheKey() throws {
+        let key = Curve25519.Signing.PrivateKey()
+        let publicKey = key.publicKey.rawRepresentation.base64EncodedString()
+        let manifest = Data(#"{"product":"aime","version":"0.2.0","files":{}}"#.utf8)
+        let signature = Data((try key.signature(for: manifest).base64EncodedString() + "\n").utf8)
+        #expect(AppUpdateChecker.verify(manifest: manifest, signature: signature, publicKey: publicKey))
+        #expect(!AppUpdateChecker.verify(manifest: manifest + Data(" ".utf8), signature: signature, publicKey: publicKey))
+        let other = Curve25519.Signing.PrivateKey().publicKey.rawRepresentation.base64EncodedString()
+        #expect(!AppUpdateChecker.verify(manifest: manifest, signature: signature, publicKey: other))
+        #expect(!AppUpdateChecker.verify(manifest: manifest, signature: Data("not base64".utf8), publicKey: publicKey))
+    }
+
+    @Test func respectsTheMinimumSystem() {
+        var release = AppRelease(product: "aime", version: "0.2.0", files: [:])
+        release.minimumSystemVersion = "27.1"
+        #expect(!release.supportsThisSystem(OperatingSystemVersion(majorVersion: 26, minorVersion: 4, patchVersion: 0)))
+        #expect(release.supportsThisSystem(OperatingSystemVersion(majorVersion: 27, minorVersion: 1, patchVersion: 0)))
+        release.minimumSystemVersion = nil
+        #expect(release.supportsThisSystem(OperatingSystemVersion(majorVersion: 26, minorVersion: 0, patchVersion: 0)))
     }
 }

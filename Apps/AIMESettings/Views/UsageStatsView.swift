@@ -143,6 +143,10 @@ struct UsageStatsView: View {
                     WordRow(rank: index + 1, word: word, fraction: Double(word.count) / Double(maxCount),
                             pinned: model.isPinned(word.text)) {
                         if let code = model.pinUsageWord(word.text) { notice = "已置顶「\(word.text)」，编码 \(code)，正在自动应用" }
+                    } unpin: {
+                        notice = model.unpinUsageWord(word.text)
+                            ? "已取消置顶「\(word.text)」，正在自动应用"
+                            : "「\(word.text)」是你在自定义短语里手写的，请在「自定义短语」中修改或删除"
                     } block: {
                         model.blockUsageWord(word.text)
                     }
@@ -158,7 +162,7 @@ struct UsageStatsView: View {
             }
             .id("words")
         } footer: {
-            Text("点图钉把词置顶为候选第一位（写入自定义短语表「\(model.phraseTable.name)」）。").font(.caption).foregroundStyle(.secondary)
+            Text("点图钉把词置顶为候选第一位（写入自定义短语表「\(model.phraseTable.name)」），再点一次取消。").font(.caption).foregroundStyle(.secondary)
         }
     }
 
@@ -497,6 +501,7 @@ private struct WordRow: View {
     let fraction: Double
     let pinned: Bool
     let pin: () -> Void
+    let unpin: () -> Void
     let block: () -> Void
 
     var body: some View {
@@ -511,8 +516,8 @@ private struct WordRow: View {
             .frame(height: 16)
             Text("\(word.count) 次").font(.caption.monospacedDigit()).foregroundStyle(.secondary).frame(width: 60, alignment: .trailing)
             if pinned {
-                Label("已置顶", systemImage: "pin.fill").labelStyle(.iconOnly).foregroundStyle(Theme.accentText)
-                    .help("已在自定义短语中")
+                Button(action: unpin) { Image(systemName: "pin.fill").foregroundStyle(Theme.accentText) }
+                    .buttonStyle(.borderless).help("已置顶，点击取消置顶")
                     .frame(width: 24)
             } else {
                 Button(action: pin) { Image(systemName: "pin") }

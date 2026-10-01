@@ -1,0 +1,401 @@
+[
+  {
+    "id": "aime_light",
+    "package": {
+      "format": "aime-theme",
+      "version": 2,
+      "id": "aime_light",
+      "name": "艾么 · 浅色",
+      "author": "AIME",
+      "colors": {
+        "back_color": "0xF5FCFCFB",
+        "border_color": "0x14242321",
+        "preedit_back_color": "0x00000000",
+        "text_color": "0xFF6B6A67",
+        "hilited_text_color": "0xFF242321",
+        "hilited_back_color": "0x14242321",
+        "candidate_text_color": "0xFF242321",
+        "comment_text_color": "0xFF6B6A67",
+        "label_color": "0xFF8A8986",
+        "hilited_candidate_back_color": "0xFFB64032",
+        "hilited_candidate_text_color": "0xFFFFFFFF",
+        "hilited_comment_text_color": "0xE6FFFFFF",
+        "hilited_candidate_label_color": "0xE6FFFFFF"
+      },
+      "layout": {
+        "corner_radius": 10,
+        "hilited_corner_radius": 6,
+        "border_width": 7,
+        "border_height": 6,
+        "spacing": 8,
+        "line_spacing": 4,
+        "font_point": 17,
+        "label_font_point": 13,
+        "comment_font_point": 13
+      }
+    },
+    "canonical": "{\"author\":\"AIME\",\"colors\":{\"back_color\":\"0xF5FCFCFB\",\"border_color\":\"0x14242321\",\"candidate_text_color\":\"0xFF242321\",\"comment_text_color\":\"0xFF6B6A67\",\"hilited_back_color\":\"0x14242321\",\"hilited_candidate_back_color\":\"0xFFB64032\",\"hilited_candidate_label_color\":\"0xE6FFFFFF\",\"hilited_candidate_text_color\":\"0xFFFFFFFF\",\"hilited_comment_text_color\":\"0xE6FFFFFF\",\"hilited_text_color\":\"0xFF242321\",\"label_color\":\"0xFF8A8986\",\"preedit_back_color\":\"0x00000000\",\"text_color\":\"0xFF6B6A67\"},\"format\":\"aime-theme\",\"id\":\"aime_light\",\"layout\":{\"border_height\":6,\"border_width\":7,\"comment_font_point\":13,\"corner_radius\":10,\"font_point\":17,\"hilited_corner_radius\":6,\"label_font_point\":13,\"line_spacing\":4,\"spacing\":8},\"name\":\"艾么 · 浅色\",\"version\":2}",
+    "d": "eyJhdXRob3IiOiJBSU1FIiwiY29sb3JzIjp7ImJhY2tfY29sb3IiOiIweEY1RkNGQ0ZCIiwiYm9yZGVyX2NvbG9yIjoiMHgxNDI0MjMyMSIsImNhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRjI0MjMyMSIsImNvbW1lbnRfdGV4dF9jb2xvciI6IjB4RkY2QjZBNjciLCJoaWxpdGVkX2JhY2tfY29sb3IiOiIweDE0MjQyMzIxIiwiaGlsaXRlZF9jYW5kaWRhdGVfYmFja19jb2xvciI6IjB4RkZCNjQwMzIiLCJoaWxpdGVkX2NhbmRpZGF0ZV9sYWJlbF9jb2xvciI6IjB4RTZGRkZGRkYiLCJoaWxpdGVkX2NhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRkZGRkZGRiIsImhpbGl0ZWRfY29tbWVudF90ZXh0X2NvbG9yIjoiMHhFNkZGRkZGRiIsImhpbGl0ZWRfdGV4dF9jb2xvciI6IjB4RkYyNDIzMjEiLCJsYWJlbF9jb2xvciI6IjB4RkY4QTg5ODYiLCJwcmVlZGl0X2JhY2tfY29sb3IiOiIweDAwMDAwMDAwIiwidGV4dF9jb2xvciI6IjB4RkY2QjZBNjcifSwiZm9ybWF0IjoiYWltZS10aGVtZSIsImlkIjoiYWltZV9saWdodCIsImxheW91dCI6eyJib3JkZXJfaGVpZ2h0Ijo2LCJib3JkZXJfd2lkdGgiOjcsImNvbW1lbnRfZm9udF9wb2ludCI6MTMsImNvcm5lcl9yYWRpdXMiOjEwLCJmb250X3BvaW50IjoxNywiaGlsaXRlZF9jb3JuZXJfcmFkaXVzIjo2LCJsYWJlbF9mb250X3BvaW50IjoxMywibGluZV9zcGFjaW5nIjo0LCJzcGFjaW5nIjo4fSwibmFtZSI6IuiJvuS5iCDCtyDmtYXoibIiLCJ2ZXJzaW9uIjoyfQ",
+    "url": "aime-ime://theme?v=2&d=eyJhdXRob3IiOiJBSU1FIiwiY29sb3JzIjp7ImJhY2tfY29sb3IiOiIweEY1RkNGQ0ZCIiwiYm9yZGVyX2NvbG9yIjoiMHgxNDI0MjMyMSIsImNhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRjI0MjMyMSIsImNvbW1lbnRfdGV4dF9jb2xvciI6IjB4RkY2QjZBNjciLCJoaWxpdGVkX2JhY2tfY29sb3IiOiIweDE0MjQyMzIxIiwiaGlsaXRlZF9jYW5kaWRhdGVfYmFja19jb2xvciI6IjB4RkZCNjQwMzIiLCJoaWxpdGVkX2NhbmRpZGF0ZV9sYWJlbF9jb2xvciI6IjB4RTZGRkZGRkYiLCJoaWxpdGVkX2NhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRkZGRkZGRiIsImhpbGl0ZWRfY29tbWVudF90ZXh0X2NvbG9yIjoiMHhFNkZGRkZGRiIsImhpbGl0ZWRfdGV4dF9jb2xvciI6IjB4RkYyNDIzMjEiLCJsYWJlbF9jb2xvciI6IjB4RkY4QTg5ODYiLCJwcmVlZGl0X2JhY2tfY29sb3IiOiIweDAwMDAwMDAwIiwidGV4dF9jb2xvciI6IjB4RkY2QjZBNjcifSwiZm9ybWF0IjoiYWltZS10aGVtZSIsImlkIjoiYWltZV9saWdodCIsImxheW91dCI6eyJib3JkZXJfaGVpZ2h0Ijo2LCJib3JkZXJfd2lkdGgiOjcsImNvbW1lbnRfZm9udF9wb2ludCI6MTMsImNvcm5lcl9yYWRpdXMiOjEwLCJmb250X3BvaW50IjoxNywiaGlsaXRlZF9jb3JuZXJfcmFkaXVzIjo2LCJsYWJlbF9mb250X3BvaW50IjoxMywibGluZV9zcGFjaW5nIjo0LCJzcGFjaW5nIjo4fSwibmFtZSI6IuiJvuS5iCDCtyDmtYXoibIiLCJ2ZXJzaW9uIjoyfQ",
+    "min_contrast": 5.57,
+    "dark": false
+  },
+  {
+    "id": "aime_dark",
+    "package": {
+      "format": "aime-theme",
+      "version": 2,
+      "id": "aime_dark",
+      "name": "艾么 · 深色",
+      "author": "AIME",
+      "colors": {
+        "back_color": "0xF21E1E20",
+        "border_color": "0x1FFFFFFF",
+        "preedit_back_color": "0x00000000",
+        "text_color": "0xFFA3A3A0",
+        "hilited_text_color": "0xFFF2F2F0",
+        "hilited_back_color": "0x29FFFFFF",
+        "candidate_text_color": "0xFFF2F2F0",
+        "comment_text_color": "0xFFA3A3A0",
+        "label_color": "0xFF8E8E8B",
+        "hilited_candidate_back_color": "0xFFC4503F",
+        "hilited_candidate_text_color": "0xFFFFFFFF",
+        "hilited_comment_text_color": "0xE6FFFFFF",
+        "hilited_candidate_label_color": "0xE6FFFFFF"
+      },
+      "layout": {
+        "corner_radius": 10,
+        "hilited_corner_radius": 6,
+        "border_width": 7,
+        "border_height": 6,
+        "spacing": 8,
+        "line_spacing": 4,
+        "font_point": 17,
+        "label_font_point": 13,
+        "comment_font_point": 13
+      }
+    },
+    "canonical": "{\"author\":\"AIME\",\"colors\":{\"back_color\":\"0xF21E1E20\",\"border_color\":\"0x1FFFFFFF\",\"candidate_text_color\":\"0xFFF2F2F0\",\"comment_text_color\":\"0xFFA3A3A0\",\"hilited_back_color\":\"0x29FFFFFF\",\"hilited_candidate_back_color\":\"0xFFC4503F\",\"hilited_candidate_label_color\":\"0xE6FFFFFF\",\"hilited_candidate_text_color\":\"0xFFFFFFFF\",\"hilited_comment_text_color\":\"0xE6FFFFFF\",\"hilited_text_color\":\"0xFFF2F2F0\",\"label_color\":\"0xFF8E8E8B\",\"preedit_back_color\":\"0x00000000\",\"text_color\":\"0xFFA3A3A0\"},\"format\":\"aime-theme\",\"id\":\"aime_dark\",\"layout\":{\"border_height\":6,\"border_width\":7,\"comment_font_point\":13,\"corner_radius\":10,\"font_point\":17,\"hilited_corner_radius\":6,\"label_font_point\":13,\"line_spacing\":4,\"spacing\":8},\"name\":\"艾么 · 深色\",\"version\":2}",
+    "d": "eyJhdXRob3IiOiJBSU1FIiwiY29sb3JzIjp7ImJhY2tfY29sb3IiOiIweEYyMUUxRTIwIiwiYm9yZGVyX2NvbG9yIjoiMHgxRkZGRkZGRiIsImNhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRkYyRjJGMCIsImNvbW1lbnRfdGV4dF9jb2xvciI6IjB4RkZBM0EzQTAiLCJoaWxpdGVkX2JhY2tfY29sb3IiOiIweDI5RkZGRkZGIiwiaGlsaXRlZF9jYW5kaWRhdGVfYmFja19jb2xvciI6IjB4RkZDNDUwM0YiLCJoaWxpdGVkX2NhbmRpZGF0ZV9sYWJlbF9jb2xvciI6IjB4RTZGRkZGRkYiLCJoaWxpdGVkX2NhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRkZGRkZGRiIsImhpbGl0ZWRfY29tbWVudF90ZXh0X2NvbG9yIjoiMHhFNkZGRkZGRiIsImhpbGl0ZWRfdGV4dF9jb2xvciI6IjB4RkZGMkYyRjAiLCJsYWJlbF9jb2xvciI6IjB4RkY4RThFOEIiLCJwcmVlZGl0X2JhY2tfY29sb3IiOiIweDAwMDAwMDAwIiwidGV4dF9jb2xvciI6IjB4RkZBM0EzQTAifSwiZm9ybWF0IjoiYWltZS10aGVtZSIsImlkIjoiYWltZV9kYXJrIiwibGF5b3V0Ijp7ImJvcmRlcl9oZWlnaHQiOjYsImJvcmRlcl93aWR0aCI6NywiY29tbWVudF9mb250X3BvaW50IjoxMywiY29ybmVyX3JhZGl1cyI6MTAsImZvbnRfcG9pbnQiOjE3LCJoaWxpdGVkX2Nvcm5lcl9yYWRpdXMiOjYsImxhYmVsX2ZvbnRfcG9pbnQiOjEzLCJsaW5lX3NwYWNpbmciOjQsInNwYWNpbmciOjh9LCJuYW1lIjoi6Im-5LmIIMK3IOa3seiJsiIsInZlcnNpb24iOjJ9",
+    "url": "aime-ime://theme?v=2&d=eyJhdXRob3IiOiJBSU1FIiwiY29sb3JzIjp7ImJhY2tfY29sb3IiOiIweEYyMUUxRTIwIiwiYm9yZGVyX2NvbG9yIjoiMHgxRkZGRkZGRiIsImNhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRkYyRjJGMCIsImNvbW1lbnRfdGV4dF9jb2xvciI6IjB4RkZBM0EzQTAiLCJoaWxpdGVkX2JhY2tfY29sb3IiOiIweDI5RkZGRkZGIiwiaGlsaXRlZF9jYW5kaWRhdGVfYmFja19jb2xvciI6IjB4RkZDNDUwM0YiLCJoaWxpdGVkX2NhbmRpZGF0ZV9sYWJlbF9jb2xvciI6IjB4RTZGRkZGRkYiLCJoaWxpdGVkX2NhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRkZGRkZGRiIsImhpbGl0ZWRfY29tbWVudF90ZXh0X2NvbG9yIjoiMHhFNkZGRkZGRiIsImhpbGl0ZWRfdGV4dF9jb2xvciI6IjB4RkZGMkYyRjAiLCJsYWJlbF9jb2xvciI6IjB4RkY4RThFOEIiLCJwcmVlZGl0X2JhY2tfY29sb3IiOiIweDAwMDAwMDAwIiwidGV4dF9jb2xvciI6IjB4RkZBM0EzQTAifSwiZm9ybWF0IjoiYWltZS10aGVtZSIsImlkIjoiYWltZV9kYXJrIiwibGF5b3V0Ijp7ImJvcmRlcl9oZWlnaHQiOjYsImJvcmRlcl93aWR0aCI6NywiY29tbWVudF9mb250X3BvaW50IjoxMywiY29ybmVyX3JhZGl1cyI6MTAsImZvbnRfcG9pbnQiOjE3LCJoaWxpdGVkX2Nvcm5lcl9yYWRpdXMiOjYsImxhYmVsX2ZvbnRfcG9pbnQiOjEzLCJsaW5lX3NwYWNpbmciOjQsInNwYWNpbmciOjh9LCJuYW1lIjoi6Im-5LmIIMK3IOa3seiJsiIsInZlcnNpb24iOjJ9",
+    "min_contrast": 4.6,
+    "dark": true
+  },
+  {
+    "id": "graphite",
+    "package": {
+      "format": "aime-theme",
+      "version": 2,
+      "id": "graphite",
+      "name": "石墨",
+      "author": "AIME",
+      "colors": {
+        "back_color": "0xF5F5F5F4",
+        "border_color": "0x1A000000",
+        "preedit_back_color": "0x00000000",
+        "text_color": "0xFF57534E",
+        "hilited_text_color": "0xFF1C1917",
+        "hilited_back_color": "0x14000000",
+        "candidate_text_color": "0xFF292524",
+        "comment_text_color": "0xFFA8A29E",
+        "label_color": "0xFFA8A29E",
+        "hilited_candidate_back_color": "0xFF292524",
+        "hilited_candidate_text_color": "0xFFFAFAF9",
+        "hilited_comment_text_color": "0xFFD6D3D1",
+        "hilited_candidate_label_color": "0xFFD6D3D1"
+      },
+      "layout": {
+        "corner_radius": 10,
+        "hilited_corner_radius": 6,
+        "border_width": 7,
+        "border_height": 6,
+        "spacing": 8,
+        "line_spacing": 4,
+        "font_point": 17,
+        "label_font_point": 13,
+        "comment_font_point": 13
+      }
+    },
+    "canonical": "{\"author\":\"AIME\",\"colors\":{\"back_color\":\"0xF5F5F5F4\",\"border_color\":\"0x1A000000\",\"candidate_text_color\":\"0xFF292524\",\"comment_text_color\":\"0xFFA8A29E\",\"hilited_back_color\":\"0x14000000\",\"hilited_candidate_back_color\":\"0xFF292524\",\"hilited_candidate_label_color\":\"0xFFD6D3D1\",\"hilited_candidate_text_color\":\"0xFFFAFAF9\",\"hilited_comment_text_color\":\"0xFFD6D3D1\",\"hilited_text_color\":\"0xFF1C1917\",\"label_color\":\"0xFFA8A29E\",\"preedit_back_color\":\"0x00000000\",\"text_color\":\"0xFF57534E\"},\"format\":\"aime-theme\",\"id\":\"graphite\",\"layout\":{\"border_height\":6,\"border_width\":7,\"comment_font_point\":13,\"corner_radius\":10,\"font_point\":17,\"hilited_corner_radius\":6,\"label_font_point\":13,\"line_spacing\":4,\"spacing\":8},\"name\":\"石墨\",\"version\":2}",
+    "d": "eyJhdXRob3IiOiJBSU1FIiwiY29sb3JzIjp7ImJhY2tfY29sb3IiOiIweEY1RjVGNUY0IiwiYm9yZGVyX2NvbG9yIjoiMHgxQTAwMDAwMCIsImNhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRjI5MjUyNCIsImNvbW1lbnRfdGV4dF9jb2xvciI6IjB4RkZBOEEyOUUiLCJoaWxpdGVkX2JhY2tfY29sb3IiOiIweDE0MDAwMDAwIiwiaGlsaXRlZF9jYW5kaWRhdGVfYmFja19jb2xvciI6IjB4RkYyOTI1MjQiLCJoaWxpdGVkX2NhbmRpZGF0ZV9sYWJlbF9jb2xvciI6IjB4RkZENkQzRDEiLCJoaWxpdGVkX2NhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRkZBRkFGOSIsImhpbGl0ZWRfY29tbWVudF90ZXh0X2NvbG9yIjoiMHhGRkQ2RDNEMSIsImhpbGl0ZWRfdGV4dF9jb2xvciI6IjB4RkYxQzE5MTciLCJsYWJlbF9jb2xvciI6IjB4RkZBOEEyOUUiLCJwcmVlZGl0X2JhY2tfY29sb3IiOiIweDAwMDAwMDAwIiwidGV4dF9jb2xvciI6IjB4RkY1NzUzNEUifSwiZm9ybWF0IjoiYWltZS10aGVtZSIsImlkIjoiZ3JhcGhpdGUiLCJsYXlvdXQiOnsiYm9yZGVyX2hlaWdodCI6NiwiYm9yZGVyX3dpZHRoIjo3LCJjb21tZW50X2ZvbnRfcG9pbnQiOjEzLCJjb3JuZXJfcmFkaXVzIjoxMCwiZm9udF9wb2ludCI6MTcsImhpbGl0ZWRfY29ybmVyX3JhZGl1cyI6NiwibGFiZWxfZm9udF9wb2ludCI6MTMsImxpbmVfc3BhY2luZyI6NCwic3BhY2luZyI6OH0sIm5hbWUiOiLnn7PloqgiLCJ2ZXJzaW9uIjoyfQ",
+    "url": "aime-ime://theme?v=2&d=eyJhdXRob3IiOiJBSU1FIiwiY29sb3JzIjp7ImJhY2tfY29sb3IiOiIweEY1RjVGNUY0IiwiYm9yZGVyX2NvbG9yIjoiMHgxQTAwMDAwMCIsImNhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRjI5MjUyNCIsImNvbW1lbnRfdGV4dF9jb2xvciI6IjB4RkZBOEEyOUUiLCJoaWxpdGVkX2JhY2tfY29sb3IiOiIweDE0MDAwMDAwIiwiaGlsaXRlZF9jYW5kaWRhdGVfYmFja19jb2xvciI6IjB4RkYyOTI1MjQiLCJoaWxpdGVkX2NhbmRpZGF0ZV9sYWJlbF9jb2xvciI6IjB4RkZENkQzRDEiLCJoaWxpdGVkX2NhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRkZBRkFGOSIsImhpbGl0ZWRfY29tbWVudF90ZXh0X2NvbG9yIjoiMHhGRkQ2RDNEMSIsImhpbGl0ZWRfdGV4dF9jb2xvciI6IjB4RkYxQzE5MTciLCJsYWJlbF9jb2xvciI6IjB4RkZBOEEyOUUiLCJwcmVlZGl0X2JhY2tfY29sb3IiOiIweDAwMDAwMDAwIiwidGV4dF9jb2xvciI6IjB4RkY1NzUzNEUifSwiZm9ybWF0IjoiYWltZS10aGVtZSIsImlkIjoiZ3JhcGhpdGUiLCJsYXlvdXQiOnsiYm9yZGVyX2hlaWdodCI6NiwiYm9yZGVyX3dpZHRoIjo3LCJjb21tZW50X2ZvbnRfcG9pbnQiOjEzLCJjb3JuZXJfcmFkaXVzIjoxMCwiZm9udF9wb2ludCI6MTcsImhpbGl0ZWRfY29ybmVyX3JhZGl1cyI6NiwibGFiZWxfZm9udF9wb2ludCI6MTMsImxpbmVfc3BhY2luZyI6NCwic3BhY2luZyI6OH0sIm5hbWUiOiLnn7PloqgiLCJ2ZXJzaW9uIjoyfQ",
+    "min_contrast": 13.35,
+    "dark": false
+  },
+  {
+    "id": "midnight",
+    "package": {
+      "format": "aime-theme",
+      "version": 2,
+      "id": "midnight",
+      "name": "午夜",
+      "author": "AIME",
+      "colors": {
+        "back_color": "0xF20B1120",
+        "border_color": "0x2638BDF8",
+        "preedit_back_color": "0x00000000",
+        "text_color": "0xFF94A3B8",
+        "hilited_text_color": "0xFFE2E8F0",
+        "hilited_back_color": "0x3338BDF8",
+        "candidate_text_color": "0xFFE2E8F0",
+        "comment_text_color": "0xFF64748B",
+        "label_color": "0xFF64748B",
+        "hilited_candidate_back_color": "0xFF0EA5E9",
+        "hilited_candidate_text_color": "0xFF0B1120",
+        "hilited_comment_text_color": "0xFF0C4A6E",
+        "hilited_candidate_label_color": "0xFF0C4A6E"
+      },
+      "layout": {
+        "corner_radius": 10,
+        "hilited_corner_radius": 6,
+        "border_width": 7,
+        "border_height": 6,
+        "spacing": 8,
+        "line_spacing": 4,
+        "font_point": 17,
+        "label_font_point": 13,
+        "comment_font_point": 13
+      }
+    },
+    "canonical": "{\"author\":\"AIME\",\"colors\":{\"back_color\":\"0xF20B1120\",\"border_color\":\"0x2638BDF8\",\"candidate_text_color\":\"0xFFE2E8F0\",\"comment_text_color\":\"0xFF64748B\",\"hilited_back_color\":\"0x3338BDF8\",\"hilited_candidate_back_color\":\"0xFF0EA5E9\",\"hilited_candidate_label_color\":\"0xFF0C4A6E\",\"hilited_candidate_text_color\":\"0xFF0B1120\",\"hilited_comment_text_color\":\"0xFF0C4A6E\",\"hilited_text_color\":\"0xFFE2E8F0\",\"label_color\":\"0xFF64748B\",\"preedit_back_color\":\"0x00000000\",\"text_color\":\"0xFF94A3B8\"},\"format\":\"aime-theme\",\"id\":\"midnight\",\"layout\":{\"border_height\":6,\"border_width\":7,\"comment_font_point\":13,\"corner_radius\":10,\"font_point\":17,\"hilited_corner_radius\":6,\"label_font_point\":13,\"line_spacing\":4,\"spacing\":8},\"name\":\"午夜\",\"version\":2}",
+    "d": "eyJhdXRob3IiOiJBSU1FIiwiY29sb3JzIjp7ImJhY2tfY29sb3IiOiIweEYyMEIxMTIwIiwiYm9yZGVyX2NvbG9yIjoiMHgyNjM4QkRGOCIsImNhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRkUyRThGMCIsImNvbW1lbnRfdGV4dF9jb2xvciI6IjB4RkY2NDc0OEIiLCJoaWxpdGVkX2JhY2tfY29sb3IiOiIweDMzMzhCREY4IiwiaGlsaXRlZF9jYW5kaWRhdGVfYmFja19jb2xvciI6IjB4RkYwRUE1RTkiLCJoaWxpdGVkX2NhbmRpZGF0ZV9sYWJlbF9jb2xvciI6IjB4RkYwQzRBNkUiLCJoaWxpdGVkX2NhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRjBCMTEyMCIsImhpbGl0ZWRfY29tbWVudF90ZXh0X2NvbG9yIjoiMHhGRjBDNEE2RSIsImhpbGl0ZWRfdGV4dF9jb2xvciI6IjB4RkZFMkU4RjAiLCJsYWJlbF9jb2xvciI6IjB4RkY2NDc0OEIiLCJwcmVlZGl0X2JhY2tfY29sb3IiOiIweDAwMDAwMDAwIiwidGV4dF9jb2xvciI6IjB4RkY5NEEzQjgifSwiZm9ybWF0IjoiYWltZS10aGVtZSIsImlkIjoibWlkbmlnaHQiLCJsYXlvdXQiOnsiYm9yZGVyX2hlaWdodCI6NiwiYm9yZGVyX3dpZHRoIjo3LCJjb21tZW50X2ZvbnRfcG9pbnQiOjEzLCJjb3JuZXJfcmFkaXVzIjoxMCwiZm9udF9wb2ludCI6MTcsImhpbGl0ZWRfY29ybmVyX3JhZGl1cyI6NiwibGFiZWxfZm9udF9wb2ludCI6MTMsImxpbmVfc3BhY2luZyI6NCwic3BhY2luZyI6OH0sIm5hbWUiOiLljYjlpJwiLCJ2ZXJzaW9uIjoyfQ",
+    "url": "aime-ime://theme?v=2&d=eyJhdXRob3IiOiJBSU1FIiwiY29sb3JzIjp7ImJhY2tfY29sb3IiOiIweEYyMEIxMTIwIiwiYm9yZGVyX2NvbG9yIjoiMHgyNjM4QkRGOCIsImNhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRkUyRThGMCIsImNvbW1lbnRfdGV4dF9jb2xvciI6IjB4RkY2NDc0OEIiLCJoaWxpdGVkX2JhY2tfY29sb3IiOiIweDMzMzhCREY4IiwiaGlsaXRlZF9jYW5kaWRhdGVfYmFja19jb2xvciI6IjB4RkYwRUE1RTkiLCJoaWxpdGVkX2NhbmRpZGF0ZV9sYWJlbF9jb2xvciI6IjB4RkYwQzRBNkUiLCJoaWxpdGVkX2NhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRjBCMTEyMCIsImhpbGl0ZWRfY29tbWVudF90ZXh0X2NvbG9yIjoiMHhGRjBDNEE2RSIsImhpbGl0ZWRfdGV4dF9jb2xvciI6IjB4RkZFMkU4RjAiLCJsYWJlbF9jb2xvciI6IjB4RkY2NDc0OEIiLCJwcmVlZGl0X2JhY2tfY29sb3IiOiIweDAwMDAwMDAwIiwidGV4dF9jb2xvciI6IjB4RkY5NEEzQjgifSwiZm9ybWF0IjoiYWltZS10aGVtZSIsImlkIjoibWlkbmlnaHQiLCJsYXlvdXQiOnsiYm9yZGVyX2hlaWdodCI6NiwiYm9yZGVyX3dpZHRoIjo3LCJjb21tZW50X2ZvbnRfcG9pbnQiOjEzLCJjb3JuZXJfcmFkaXVzIjoxMCwiZm9udF9wb2ludCI6MTcsImhpbGl0ZWRfY29ybmVyX3JhZGl1cyI6NiwibGFiZWxfZm9udF9wb2ludCI6MTMsImxpbmVfc3BhY2luZyI6NCwic3BhY2luZyI6OH0sIm5hbWUiOiLljYjlpJwiLCJ2ZXJzaW9uIjoyfQ",
+    "min_contrast": 6.79,
+    "dark": true
+  },
+  {
+    "id": "sakura",
+    "package": {
+      "format": "aime-theme",
+      "version": 2,
+      "id": "sakura",
+      "name": "樱花",
+      "author": "AIME",
+      "colors": {
+        "back_color": "0xF5FFF5F7",
+        "border_color": "0x1FDB2777",
+        "preedit_back_color": "0x00000000",
+        "text_color": "0xFF9D174D",
+        "hilited_text_color": "0xFF831843",
+        "hilited_back_color": "0x1FEC4899",
+        "candidate_text_color": "0xFF500724",
+        "comment_text_color": "0xFFF472B6",
+        "label_color": "0xFFF9A8D4",
+        "hilited_candidate_back_color": "0xFFEC4899",
+        "hilited_candidate_text_color": "0xFFFFFFFF",
+        "hilited_comment_text_color": "0xFFFCE7F3",
+        "hilited_candidate_label_color": "0xFFFCE7F3"
+      },
+      "layout": {
+        "corner_radius": 10,
+        "hilited_corner_radius": 6,
+        "border_width": 7,
+        "border_height": 6,
+        "spacing": 8,
+        "line_spacing": 4,
+        "font_point": 17,
+        "label_font_point": 13,
+        "comment_font_point": 13
+      }
+    },
+    "canonical": "{\"author\":\"AIME\",\"colors\":{\"back_color\":\"0xF5FFF5F7\",\"border_color\":\"0x1FDB2777\",\"candidate_text_color\":\"0xFF500724\",\"comment_text_color\":\"0xFFF472B6\",\"hilited_back_color\":\"0x1FEC4899\",\"hilited_candidate_back_color\":\"0xFFEC4899\",\"hilited_candidate_label_color\":\"0xFFFCE7F3\",\"hilited_candidate_text_color\":\"0xFFFFFFFF\",\"hilited_comment_text_color\":\"0xFFFCE7F3\",\"hilited_text_color\":\"0xFF831843\",\"label_color\":\"0xFFF9A8D4\",\"preedit_back_color\":\"0x00000000\",\"text_color\":\"0xFF9D174D\"},\"format\":\"aime-theme\",\"id\":\"sakura\",\"layout\":{\"border_height\":6,\"border_width\":7,\"comment_font_point\":13,\"corner_radius\":10,\"font_point\":17,\"hilited_corner_radius\":6,\"label_font_point\":13,\"line_spacing\":4,\"spacing\":8},\"name\":\"樱花\",\"version\":2}",
+    "d": "eyJhdXRob3IiOiJBSU1FIiwiY29sb3JzIjp7ImJhY2tfY29sb3IiOiIweEY1RkZGNUY3IiwiYm9yZGVyX2NvbG9yIjoiMHgxRkRCMjc3NyIsImNhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRjUwMDcyNCIsImNvbW1lbnRfdGV4dF9jb2xvciI6IjB4RkZGNDcyQjYiLCJoaWxpdGVkX2JhY2tfY29sb3IiOiIweDFGRUM0ODk5IiwiaGlsaXRlZF9jYW5kaWRhdGVfYmFja19jb2xvciI6IjB4RkZFQzQ4OTkiLCJoaWxpdGVkX2NhbmRpZGF0ZV9sYWJlbF9jb2xvciI6IjB4RkZGQ0U3RjMiLCJoaWxpdGVkX2NhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRkZGRkZGRiIsImhpbGl0ZWRfY29tbWVudF90ZXh0X2NvbG9yIjoiMHhGRkZDRTdGMyIsImhpbGl0ZWRfdGV4dF9jb2xvciI6IjB4RkY4MzE4NDMiLCJsYWJlbF9jb2xvciI6IjB4RkZGOUE4RDQiLCJwcmVlZGl0X2JhY2tfY29sb3IiOiIweDAwMDAwMDAwIiwidGV4dF9jb2xvciI6IjB4RkY5RDE3NEQifSwiZm9ybWF0IjoiYWltZS10aGVtZSIsImlkIjoic2FrdXJhIiwibGF5b3V0Ijp7ImJvcmRlcl9oZWlnaHQiOjYsImJvcmRlcl93aWR0aCI6NywiY29tbWVudF9mb250X3BvaW50IjoxMywiY29ybmVyX3JhZGl1cyI6MTAsImZvbnRfcG9pbnQiOjE3LCJoaWxpdGVkX2Nvcm5lcl9yYWRpdXMiOjYsImxhYmVsX2ZvbnRfcG9pbnQiOjEzLCJsaW5lX3NwYWNpbmciOjQsInNwYWNpbmciOjh9LCJuYW1lIjoi5qix6IqxIiwidmVyc2lvbiI6Mn0",
+    "url": "aime-ime://theme?v=2&d=eyJhdXRob3IiOiJBSU1FIiwiY29sb3JzIjp7ImJhY2tfY29sb3IiOiIweEY1RkZGNUY3IiwiYm9yZGVyX2NvbG9yIjoiMHgxRkRCMjc3NyIsImNhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRjUwMDcyNCIsImNvbW1lbnRfdGV4dF9jb2xvciI6IjB4RkZGNDcyQjYiLCJoaWxpdGVkX2JhY2tfY29sb3IiOiIweDFGRUM0ODk5IiwiaGlsaXRlZF9jYW5kaWRhdGVfYmFja19jb2xvciI6IjB4RkZFQzQ4OTkiLCJoaWxpdGVkX2NhbmRpZGF0ZV9sYWJlbF9jb2xvciI6IjB4RkZGQ0U3RjMiLCJoaWxpdGVkX2NhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRkZGRkZGRiIsImhpbGl0ZWRfY29tbWVudF90ZXh0X2NvbG9yIjoiMHhGRkZDRTdGMyIsImhpbGl0ZWRfdGV4dF9jb2xvciI6IjB4RkY4MzE4NDMiLCJsYWJlbF9jb2xvciI6IjB4RkZGOUE4RDQiLCJwcmVlZGl0X2JhY2tfY29sb3IiOiIweDAwMDAwMDAwIiwidGV4dF9jb2xvciI6IjB4RkY5RDE3NEQifSwiZm9ybWF0IjoiYWltZS10aGVtZSIsImlkIjoic2FrdXJhIiwibGF5b3V0Ijp7ImJvcmRlcl9oZWlnaHQiOjYsImJvcmRlcl93aWR0aCI6NywiY29tbWVudF9mb250X3BvaW50IjoxMywiY29ybmVyX3JhZGl1cyI6MTAsImZvbnRfcG9pbnQiOjE3LCJoaWxpdGVkX2Nvcm5lcl9yYWRpdXMiOjYsImxhYmVsX2ZvbnRfcG9pbnQiOjEzLCJsaW5lX3NwYWNpbmciOjQsInNwYWNpbmciOjh9LCJuYW1lIjoi5qix6IqxIiwidmVyc2lvbiI6Mn0",
+    "min_contrast": 3.53,
+    "dark": false
+  },
+  {
+    "id": "matcha",
+    "package": {
+      "format": "aime-theme",
+      "version": 2,
+      "id": "matcha",
+      "name": "抹茶",
+      "author": "AIME",
+      "colors": {
+        "back_color": "0xF5F4F9F1",
+        "border_color": "0x1F4D7C0F",
+        "preedit_back_color": "0x00000000",
+        "text_color": "0xFF4D7C0F",
+        "hilited_text_color": "0xFF365314",
+        "hilited_back_color": "0x1F65A30D",
+        "candidate_text_color": "0xFF1A2E05",
+        "comment_text_color": "0xFF84A36B",
+        "label_color": "0xFF9CB88A",
+        "hilited_candidate_back_color": "0xFF4D7C0F",
+        "hilited_candidate_text_color": "0xFFF7FEE7",
+        "hilited_comment_text_color": "0xFFD9F99D",
+        "hilited_candidate_label_color": "0xFFD9F99D"
+      },
+      "layout": {
+        "corner_radius": 10,
+        "hilited_corner_radius": 6,
+        "border_width": 7,
+        "border_height": 6,
+        "spacing": 8,
+        "line_spacing": 4,
+        "font_point": 17,
+        "label_font_point": 13,
+        "comment_font_point": 13
+      }
+    },
+    "canonical": "{\"author\":\"AIME\",\"colors\":{\"back_color\":\"0xF5F4F9F1\",\"border_color\":\"0x1F4D7C0F\",\"candidate_text_color\":\"0xFF1A2E05\",\"comment_text_color\":\"0xFF84A36B\",\"hilited_back_color\":\"0x1F65A30D\",\"hilited_candidate_back_color\":\"0xFF4D7C0F\",\"hilited_candidate_label_color\":\"0xFFD9F99D\",\"hilited_candidate_text_color\":\"0xFFF7FEE7\",\"hilited_comment_text_color\":\"0xFFD9F99D\",\"hilited_text_color\":\"0xFF365314\",\"label_color\":\"0xFF9CB88A\",\"preedit_back_color\":\"0x00000000\",\"text_color\":\"0xFF4D7C0F\"},\"format\":\"aime-theme\",\"id\":\"matcha\",\"layout\":{\"border_height\":6,\"border_width\":7,\"comment_font_point\":13,\"corner_radius\":10,\"font_point\":17,\"hilited_corner_radius\":6,\"label_font_point\":13,\"line_spacing\":4,\"spacing\":8},\"name\":\"抹茶\",\"version\":2}",
+    "d": "eyJhdXRob3IiOiJBSU1FIiwiY29sb3JzIjp7ImJhY2tfY29sb3IiOiIweEY1RjRGOUYxIiwiYm9yZGVyX2NvbG9yIjoiMHgxRjREN0MwRiIsImNhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRjFBMkUwNSIsImNvbW1lbnRfdGV4dF9jb2xvciI6IjB4RkY4NEEzNkIiLCJoaWxpdGVkX2JhY2tfY29sb3IiOiIweDFGNjVBMzBEIiwiaGlsaXRlZF9jYW5kaWRhdGVfYmFja19jb2xvciI6IjB4RkY0RDdDMEYiLCJoaWxpdGVkX2NhbmRpZGF0ZV9sYWJlbF9jb2xvciI6IjB4RkZEOUY5OUQiLCJoaWxpdGVkX2NhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRkY3RkVFNyIsImhpbGl0ZWRfY29tbWVudF90ZXh0X2NvbG9yIjoiMHhGRkQ5Rjk5RCIsImhpbGl0ZWRfdGV4dF9jb2xvciI6IjB4RkYzNjUzMTQiLCJsYWJlbF9jb2xvciI6IjB4RkY5Q0I4OEEiLCJwcmVlZGl0X2JhY2tfY29sb3IiOiIweDAwMDAwMDAwIiwidGV4dF9jb2xvciI6IjB4RkY0RDdDMEYifSwiZm9ybWF0IjoiYWltZS10aGVtZSIsImlkIjoibWF0Y2hhIiwibGF5b3V0Ijp7ImJvcmRlcl9oZWlnaHQiOjYsImJvcmRlcl93aWR0aCI6NywiY29tbWVudF9mb250X3BvaW50IjoxMywiY29ybmVyX3JhZGl1cyI6MTAsImZvbnRfcG9pbnQiOjE3LCJoaWxpdGVkX2Nvcm5lcl9yYWRpdXMiOjYsImxhYmVsX2ZvbnRfcG9pbnQiOjEzLCJsaW5lX3NwYWNpbmciOjQsInNwYWNpbmciOjh9LCJuYW1lIjoi5oq56Iy2IiwidmVyc2lvbiI6Mn0",
+    "url": "aime-ime://theme?v=2&d=eyJhdXRob3IiOiJBSU1FIiwiY29sb3JzIjp7ImJhY2tfY29sb3IiOiIweEY1RjRGOUYxIiwiYm9yZGVyX2NvbG9yIjoiMHgxRjREN0MwRiIsImNhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRjFBMkUwNSIsImNvbW1lbnRfdGV4dF9jb2xvciI6IjB4RkY4NEEzNkIiLCJoaWxpdGVkX2JhY2tfY29sb3IiOiIweDFGNjVBMzBEIiwiaGlsaXRlZF9jYW5kaWRhdGVfYmFja19jb2xvciI6IjB4RkY0RDdDMEYiLCJoaWxpdGVkX2NhbmRpZGF0ZV9sYWJlbF9jb2xvciI6IjB4RkZEOUY5OUQiLCJoaWxpdGVkX2NhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRkY3RkVFNyIsImhpbGl0ZWRfY29tbWVudF90ZXh0X2NvbG9yIjoiMHhGRkQ5Rjk5RCIsImhpbGl0ZWRfdGV4dF9jb2xvciI6IjB4RkYzNjUzMTQiLCJsYWJlbF9jb2xvciI6IjB4RkY5Q0I4OEEiLCJwcmVlZGl0X2JhY2tfY29sb3IiOiIweDAwMDAwMDAwIiwidGV4dF9jb2xvciI6IjB4RkY0RDdDMEYifSwiZm9ybWF0IjoiYWltZS10aGVtZSIsImlkIjoibWF0Y2hhIiwibGF5b3V0Ijp7ImJvcmRlcl9oZWlnaHQiOjYsImJvcmRlcl93aWR0aCI6NywiY29tbWVudF9mb250X3BvaW50IjoxMywiY29ybmVyX3JhZGl1cyI6MTAsImZvbnRfcG9pbnQiOjE3LCJoaWxpdGVkX2Nvcm5lcl9yYWRpdXMiOjYsImxhYmVsX2ZvbnRfcG9pbnQiOjEzLCJsaW5lX3NwYWNpbmciOjQsInNwYWNpbmciOjh9LCJuYW1lIjoi5oq56Iy2IiwidmVyc2lvbiI6Mn0",
+    "min_contrast": 4.82,
+    "dark": false
+  },
+  {
+    "id": "nord",
+    "package": {
+      "format": "aime-theme",
+      "version": 2,
+      "id": "nord",
+      "name": "北境",
+      "author": "AIME",
+      "colors": {
+        "back_color": "0xF22E3440",
+        "border_color": "0x1FD8DEE9",
+        "preedit_back_color": "0x00000000",
+        "text_color": "0xFFD8DEE9",
+        "hilited_text_color": "0xFFECEFF4",
+        "hilited_back_color": "0x3388C0D0",
+        "candidate_text_color": "0xFFE5E9F0",
+        "comment_text_color": "0xFF81A1C1",
+        "label_color": "0xFF81A1C1",
+        "hilited_candidate_back_color": "0xFF88C0D0",
+        "hilited_candidate_text_color": "0xFF2E3440",
+        "hilited_comment_text_color": "0xFF3B4252",
+        "hilited_candidate_label_color": "0xFF3B4252"
+      },
+      "layout": {
+        "corner_radius": 10,
+        "hilited_corner_radius": 6,
+        "border_width": 7,
+        "border_height": 6,
+        "spacing": 8,
+        "line_spacing": 4,
+        "font_point": 17,
+        "label_font_point": 13,
+        "comment_font_point": 13
+      }
+    },
+    "canonical": "{\"author\":\"AIME\",\"colors\":{\"back_color\":\"0xF22E3440\",\"border_color\":\"0x1FD8DEE9\",\"candidate_text_color\":\"0xFFE5E9F0\",\"comment_text_color\":\"0xFF81A1C1\",\"hilited_back_color\":\"0x3388C0D0\",\"hilited_candidate_back_color\":\"0xFF88C0D0\",\"hilited_candidate_label_color\":\"0xFF3B4252\",\"hilited_candidate_text_color\":\"0xFF2E3440\",\"hilited_comment_text_color\":\"0xFF3B4252\",\"hilited_text_color\":\"0xFFECEFF4\",\"label_color\":\"0xFF81A1C1\",\"preedit_back_color\":\"0x00000000\",\"text_color\":\"0xFFD8DEE9\"},\"format\":\"aime-theme\",\"id\":\"nord\",\"layout\":{\"border_height\":6,\"border_width\":7,\"comment_font_point\":13,\"corner_radius\":10,\"font_point\":17,\"hilited_corner_radius\":6,\"label_font_point\":13,\"line_spacing\":4,\"spacing\":8},\"name\":\"北境\",\"version\":2}",
+    "d": "eyJhdXRob3IiOiJBSU1FIiwiY29sb3JzIjp7ImJhY2tfY29sb3IiOiIweEYyMkUzNDQwIiwiYm9yZGVyX2NvbG9yIjoiMHgxRkQ4REVFOSIsImNhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRkU1RTlGMCIsImNvbW1lbnRfdGV4dF9jb2xvciI6IjB4RkY4MUExQzEiLCJoaWxpdGVkX2JhY2tfY29sb3IiOiIweDMzODhDMEQwIiwiaGlsaXRlZF9jYW5kaWRhdGVfYmFja19jb2xvciI6IjB4RkY4OEMwRDAiLCJoaWxpdGVkX2NhbmRpZGF0ZV9sYWJlbF9jb2xvciI6IjB4RkYzQjQyNTIiLCJoaWxpdGVkX2NhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRjJFMzQ0MCIsImhpbGl0ZWRfY29tbWVudF90ZXh0X2NvbG9yIjoiMHhGRjNCNDI1MiIsImhpbGl0ZWRfdGV4dF9jb2xvciI6IjB4RkZFQ0VGRjQiLCJsYWJlbF9jb2xvciI6IjB4RkY4MUExQzEiLCJwcmVlZGl0X2JhY2tfY29sb3IiOiIweDAwMDAwMDAwIiwidGV4dF9jb2xvciI6IjB4RkZEOERFRTkifSwiZm9ybWF0IjoiYWltZS10aGVtZSIsImlkIjoibm9yZCIsImxheW91dCI6eyJib3JkZXJfaGVpZ2h0Ijo2LCJib3JkZXJfd2lkdGgiOjcsImNvbW1lbnRfZm9udF9wb2ludCI6MTMsImNvcm5lcl9yYWRpdXMiOjEwLCJmb250X3BvaW50IjoxNywiaGlsaXRlZF9jb3JuZXJfcmFkaXVzIjo2LCJsYWJlbF9mb250X3BvaW50IjoxMywibGluZV9zcGFjaW5nIjo0LCJzcGFjaW5nIjo4fSwibmFtZSI6IuWMl-WigyIsInZlcnNpb24iOjJ9",
+    "url": "aime-ime://theme?v=2&d=eyJhdXRob3IiOiJBSU1FIiwiY29sb3JzIjp7ImJhY2tfY29sb3IiOiIweEYyMkUzNDQwIiwiYm9yZGVyX2NvbG9yIjoiMHgxRkQ4REVFOSIsImNhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRkU1RTlGMCIsImNvbW1lbnRfdGV4dF9jb2xvciI6IjB4RkY4MUExQzEiLCJoaWxpdGVkX2JhY2tfY29sb3IiOiIweDMzODhDMEQwIiwiaGlsaXRlZF9jYW5kaWRhdGVfYmFja19jb2xvciI6IjB4RkY4OEMwRDAiLCJoaWxpdGVkX2NhbmRpZGF0ZV9sYWJlbF9jb2xvciI6IjB4RkYzQjQyNTIiLCJoaWxpdGVkX2NhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRjJFMzQ0MCIsImhpbGl0ZWRfY29tbWVudF90ZXh0X2NvbG9yIjoiMHhGRjNCNDI1MiIsImhpbGl0ZWRfdGV4dF9jb2xvciI6IjB4RkZFQ0VGRjQiLCJsYWJlbF9jb2xvciI6IjB4RkY4MUExQzEiLCJwcmVlZGl0X2JhY2tfY29sb3IiOiIweDAwMDAwMDAwIiwidGV4dF9jb2xvciI6IjB4RkZEOERFRTkifSwiZm9ybWF0IjoiYWltZS10aGVtZSIsImlkIjoibm9yZCIsImxheW91dCI6eyJib3JkZXJfaGVpZ2h0Ijo2LCJib3JkZXJfd2lkdGgiOjcsImNvbW1lbnRfZm9udF9wb2ludCI6MTMsImNvcm5lcl9yYWRpdXMiOjEwLCJmb250X3BvaW50IjoxNywiaGlsaXRlZF9jb3JuZXJfcmFkaXVzIjo2LCJsYWJlbF9mb250X3BvaW50IjoxMywibGluZV9zcGFjaW5nIjo0LCJzcGFjaW5nIjo4fSwibmFtZSI6IuWMl-WigyIsInZlcnNpb24iOjJ9",
+    "min_contrast": 6.24,
+    "dark": true
+  },
+  {
+    "id": "paper",
+    "package": {
+      "format": "aime-theme",
+      "version": 2,
+      "id": "paper",
+      "name": "纸墨（竖排适用）",
+      "author": "AIME",
+      "colors": {
+        "back_color": "0xFAFAF7F0",
+        "border_color": "0x26000000",
+        "preedit_back_color": "0x00000000",
+        "text_color": "0xFF78716C",
+        "hilited_text_color": "0xFF1C1917",
+        "hilited_back_color": "0x1A92400E",
+        "candidate_text_color": "0xFF1C1917",
+        "comment_text_color": "0xFFA8A29E",
+        "label_color": "0xFFB45309",
+        "hilited_candidate_back_color": "0xFFB91C1C",
+        "hilited_candidate_text_color": "0xFFFFFBEB",
+        "hilited_comment_text_color": "0xFFFDE68A",
+        "hilited_candidate_label_color": "0xFFFDE68A"
+      },
+      "layout": {
+        "corner_radius": 10,
+        "hilited_corner_radius": 6,
+        "border_width": 7,
+        "border_height": 6,
+        "spacing": 8,
+        "line_spacing": 4,
+        "font_point": 17,
+        "label_font_point": 13,
+        "comment_font_point": 13
+      }
+    },
+    "canonical": "{\"author\":\"AIME\",\"colors\":{\"back_color\":\"0xFAFAF7F0\",\"border_color\":\"0x26000000\",\"candidate_text_color\":\"0xFF1C1917\",\"comment_text_color\":\"0xFFA8A29E\",\"hilited_back_color\":\"0x1A92400E\",\"hilited_candidate_back_color\":\"0xFFB91C1C\",\"hilited_candidate_label_color\":\"0xFFFDE68A\",\"hilited_candidate_text_color\":\"0xFFFFFBEB\",\"hilited_comment_text_color\":\"0xFFFDE68A\",\"hilited_text_color\":\"0xFF1C1917\",\"label_color\":\"0xFFB45309\",\"preedit_back_color\":\"0x00000000\",\"text_color\":\"0xFF78716C\"},\"format\":\"aime-theme\",\"id\":\"paper\",\"layout\":{\"border_height\":6,\"border_width\":7,\"comment_font_point\":13,\"corner_radius\":10,\"font_point\":17,\"hilited_corner_radius\":6,\"label_font_point\":13,\"line_spacing\":4,\"spacing\":8},\"name\":\"纸墨（竖排适用）\",\"version\":2}",
+    "d": "eyJhdXRob3IiOiJBSU1FIiwiY29sb3JzIjp7ImJhY2tfY29sb3IiOiIweEZBRkFGN0YwIiwiYm9yZGVyX2NvbG9yIjoiMHgyNjAwMDAwMCIsImNhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRjFDMTkxNyIsImNvbW1lbnRfdGV4dF9jb2xvciI6IjB4RkZBOEEyOUUiLCJoaWxpdGVkX2JhY2tfY29sb3IiOiIweDFBOTI0MDBFIiwiaGlsaXRlZF9jYW5kaWRhdGVfYmFja19jb2xvciI6IjB4RkZCOTFDMUMiLCJoaWxpdGVkX2NhbmRpZGF0ZV9sYWJlbF9jb2xvciI6IjB4RkZGREU2OEEiLCJoaWxpdGVkX2NhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRkZGRkJFQiIsImhpbGl0ZWRfY29tbWVudF90ZXh0X2NvbG9yIjoiMHhGRkZERTY4QSIsImhpbGl0ZWRfdGV4dF9jb2xvciI6IjB4RkYxQzE5MTciLCJsYWJlbF9jb2xvciI6IjB4RkZCNDUzMDkiLCJwcmVlZGl0X2JhY2tfY29sb3IiOiIweDAwMDAwMDAwIiwidGV4dF9jb2xvciI6IjB4RkY3ODcxNkMifSwiZm9ybWF0IjoiYWltZS10aGVtZSIsImlkIjoicGFwZXIiLCJsYXlvdXQiOnsiYm9yZGVyX2hlaWdodCI6NiwiYm9yZGVyX3dpZHRoIjo3LCJjb21tZW50X2ZvbnRfcG9pbnQiOjEzLCJjb3JuZXJfcmFkaXVzIjoxMCwiZm9udF9wb2ludCI6MTcsImhpbGl0ZWRfY29ybmVyX3JhZGl1cyI6NiwibGFiZWxfZm9udF9wb2ludCI6MTMsImxpbmVfc3BhY2luZyI6NCwic3BhY2luZyI6OH0sIm5hbWUiOiLnurjloqjvvIjnq5bmjpLpgILnlKjvvIkiLCJ2ZXJzaW9uIjoyfQ",
+    "url": "aime-ime://theme?v=2&d=eyJhdXRob3IiOiJBSU1FIiwiY29sb3JzIjp7ImJhY2tfY29sb3IiOiIweEZBRkFGN0YwIiwiYm9yZGVyX2NvbG9yIjoiMHgyNjAwMDAwMCIsImNhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRjFDMTkxNyIsImNvbW1lbnRfdGV4dF9jb2xvciI6IjB4RkZBOEEyOUUiLCJoaWxpdGVkX2JhY2tfY29sb3IiOiIweDFBOTI0MDBFIiwiaGlsaXRlZF9jYW5kaWRhdGVfYmFja19jb2xvciI6IjB4RkZCOTFDMUMiLCJoaWxpdGVkX2NhbmRpZGF0ZV9sYWJlbF9jb2xvciI6IjB4RkZGREU2OEEiLCJoaWxpdGVkX2NhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRkZGRkJFQiIsImhpbGl0ZWRfY29tbWVudF90ZXh0X2NvbG9yIjoiMHhGRkZERTY4QSIsImhpbGl0ZWRfdGV4dF9jb2xvciI6IjB4RkYxQzE5MTciLCJsYWJlbF9jb2xvciI6IjB4RkZCNDUzMDkiLCJwcmVlZGl0X2JhY2tfY29sb3IiOiIweDAwMDAwMDAwIiwidGV4dF9jb2xvciI6IjB4RkY3ODcxNkMifSwiZm9ybWF0IjoiYWltZS10aGVtZSIsImlkIjoicGFwZXIiLCJsYXlvdXQiOnsiYm9yZGVyX2hlaWdodCI6NiwiYm9yZGVyX3dpZHRoIjo3LCJjb21tZW50X2ZvbnRfcG9pbnQiOjEzLCJjb3JuZXJfcmFkaXVzIjoxMCwiZm9udF9wb2ludCI6MTcsImhpbGl0ZWRfY29ybmVyX3JhZGl1cyI6NiwibGFiZWxfZm9udF9wb2ludCI6MTMsImxpbmVfc3BhY2luZyI6NCwic3BhY2luZyI6OH0sIm5hbWUiOiLnurjloqjvvIjnq5bmjpLpgILnlKjvvIkiLCJ2ZXJzaW9uIjoyfQ",
+    "min_contrast": 6.24,
+    "dark": false
+  },
+  {
+    "id": "sakura_test",
+    "package": {
+      "format": "aime-theme",
+      "version": 2,
+      "id": "sakura_test",
+      "name": "樱花测试 / Sakura test",
+      "author": "Fixture",
+      "colors": {
+        "back_color": "0xF5FFF5F7",
+        "border_color": "0x1FDB2777",
+        "preedit_back_color": "0x00000000",
+        "text_color": "0xFF9D174D",
+        "hilited_text_color": "0xFF831843",
+        "hilited_back_color": "0x1FEC4899",
+        "candidate_text_color": "0xFF500724",
+        "comment_text_color": "0xFFF472B6",
+        "label_color": "0xFFF9A8D4",
+        "hilited_candidate_back_color": "0xFFD81B60",
+        "hilited_candidate_text_color": "0xFFFFFFFF",
+        "hilited_comment_text_color": "0xFFFCE7F3",
+        "hilited_candidate_label_color": "0xFFFCE7F3"
+      },
+      "layout": {
+        "corner_radius": 14,
+        "hilited_corner_radius": 0,
+        "border_width": 0,
+        "border_height": 0,
+        "spacing": 8,
+        "line_spacing": 4,
+        "font_point": 18,
+        "label_font_point": 13,
+        "comment_font_point": 13
+      }
+    },
+    "canonical": "{\"author\":\"Fixture\",\"colors\":{\"back_color\":\"0xF5FFF5F7\",\"border_color\":\"0x1FDB2777\",\"candidate_text_color\":\"0xFF500724\",\"comment_text_color\":\"0xFFF472B6\",\"hilited_back_color\":\"0x1FEC4899\",\"hilited_candidate_back_color\":\"0xFFD81B60\",\"hilited_candidate_label_color\":\"0xFFFCE7F3\",\"hilited_candidate_text_color\":\"0xFFFFFFFF\",\"hilited_comment_text_color\":\"0xFFFCE7F3\",\"hilited_text_color\":\"0xFF831843\",\"label_color\":\"0xFFF9A8D4\",\"preedit_back_color\":\"0x00000000\",\"text_color\":\"0xFF9D174D\"},\"format\":\"aime-theme\",\"id\":\"sakura_test\",\"layout\":{\"border_height\":0,\"border_width\":0,\"comment_font_point\":13,\"corner_radius\":14,\"font_point\":18,\"hilited_corner_radius\":0,\"label_font_point\":13,\"line_spacing\":4,\"spacing\":8},\"name\":\"樱花测试 / Sakura test\",\"version\":2}",
+    "d": "eyJhdXRob3IiOiJGaXh0dXJlIiwiY29sb3JzIjp7ImJhY2tfY29sb3IiOiIweEY1RkZGNUY3IiwiYm9yZGVyX2NvbG9yIjoiMHgxRkRCMjc3NyIsImNhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRjUwMDcyNCIsImNvbW1lbnRfdGV4dF9jb2xvciI6IjB4RkZGNDcyQjYiLCJoaWxpdGVkX2JhY2tfY29sb3IiOiIweDFGRUM0ODk5IiwiaGlsaXRlZF9jYW5kaWRhdGVfYmFja19jb2xvciI6IjB4RkZEODFCNjAiLCJoaWxpdGVkX2NhbmRpZGF0ZV9sYWJlbF9jb2xvciI6IjB4RkZGQ0U3RjMiLCJoaWxpdGVkX2NhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRkZGRkZGRiIsImhpbGl0ZWRfY29tbWVudF90ZXh0X2NvbG9yIjoiMHhGRkZDRTdGMyIsImhpbGl0ZWRfdGV4dF9jb2xvciI6IjB4RkY4MzE4NDMiLCJsYWJlbF9jb2xvciI6IjB4RkZGOUE4RDQiLCJwcmVlZGl0X2JhY2tfY29sb3IiOiIweDAwMDAwMDAwIiwidGV4dF9jb2xvciI6IjB4RkY5RDE3NEQifSwiZm9ybWF0IjoiYWltZS10aGVtZSIsImlkIjoic2FrdXJhX3Rlc3QiLCJsYXlvdXQiOnsiYm9yZGVyX2hlaWdodCI6MCwiYm9yZGVyX3dpZHRoIjowLCJjb21tZW50X2ZvbnRfcG9pbnQiOjEzLCJjb3JuZXJfcmFkaXVzIjoxNCwiZm9udF9wb2ludCI6MTgsImhpbGl0ZWRfY29ybmVyX3JhZGl1cyI6MCwibGFiZWxfZm9udF9wb2ludCI6MTMsImxpbmVfc3BhY2luZyI6NCwic3BhY2luZyI6OH0sIm5hbWUiOiLmqLHoirHmtYvor5UgLyBTYWt1cmEgdGVzdCIsInZlcnNpb24iOjJ9",
+    "url": "aime-ime://theme?v=2&d=eyJhdXRob3IiOiJGaXh0dXJlIiwiY29sb3JzIjp7ImJhY2tfY29sb3IiOiIweEY1RkZGNUY3IiwiYm9yZGVyX2NvbG9yIjoiMHgxRkRCMjc3NyIsImNhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRjUwMDcyNCIsImNvbW1lbnRfdGV4dF9jb2xvciI6IjB4RkZGNDcyQjYiLCJoaWxpdGVkX2JhY2tfY29sb3IiOiIweDFGRUM0ODk5IiwiaGlsaXRlZF9jYW5kaWRhdGVfYmFja19jb2xvciI6IjB4RkZEODFCNjAiLCJoaWxpdGVkX2NhbmRpZGF0ZV9sYWJlbF9jb2xvciI6IjB4RkZGQ0U3RjMiLCJoaWxpdGVkX2NhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRkZGRkZGRiIsImhpbGl0ZWRfY29tbWVudF90ZXh0X2NvbG9yIjoiMHhGRkZDRTdGMyIsImhpbGl0ZWRfdGV4dF9jb2xvciI6IjB4RkY4MzE4NDMiLCJsYWJlbF9jb2xvciI6IjB4RkZGOUE4RDQiLCJwcmVlZGl0X2JhY2tfY29sb3IiOiIweDAwMDAwMDAwIiwidGV4dF9jb2xvciI6IjB4RkY5RDE3NEQifSwiZm9ybWF0IjoiYWltZS10aGVtZSIsImlkIjoic2FrdXJhX3Rlc3QiLCJsYXlvdXQiOnsiYm9yZGVyX2hlaWdodCI6MCwiYm9yZGVyX3dpZHRoIjowLCJjb21tZW50X2ZvbnRfcG9pbnQiOjEzLCJjb3JuZXJfcmFkaXVzIjoxNCwiZm9udF9wb2ludCI6MTgsImhpbGl0ZWRfY29ybmVyX3JhZGl1cyI6MCwibGFiZWxfZm9udF9wb2ludCI6MTMsImxpbmVfc3BhY2luZyI6NCwic3BhY2luZyI6OH0sIm5hbWUiOiLmqLHoirHmtYvor5UgLyBTYWt1cmEgdGVzdCIsInZlcnNpb24iOjJ9",
+    "min_contrast": 4.95,
+    "dark": false
+  },
+  {
+    "id": "low_contrast",
+    "package": {
+      "format": "aime-theme",
+      "version": 1,
+      "id": "low_contrast",
+      "name": "低对比度",
+      "author": "Fixture",
+      "colors": {
+        "back_color": "0xF5FCFCFB",
+        "border_color": "0x14242321",
+        "preedit_back_color": "0x00000000",
+        "text_color": "0xFF6B6A67",
+        "hilited_text_color": "0xFF242321",
+        "hilited_back_color": "0x14242321",
+        "candidate_text_color": "0xFFC8C7C4",
+        "comment_text_color": "0xFF6B6A67",
+        "label_color": "0xFF8A8986",
+        "hilited_candidate_back_color": "0xFFEDEDEB",
+        "hilited_candidate_text_color": "0xFFFFFFFF",
+        "hilited_comment_text_color": "0xE6FFFFFF",
+        "hilited_candidate_label_color": "0xE6FFFFFF"
+      }
+    },
+    "canonical": "{\"author\":\"Fixture\",\"colors\":{\"back_color\":\"0xF5FCFCFB\",\"border_color\":\"0x14242321\",\"candidate_text_color\":\"0xFFC8C7C4\",\"comment_text_color\":\"0xFF6B6A67\",\"hilited_back_color\":\"0x14242321\",\"hilited_candidate_back_color\":\"0xFFEDEDEB\",\"hilited_candidate_label_color\":\"0xE6FFFFFF\",\"hilited_candidate_text_color\":\"0xFFFFFFFF\",\"hilited_comment_text_color\":\"0xE6FFFFFF\",\"hilited_text_color\":\"0xFF242321\",\"label_color\":\"0xFF8A8986\",\"preedit_back_color\":\"0x00000000\",\"text_color\":\"0xFF6B6A67\"},\"format\":\"aime-theme\",\"id\":\"low_contrast\",\"name\":\"低对比度\",\"version\":1}",
+    "d": "eyJhdXRob3IiOiJGaXh0dXJlIiwiY29sb3JzIjp7ImJhY2tfY29sb3IiOiIweEY1RkNGQ0ZCIiwiYm9yZGVyX2NvbG9yIjoiMHgxNDI0MjMyMSIsImNhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRkM4QzdDNCIsImNvbW1lbnRfdGV4dF9jb2xvciI6IjB4RkY2QjZBNjciLCJoaWxpdGVkX2JhY2tfY29sb3IiOiIweDE0MjQyMzIxIiwiaGlsaXRlZF9jYW5kaWRhdGVfYmFja19jb2xvciI6IjB4RkZFREVERUIiLCJoaWxpdGVkX2NhbmRpZGF0ZV9sYWJlbF9jb2xvciI6IjB4RTZGRkZGRkYiLCJoaWxpdGVkX2NhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRkZGRkZGRiIsImhpbGl0ZWRfY29tbWVudF90ZXh0X2NvbG9yIjoiMHhFNkZGRkZGRiIsImhpbGl0ZWRfdGV4dF9jb2xvciI6IjB4RkYyNDIzMjEiLCJsYWJlbF9jb2xvciI6IjB4RkY4QTg5ODYiLCJwcmVlZGl0X2JhY2tfY29sb3IiOiIweDAwMDAwMDAwIiwidGV4dF9jb2xvciI6IjB4RkY2QjZBNjcifSwiZm9ybWF0IjoiYWltZS10aGVtZSIsImlkIjoibG93X2NvbnRyYXN0IiwibmFtZSI6IuS9juWvueavlOW6piIsInZlcnNpb24iOjF9",
+    "url": "aime-ime://theme?v=1&d=eyJhdXRob3IiOiJGaXh0dXJlIiwiY29sb3JzIjp7ImJhY2tfY29sb3IiOiIweEY1RkNGQ0ZCIiwiYm9yZGVyX2NvbG9yIjoiMHgxNDI0MjMyMSIsImNhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRkM4QzdDNCIsImNvbW1lbnRfdGV4dF9jb2xvciI6IjB4RkY2QjZBNjciLCJoaWxpdGVkX2JhY2tfY29sb3IiOiIweDE0MjQyMzIxIiwiaGlsaXRlZF9jYW5kaWRhdGVfYmFja19jb2xvciI6IjB4RkZFREVERUIiLCJoaWxpdGVkX2NhbmRpZGF0ZV9sYWJlbF9jb2xvciI6IjB4RTZGRkZGRkYiLCJoaWxpdGVkX2NhbmRpZGF0ZV90ZXh0X2NvbG9yIjoiMHhGRkZGRkZGRiIsImhpbGl0ZWRfY29tbWVudF90ZXh0X2NvbG9yIjoiMHhFNkZGRkZGRiIsImhpbGl0ZWRfdGV4dF9jb2xvciI6IjB4RkYyNDIzMjEiLCJsYWJlbF9jb2xvciI6IjB4RkY4QTg5ODYiLCJwcmVlZGl0X2JhY2tfY29sb3IiOiIweDAwMDAwMDAwIiwidGV4dF9jb2xvciI6IjB4RkY2QjZBNjcifSwiZm9ybWF0IjoiYWltZS10aGVtZSIsImlkIjoibG93X2NvbnRyYXN0IiwibmFtZSI6IuS9juWvueavlOW6piIsInZlcnNpb24iOjF9",
+    "min_contrast": 1.17,
+    "dark": false
+  }
+]

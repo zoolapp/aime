@@ -161,6 +161,7 @@ jobs:
       - name: Build, sign and package
         env:
           VERSION: ${{ steps.version.outputs.version }}
+          AIME_MANIFEST_KEY: ${{ secrets.AIME_MANIFEST_KEY }}
         run: bash scripts/release.sh "$VERSION"
 
       - name: Verify artefacts
@@ -177,6 +178,12 @@ jobs:
           if [[ "$status" == notarized ]]; then
             spctl --assess --type install --verbose=2 "AIME-$VERSION.pkg"
             xcrun stapler validate "AIME-$VERSION.pkg"
+          elif [[ "$status" == pending ]]; then
+            echo "::warning::Apple notarization still in progress; staple later with scripts/finish-notarization.sh"
+            cat NOTARY_PENDING.txt
+          fi
+          if [[ -f latest.json.sig ]]; then
+            swift "$GITHUB_WORKSPACE/scripts/sign-manifest.swift" verify latest.json "$(awk -F'"' '/manifestPublicKey =/ {print $2; exit}' "$GITHUB_WORKSPACE/Packages/AIMEKit/Sources/AIMECore/AppUpdate.swift")"
           fi
           prerelease=false
           [[ "$status" != notarized || "$VERSION" == *-* ]] && prerelease=true
@@ -199,6 +206,10 @@ jobs:
             dist/release/AIME-*-source.tar.gz
             dist/release/SHA256SUMS.txt
             dist/release/RELEASE_NOTES.md
+            dist/release/latest.json
+            dist/release/latest.json.sig
+            dist/release/NOTARY_PENDING.txt
+            dist/release/SIGNING_STATUS
           if-no-files-found: error
           retention-days: 14
 
@@ -237,7 +248,8 @@ jobs:
           shasum -a 256 -c SHA256SUMS.txt
           title="AIME $VERSION"
           [[ "$STATUS" == preview ]] && title="$title（预览版，未签名）"
+          [[ "$STATUS" == pending ]] && title="$title（公证处理中）"
           flags=(--draft --verify-tag --title "$title" --notes-file RELEASE_NOTES.md)
           [[ "$PRERELEASE" == true ]] && flags+=(--prerelease)
           gh release create "$TAG" --repo "$GITHUB_REPOSITORY" "${flags[@]}" \
-            "AIME-$VERSION.pkg" "AIME-$VERSION.zip" SHA256SUMS.txt
+            "AIME-$VERSION.pkg" "AIME-$VERSION.zip" "AIME-$VERSION-source.tar.gz" SHA256SUMS.txt

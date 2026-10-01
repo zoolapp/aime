@@ -117,6 +117,7 @@ struct RootView: View {
         }
         .tint(Theme.accent)
         .onboardingHost()
+        .themeImportHost(model)
         .overlay(alignment: .bottom) { ErrorBanner() }
         // The input method's quick menu opens a specific pane in a running Settings app.
         .onReceive(DistributedNotificationCenter.default().publisher(for: .init("app.zool.aime.settings.showPane"))) { note in
@@ -238,7 +239,8 @@ struct ErrorBanner: View {
 }
 
 /// Launch arguments used by screenshot automation (scripts/ui-shots.sh):
-/// `--pane <id>` opens a pane, `--appearance light|dark` forces the appearance.
+/// `--pane <id>` opens a pane, `--appearance light|dark` forces the appearance,
+/// `--import-theme-url <aime-ime://theme…>` opens the theme import sheet.
 enum LaunchOptions {
     static func argument(_ name: String) -> String? {
         let args = ProcessInfo.processInfo.arguments

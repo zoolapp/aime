@@ -1,5 +1,6 @@
 public import Foundation
 import CryptoKit
+import Security
 
 /// The release manifest published at `get.zool.app/<product>/latest.json`.
 /// Only this public file is requested; nothing about the user or their input is sent.
@@ -17,10 +18,18 @@ public struct AppRelease: Codable, Sendable, Equatable {
     public var date: String?
     public var prerelease: Bool?
     public var notes: String?
+    /// Releases needing a newer macOS are not offered ("26.0").
+    public var minimumSystemVersion: String?
     public var `default`: String?
     public var files: [String: File]
 
     public var appVersion: AppVersion { AppVersion(version, build: build) }
+
+    public func supportsThisSystem(_ system: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion) -> Bool {
+        guard let minimum = minimumSystemVersion else { return true }
+        let running = AppVersion("\(system.majorVersion).\(system.minorVersion).\(system.patchVersion)")
+        return !(running < AppVersion(minimum))
+    }
 
     /// The installer package (`pkg`), or the default file.
     public var installer: File? { files["pkg"] ?? self.default.flatMap { files[$0] } }
@@ -50,6 +59,17 @@ public struct AppVersion: Comparable, Sendable, CustomStringConvertible {
     }
 
     public var description: String { build.map { "\(string) (\($0))" } ?? string }
+
+    /// Whether this copy was signed by AIME's team (a release), not an ad-hoc development
+    /// build. Development builds skip the automatic check and never offer an "update".
+    public static func isDistributionBuild(_ bundle: Bundle = .main) -> Bool {
+        var code: SecStaticCode?
+        guard SecStaticCodeCreateWithPath(bundle.bundleURL as CFURL, [], &code) == errSecSuccess, let code else { return false }
+        var info: CFDictionary?
+        guard SecCodeCopySigningInformation(code, SecCSFlags(rawValue: kSecCSSigningInformation), &info) == errSecSuccess,
+              let dictionary = info as? [String: Any] else { return false }
+        return dictionary[kSecCodeInfoTeamIdentifier as String] as? String == AppUpdateChecker.teamID
+    }
 
     public static func < (lhs: AppVersion, rhs: AppVersion) -> Bool {
         let count = max(lhs.parts.count, rhs.parts.count)
@@ -117,6 +137,7 @@ public enum AppUpdateError: Error, LocalizedError, Equatable {
     case noInstaller
     case checksumMismatch
     case untrustedPackage(String)
+    case untrustedManifest
 
     public var errorDescription: String? {
         switch self {
@@ -124,6 +145,7 @@ public enum AppUpdateError: Error, LocalizedError, Equatable {
         case .noInstaller: "此版本没有安装包"
         case .checksumMismatch: "安装包校验失败（SHA-256 不一致），已删除"
         case let .untrustedPackage(detail): "安装包签名不可信：\(detail)"
+        case .untrustedManifest: "版本清单签名校验失败，已忽略"
         }
     }
 }
@@ -135,6 +157,9 @@ public struct AppUpdateChecker: Sendable {
     public static let product = "aime"
     /// Team that signs AIME installers; downloaded packages must carry this signature.
     public static let teamID = "PX694P4CGY"
+    /// Ed25519 key that signs latest.json (scripts/sign-manifest.swift); the manifest is
+    /// trusted only with a valid latest.json.sig, whatever host serves it.
+    public static let manifestPublicKey = "O7FCOIU2KiHoIyJnCh4tcZRCmgaiMtElud2wmuIMglw="
 
     public var manifestURL: URL
     public var session: URLSession
@@ -146,11 +171,27 @@ public struct AppUpdateChecker: Sendable {
     }
 
     public func fetchLatest() async throws -> AppRelease {
-        var request = URLRequest(url: manifestURL, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 20)
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        let data = try await get(manifestURL)
+        let signature = try await get(manifestURL.appendingPathExtension("sig"))
+        guard Self.verify(manifest: data, signature: signature) else { throw AppUpdateError.untrustedManifest }
+        return try JSONDecoder().decode(AppRelease.self, from: data)
+    }
+
+    private func get(_ url: URL) async throws -> Data {
+        var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 20)
+        request.setValue("*/*", forHTTPHeaderField: "Accept")
         let (data, response) = try await session.data(for: request)
         if let http = response as? HTTPURLResponse, http.statusCode != 200 { throw AppUpdateError.badResponse(http.statusCode) }
-        return try JSONDecoder().decode(AppRelease.self, from: data)
+        return data
+    }
+
+    /// `signature` is the base64 text of latest.json.sig.
+    static func verify(manifest: Data, signature: Data, publicKey: String = manifestPublicKey) -> Bool {
+        guard let keyData = Data(base64Encoded: publicKey),
+              let key = try? Curve25519.Signing.PublicKey(rawRepresentation: keyData),
+              let text = String(data: signature, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
+              let raw = Data(base64Encoded: text) else { return false }
+        return key.isValidSignature(raw, for: manifest)
     }
 
     /// Checks once, records the result in `state` and returns the release when newer.
@@ -159,7 +200,7 @@ public struct AppUpdateChecker: Sendable {
         let latest = try await fetchLatest()
         var state = AppUpdateState.load(paths)
         state.lastCheck = now
-        state.available = current < latest.appVersion ? latest : nil
+        state.available = current < latest.appVersion && latest.supportsThisSystem() ? latest : nil
         try state.save(paths)
         return state.pending(current: current)
     }

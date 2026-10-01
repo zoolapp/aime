@@ -17,7 +17,7 @@ struct OnboardingView: View {
     let finish: () -> Void
 
     enum Step: Int, CaseIterable {
-        case welcome, enable, scheme, habits, smart, practice, done
+        case welcome, enable, scheme, habits, apps, smart, practice, done
 
         var title: String {
             switch self {
@@ -25,6 +25,7 @@ struct OnboardingView: View {
             case .enable: "启用艾么输入法"
             case .scheme: "你平时怎么打字？"
             case .habits: "候选词怎么显示"
+            case .apps: "按应用自动切换中英文"
             case .smart: "智能功能"
             case .practice: "试一试"
             case .done: "准备好了"
@@ -37,6 +38,7 @@ struct OnboardingView: View {
             case .enable: "在系统设置里添加一次，之后用 ⌃空格 或菜单栏切换。"
             case .scheme: "选你习惯的方式，之后随时可以在「输入方案」里改。"
             case .habits: "三个最常调整的选项，下面是实时预览。"
+            case .apps: "看看你装了哪些应用：写代码时默认英文，聊天和写作时默认中文。每个都可以改。"
             case .smart: "都是可选的，之后可以随时在设置里改。数据只留在你的 Mac 上。"
             case .practice: "切换到艾么输入法，在下面的输入框里跟着做。"
             case .done: "设置都已生效。常用的操作记在这里。"
@@ -52,7 +54,6 @@ struct OnboardingView: View {
         var traditional = false
         var aiActions = false
         var stats = false
-        var smartApps = true
         var samplePhrases = true
         var importSquirrel = false
     }
@@ -85,12 +86,34 @@ struct OnboardingView: View {
         }
         // A sheet does not inherit the window's tint.
         .tint(Theme.accent)
+        .background(WindowReader { OnboardingWindow.window = $0 })
+        .onChange(of: step) { OnboardingWindow.fit(preferredSize, animated: !reduceMotion) }
+        .onChange(of: model.appScanPhase) { if step == .apps { OnboardingWindow.fit(preferredSize, animated: !reduceMotion) } }
+        .task {
+            try? await Task.sleep(for: .milliseconds(80))
+            OnboardingWindow.fit(preferredSize, animated: false)
+        }
         .onAppear {
             load()
             // Screenshot automation: `--onboarding-step=<n>` opens a given step. One token: a bare
             // number would make AppKit treat it as a document to open and skip the window.
             if let raw = ProcessInfo.processInfo.arguments.first(where: { $0.hasPrefix("--onboarding-step=") })?.split(separator: "=").last,
                let n = Int(raw), let target = Step(rawValue: n) { step = target }
+        }
+    }
+
+    /// The window size each step wants; the window animates between them.
+    private var preferredSize: CGSize {
+        switch step {
+        case .welcome: CGSize(width: 820, height: 600)
+        case .enable: CGSize(width: 820, height: 620)
+        case .scheme: CGSize(width: 840, height: 660)
+        case .habits: CGSize(width: 840, height: 720)
+        case .apps: model.appScanPhase == .review && !model.appSuggestions.isEmpty
+            ? CGSize(width: 900, height: 780) : CGSize(width: 900, height: 740)
+        case .smart: CGSize(width: 840, height: 700)
+        case .practice: CGSize(width: 840, height: 700)
+        case .done: CGSize(width: 820, height: 660)
         }
     }
 
@@ -118,7 +141,7 @@ struct OnboardingView: View {
             if step == .enable, !model.isInputSourceEnabled {
                 Button("稍后再说") { go(1) }.buttonStyle(.borderless).foregroundStyle(.secondary)
             }
-            if step == .practice { Button("跳过") { go(1) }.buttonStyle(.borderless).foregroundStyle(.secondary) }
+            if step == .practice || step == .apps { Button("跳过") { go(1) }.buttonStyle(.borderless).foregroundStyle(.secondary) }
             Button(primaryTitle) { primaryAction() }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
@@ -130,6 +153,7 @@ struct OnboardingView: View {
 
     private var primaryTitle: String {
         switch step {
+        case .apps: model.appScanPhase == .review && !model.appSuggestions.filter(\.selected).isEmpty ? "应用并继续" : "继续"
         case .smart: applying ? "正在应用…" : "应用并继续"
         case .done: "开始使用"
         default: "继续"
@@ -138,6 +162,9 @@ struct OnboardingView: View {
 
     private func primaryAction() {
         switch step {
+        case .apps:
+            if model.appScanPhase == .review { model.applyAppSuggestions() }
+            go(1)
         case .smart: Task { await apply() }
         case .done: finish()
         default: go(1)
@@ -164,6 +191,7 @@ struct OnboardingView: View {
                     case .enable: EnableStep()
                     case .scheme: SchemeStep(choices: $choices)
                     case .habits: HabitsStep(choices: $choices)
+                    case .apps: AppsStep()
                     case .smart: SmartStep(choices: $choices)
                     case .practice: PracticeStep(samples: choices.samplePhrases ? Self.samples : [])
                     default: DoneStep()
@@ -223,11 +251,6 @@ struct OnboardingView: View {
                 model.updatePhrases { phrases in for sample in missing { _ = phrases.add(.init(text: sample.text, code: sample.code)) } }
                 model.savePhrases()
             }
-        }
-        if choices.smartApps {
-            await model.scanInstalledApps()
-            model.applyAppSuggestions()
-            model.dismissAppScan()
         }
         go(1)
     }
@@ -426,14 +449,172 @@ private struct SmartStep: View {
     var body: some View {
         VStack(spacing: 10) {
             FeatureToggle(isOn: $choices.aiActions, symbol: "sparkles", title: "AI 翻译与润色",
-                          detail: "长按 ⌥ 或按 ⌃⌥P，对选中或刚打的文字翻译、润色。默认用 Apple 端侧模型；只有你执行时才处理那一段文字。")
+                          detail: "长按 ⌥ 或按 ⌃⌥P，对选中或刚打的文字翻译、润色。只有你执行时才处理那一段文字；Apple 端侧模型取决于设备与地区，也可以配置自己的接口。")
             FeatureToggle(isOn: $choices.stats, symbol: "chart.bar.xaxis", title: "输入统计",
-                          detail: "每天打了多少字、在哪些应用、高频词。只记数字，不记句子，只存在本机。")
-            FeatureToggle(isOn: $choices.smartApps, symbol: "square.grid.2x2", title: "按应用自动切换中英文",
-                          detail: "扫描已安装的应用：终端和代码编辑器进入时默认英文，聊天、浏览器和笔记默认中文。")
+                          detail: "每天打了多少字、在哪些应用、2–8 字的高频词。不记句子，只存在本机，可随时清空。")
             FeatureToggle(isOn: $choices.samplePhrases, symbol: "text.quote", title: "添加示例短语",
                           detail: "打 am 出「艾么输入法」、gw 出官网、yx 出邮箱，下一步就用它们演示；随时可在「自定义短语」删除。")
         }
+    }
+}
+
+/// Scans installed apps with a little motion (icons drift in while the scan runs), then
+/// lists the recommendations with their default input mode; nothing is written until
+/// the user continues.
+private struct AppsStep: View {
+    @Environment(SettingsModel.self) private var model
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var seen: [ScannedIcon] = []
+    @State private var scannedCount = 0
+    @State private var shownRows = 0
+
+    struct ScannedIcon: Identifiable, Equatable { let id: String; let path: String; let slot: Int }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            switch model.appScanPhase {
+            case let .scanning(fraction, name, _):
+                scanning(fraction: fraction, name: name)
+            case .review:
+                review
+            default:
+                scanning(fraction: 0, name: "")
+            }
+        }
+        .task {
+            if model.appScanPhase != .review { await model.scanInstalledApps() }
+        }
+        .onChange(of: model.appScanPhase) { _, phase in
+            if case let .scanning(_, name, path?) = phase, !name.isEmpty, !seen.contains(where: { $0.path == path }) {
+                let slot = scannedCount % OrbitScanner.slots
+                scannedCount += 1
+                withAnimation(reduceMotion ? nil : .spring(duration: 0.5, bounce: 0.32)) {
+                    seen.removeAll { $0.slot == slot }
+                    seen.append(ScannedIcon(id: path, path: path, slot: slot))
+                }
+            }
+            if phase == .review { revealRows() }
+        }
+        .onAppear { if model.appScanPhase == .review { revealRows() } }
+    }
+
+    private func scanning(fraction: Double, name: String) -> some View {
+        VStack(spacing: 18) {
+            OrbitScanner(icons: seen, fraction: fraction, reduceMotion: reduceMotion)
+                .frame(width: 440, height: 440)
+            VStack(spacing: 6) {
+                Text(name.isEmpty ? "正在查看已安装的应用…" : "正在查看 \(name)")
+                    .font(.headline).contentTransition(.opacity)
+                Text("已查看 \(scannedCount) 个应用 · 只读取应用名称与标识，不读取任何内容")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder private var review: some View {
+        let items = model.appSuggestions
+        if items.isEmpty {
+            Label("没有需要特别设置的应用。之后可以在「应用」里随时添加。", systemImage: "checkmark.circle")
+                .foregroundStyle(.secondary)
+        } else {
+            let recommended = items.filter(\.selected).count
+            Text(summary(recommended: recommended, optional: items.count - recommended))
+                .font(.callout).foregroundStyle(.secondary)
+            ScrollView {
+                VStack(spacing: 0) {
+                    ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                        if index > 0 { Divider().opacity(0.5) }
+                        SuggestionRow(suggestion: item)
+                            .padding(.vertical, 6)
+                            .opacity(index < shownRows ? 1 : 0)
+                            .offset(y: index < shownRows ? 0 : 10)
+                    }
+                }
+                .padding(.horizontal, 14).padding(.vertical, 6)
+                .background(Theme.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.cardBorder))
+            }
+            .frame(maxHeight: 360)
+        }
+    }
+
+    private func summary(recommended: Int, optional: Int) -> String {
+        var parts: [String] = []
+        if recommended > 0 { parts.append("\(recommended) 个推荐（已勾选）") }
+        if optional > 0 { parts.append("\(optional) 个可选（需要时勾选）") }
+        let configured = model.configuredAppCount
+        let tail = configured > 0 ? "；已设置过的 \(configured) 个应用保持不变" : ""
+        return "找到 " + parts.joined(separator: "、") + tail + "。"
+    }
+
+    /// Rows arrive one after another (instantly with Reduce Motion).
+    private func revealRows() {
+        let count = model.appSuggestions.count
+        guard !reduceMotion else { shownRows = count; return }
+        for index in 0...count {
+            withAnimation(.spring(duration: 0.4, bounce: 0.2).delay(Double(index) * 0.045)) { shownRows = index }
+        }
+    }
+}
+
+/// The AIME mark at the center with the scan progress as a ring; apps found so far sit
+/// on two slowly turning orbits, newest replacing oldest.
+private struct OrbitScanner: View {
+    static let slots = 14
+    let icons: [AppsStep.ScannedIcon]
+    let fraction: Double
+    let reduceMotion: Bool
+
+    var body: some View {
+        TimelineView(.animation(paused: reduceMotion)) { context in
+            let turn = reduceMotion ? 0 : context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 120) / 120
+            ZStack {
+                ForEach([110.0, 175.0, 214.0], id: \.self) { radius in
+                    Circle().strokeBorder(Color.primary.opacity(radius == 214 ? 0.035 : 0.07), lineWidth: 1)
+                        .frame(width: radius * 2, height: radius * 2)
+                }
+                Circle()
+                    .trim(from: 0, to: 0.18)
+                    .stroke(AngularGradient(colors: [Theme.accent.opacity(0), Theme.accent.opacity(0.35)], center: .center),
+                            style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                    .frame(width: 350, height: 350)
+                    .rotationEffect(.degrees(turn * 360 * 6))
+                ForEach(icons) { icon in
+                    let slot = position(icon.slot, turn: turn)
+                    Image(nsImage: NSWorkspace.shared.icon(forFile: icon.path))
+                        .resizable()
+                        .frame(width: slot.size, height: slot.size)
+                        .shadow(color: .black.opacity(0.14), radius: 8, y: 4)
+                        .offset(x: slot.point.x, y: slot.point.y)
+                        .transition(.scale(scale: 0.2).combined(with: .opacity))
+                }
+                ZStack {
+                    Circle().stroke(Color.primary.opacity(0.08), lineWidth: 5)
+                    Circle().trim(from: 0, to: max(0.02, fraction))
+                        .stroke(Theme.accent, style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                        .animation(.easeOut(duration: 0.3), value: fraction)
+                    Image("BrandSquare").resizable().scaledToFit().frame(width: 76, height: 76)
+                        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                }
+                .frame(width: 112, height: 112)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("正在扫描已安装的应用，已完成 \(Int(fraction * 100))%")
+    }
+
+    /// Six slots on the inner orbit, eight on the outer one, each orbit turning its own way.
+    private func position(_ index: Int, turn: Double) -> (point: CGPoint, size: CGFloat) {
+        // Even slots fill the inner orbit, odd ones the outer, so both rings grow together.
+        let n = index % Self.slots
+        let inner = n % 2 == 0 && n / 2 < 6
+        let count = inner ? 6.0 : 8.0
+        let i = Double(inner ? n / 2 : (n % 2 == 1 ? n / 2 : n / 2 - 6 + 7) % 8)
+        let radius = inner ? 110.0 : 175.0
+        let angle = (i / count + (inner ? turn : -turn * 0.7) + (inner ? 0 : 1 / 16)) * 2 * .pi
+        return (CGPoint(x: cos(angle) * radius, y: sin(angle) * radius), inner ? 44 : 50)
     }
 }
 
@@ -732,15 +913,16 @@ private struct OnboardingHost: ViewModifier {
                 OnboardingView {
                     completed = true
                     withAnimation(.easeInOut(duration: 0.35)) { presented = false }
+                    OnboardingWindow.restore()
                 }
-                .frame(minWidth: 780, minHeight: 620)
+                .frame(minWidth: 700, minHeight: 540)
                 // Full-bleed: no title bar band, only the window controls over the guide.
                 .ignoresSafeArea()
                 .toolbar(removing: .title)
                 .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
                 .transition(.opacity)
             } else {
-                content.transition(.opacity)
+                content.frame(minWidth: 900, minHeight: 620).transition(.opacity)
             }
         }
         .onChange(of: completed) { _, done in
@@ -767,5 +949,44 @@ struct RerunOnboardingButton: View {
     var body: some View {
         Button { completed = false } label: { Label("新手引导", systemImage: "sparkles.rectangle.stack") }
             .help("重新运行首次启动的引导")
+    }
+}
+
+/// Resizes the settings window for onboarding (kept centered, inside the screen) and
+/// puts it back afterwards.
+@MainActor
+enum OnboardingWindow {
+    static weak var window: NSWindow? { didSet { if original == nil, let window { original = window.frame } } }
+    private static var original: NSRect?
+
+    static func fit(_ size: CGSize, animated: Bool) {
+        guard let window, let screen = window.screen?.visibleFrame else { return }
+        let width = min(size.width, screen.width - 40), height = min(size.height, screen.height - 40)
+        var frame = NSRect(x: window.frame.midX - width / 2, y: window.frame.maxY - height, width: width, height: height)
+        frame.origin.x = min(max(frame.minX, screen.minX + 20), screen.maxX - width - 20)
+        frame.origin.y = min(max(frame.minY, screen.minY + 20), screen.maxY - height - 20)
+        guard frame.integral != window.frame.integral else { return }
+        window.setFrame(frame, display: true, animate: animated)
+    }
+
+    static func restore() {
+        guard let window, let original else { return }
+        let target = NSRect(origin: original.origin,
+                            size: CGSize(width: max(original.width, 900), height: max(original.height, 620)))
+        window.setFrame(target, display: true, animate: true)
+        self.original = nil
+    }
+}
+
+/// Hands the hosting NSWindow to a closure once the view is in a window.
+struct WindowReader: NSViewRepresentable {
+    let found: (NSWindow) -> Void
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async { if let window = view.window { found(window) } }
+        return view
+    }
+    func updateNSView(_ view: NSView, context: Context) {
+        if let window = view.window { found(window) }
     }
 }

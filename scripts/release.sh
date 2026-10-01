@@ -45,18 +45,30 @@ else STATUS=preview
 fi
 echo "==> AIME $VERSION ($STATUS)"
 
-notarize() {  # <file>: submit, wait (bounded) and require "Accepted"
-  local file="$1" result id
+# Waits up to AIME_NOTARY_WAIT (default 20m). A new team's first submissions can sit in
+# Apple's queue for hours: that is not a failure. The artefacts are still signed and
+# uploaded, the submission ids land in NOTARY_PENDING.txt, and scripts/finish-notarization.sh
+# staples them once Apple accepts. Only a rejection ("Invalid") fails the release.
+PENDING="$OUT/NOTARY_PENDING.txt"
+notarize() {  # <file>: 0 accepted, 2 still in progress; exits on rejection
+  local file="$1" result id status
   result="$(xcrun notarytool submit "$file" --key "$AIME_NOTARY_KEY_PATH" --key-id "$AIME_NOTARY_KEY_ID" \
-    --issuer "$AIME_NOTARY_ISSUER_ID" --wait --timeout 30m --output-format json)" || true
+    --issuer "$AIME_NOTARY_ISSUER_ID" --wait --timeout "${AIME_NOTARY_WAIT:-20m}" --output-format json)" || true
   id="$(plutil -extract id raw -o - - <<<"$result" 2>/dev/null || true)"
-  if [[ "$(plutil -extract status raw -o - - <<<"$result" 2>/dev/null || true)" != Accepted ]]; then
-    echo "notarization of $(basename "$file") failed: $result" >&2
-    [[ -n "$id" ]] && xcrun notarytool log "$id" --key "$AIME_NOTARY_KEY_PATH" \
-      --key-id "$AIME_NOTARY_KEY_ID" --issuer "$AIME_NOTARY_ISSUER_ID" >&2 || true
-    return 1
+  status="$(plutil -extract status raw -o - - <<<"$result" 2>/dev/null || true)"
+  if [[ "$status" == Accepted ]]; then
+    echo "==> notarized $(basename "$file") (submission $id)"
+    return 0
   fi
-  echo "==> notarized $(basename "$file") (submission $id)"
+  if [[ -n "$id" && ( -z "$status" || "$status" == "In Progress" ) ]]; then
+    echo "==> notarization of $(basename "$file") still in progress (submission $id)"
+    printf '%s\t%s\n' "$(basename "$file")" "$id" >> "$PENDING"
+    return 2
+  fi
+  echo "notarization of $(basename "$file") failed: $result" >&2
+  [[ -n "$id" ]] && xcrun notarytool log "$id" --key "$AIME_NOTARY_KEY_PATH" \
+    --key-id "$AIME_NOTARY_KEY_ID" --issuer "$AIME_NOTARY_ISSUER_ID" >&2 || true
+  exit 1
 }
 
 AIME_REQUIRE_TIMESTAMP=$([[ "$IDENTITY" == "-" ]] && echo 0 || echo 1) bash scripts/build-app.sh
@@ -69,24 +81,56 @@ ZIP="$OUT/AIME-$VERSION.zip"
 if [[ "$NOTARIZE" == 1 ]]; then
   # Notarize and staple the app first so both the zip and the pkg carry the ticket.
   ditto -c -k --keepParent "$APP" "$OUT/notarize-app.zip"
-  notarize "$OUT/notarize-app.zip"
+  if notarize "$OUT/notarize-app.zip"; then
+    xcrun stapler staple "$APP"
+    xcrun stapler validate "$APP"
+  else
+    STATUS=pending
+  fi
   rm -f "$OUT/notarize-app.zip"
-  xcrun stapler staple "$APP"
-  xcrun stapler validate "$APP"
 fi
 
 SKIP_BUILD=1 bash scripts/package.sh
 mv "dist/AIME-$APP_VERSION.pkg" "$PKG"
 if [[ "$NOTARIZE" == 1 ]]; then
-  notarize "$PKG"
-  xcrun stapler staple "$PKG"
-  xcrun stapler validate "$PKG"
+  if notarize "$PKG"; then
+    xcrun stapler staple "$PKG"
+    xcrun stapler validate "$PKG"
+  else
+    STATUS=pending
+  fi
 fi
 
 ditto -c -k --keepParent "$APP" "$ZIP"
 SRC="$OUT/AIME-$VERSION-source.tar.gz"
 bash scripts/source-archive.sh "$VERSION" "$OUT"
 (cd "$OUT" && shasum -a 256 "$(basename "$PKG")" "$(basename "$ZIP")" "$(basename "$SRC")" > SHA256SUMS.txt)
+
+# The update manifest served at get.zool.app/aime/latest.json, signed with Ed25519 so the
+# app trusts it independently of the host. Official builds must sign it.
+BUILD="$(awk -F'"' '/CURRENT_PROJECT_VERSION/ {print $2; exit}' project.yml)"
+python3 - "$OUT" "$VERSION" "$BUILD" "$STATUS" <<'PY'
+import hashlib, json, os, sys, datetime
+out, version, build, status = sys.argv[1:5]
+def entry(name):
+    path = os.path.join(out, name)
+    return {"name": name, "size": os.path.getsize(path), "sha256": hashlib.sha256(open(path, "rb").read()).hexdigest()}
+manifest = {
+    "product": "aime", "version": version, "build": int(build),
+    "date": datetime.date.today().isoformat(), "prerelease": "-" in version or status != "notarized",
+    "minimumSystemVersion": "26.0", "default": "pkg",
+    "files": {"pkg": entry(f"AIME-{version}.pkg"), "zip": entry(f"AIME-{version}.zip"),
+              "source": entry(f"AIME-{version}-source.tar.gz"), "sums": {"name": "SHA256SUMS.txt"}},
+}
+json.dump(manifest, open(os.path.join(out, "latest.json"), "w"), ensure_ascii=False, indent=2)
+open(os.path.join(out, "latest.json"), "a").write("\n")
+PY
+if [[ -n "${AIME_MANIFEST_KEY:-}" ]]; then
+  swift scripts/sign-manifest.swift sign "$OUT/latest.json"
+elif [[ "$NOTARIZE" == 1 ]]; then
+  echo "AIME_MANIFEST_KEY is required to sign latest.json for an official release" >&2
+  exit 1
+fi
 
 # Release notes: the CHANGELOG section for this version, else a template.
 NOTES="$OUT/RELEASE_NOTES.md"
@@ -109,6 +153,8 @@ SECTION="$(awk -v v="$VERSION" '
       echo "已使用 Developer ID 签名（Hardened Runtime + 可信时间戳），并通过 Apple 公证、已装订票据。" ;;
     signed)
       echo "已使用 Developer ID 签名，**未经 Apple 公证**。" ;;
+    pending)
+      echo "已使用 Developer ID 签名；**Apple 公证处理中**，通过后会替换为装订了公证票据的安装包（文件名不变，SHA-256 会更新）。" ;;
     preview)
       cat <<'MD'
 **预览版：未使用 Developer ID 签名（仅 ad-hoc 签名），未经 Apple 公证。** 仅供了解风险的测试者使用。

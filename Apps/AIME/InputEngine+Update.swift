@@ -10,7 +10,7 @@ import AppKit
 extension InputEngine {
     func checkForAppUpdate() {
         let state = AppUpdateState.load(paths)
-        guard state.isDue() else { return }
+        guard state.isDue(), AppVersion.isDistributionBuild() else { return }
         let paths = paths
         let current = AppVersion.current()
         Task.detached(priority: .utility) {
@@ -22,7 +22,9 @@ extension InputEngine {
     }
 
     /// The release to offer in the input menu, if any.
-    var pendingUpdate: AppRelease? { AppUpdateState.load(paths).pending(current: .current()) }
+    var pendingUpdate: AppRelease? {
+        AppVersion.isDistributionBuild() ? AppUpdateState.load(paths).pending(current: .current()) : nil
+    }
 
     private func announceUpdate(_ release: AppRelease) {
         logger.info("update available: \(release.appVersion.description, privacy: .public)")

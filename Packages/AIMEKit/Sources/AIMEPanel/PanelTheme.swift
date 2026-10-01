@@ -73,6 +73,8 @@ public struct PanelTheme: Sendable, Hashable {
     public var alpha: Double
     public var cornerRadius: Double
     public var hilitedCornerRadius: Double
+    /// The highlight radius as configured (may be 0), before AIME's soft minimum.
+    public var configuredHilitedCornerRadius: Double
     public var borderHeight: Double
     public var borderWidth: Double
     public var lineSpacing: Double
@@ -149,6 +151,7 @@ public struct PanelTheme: Sendable, Hashable {
             ?? max(double("corner_radius", 10), Self.minimumCornerRadius)
         hilitedCornerRadius = aime?["hilited_corner_radius"]?.doubleValue
             ?? max(double("hilited_corner_radius", 6), Self.minimumHilitedCornerRadius)
+        configuredHilitedCornerRadius = max(0, value("hilited_corner_radius")?.doubleValue ?? hilitedCornerRadius)
         borderHeight = double("border_height", 6)
         borderWidth = double("border_width", 8)
         lineSpacing = double("line_spacing", 4)
@@ -206,5 +209,25 @@ public struct PanelTheme: Sendable, Hashable {
     /// Background as seen by the user, assuming a mid-gray desktop behind translucent panels.
     var dimmedBackground: ThemeColor {
         backColor.over(ThemeColor(red: 0.5, green: 0.5, blue: 0.5))
+    }
+}
+
+extension PanelTheme {
+    /// How the highlighted candidate meets the panel's edge.
+    public enum HighlightShape: Sendable, Hashable {
+        /// Squirrel's edge-to-edge style (borders of 0–2 pt): the highlight reaches the
+        /// panel's edge and takes the panel's own corner where it touches one.
+        case filled
+        /// The highlight floats inside the panel with a margin.
+        case inset
+    }
+
+    public var highlightShape: HighlightShape { borderWidth <= 2 && borderHeight <= 2 ? .filled : .inset }
+
+    /// Radius of a floating highlight sitting `gap` points inside a panel corner of
+    /// `panelRadius`. Close to the corner it is concentric with it (no wedge of panel
+    /// color in the corner); with a generous margin the theme's own radius is kept.
+    public func insetHighlightRadius(gap: Double, panelRadius: Double) -> Double {
+        gap < panelRadius / 2 ? max(2, panelRadius - gap) : min(hilitedCornerRadius, panelRadius)
     }
 }

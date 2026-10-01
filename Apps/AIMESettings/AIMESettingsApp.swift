@@ -21,9 +21,9 @@ struct AIMESettingsApp: App {
 
     var body: some Scene {
         Window("艾么输入法设置", id: "main") {
+            // The settings layout needs 900 × 620; onboarding sizes the window per step.
             RootView()
                 .environment(model)
-                .frame(minWidth: 900, minHeight: 620)
         }
         .defaultSize(width: 1080, height: 720)
         // A settings app must always open its window: never restore a "closed" state.
