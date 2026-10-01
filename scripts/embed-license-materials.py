@@ -52,7 +52,7 @@ def embed(source_root, app):
     if actual_names != expected_names:
         raise ValueError("bundled plugin directory differs from audited inventory")
     for path in ["LICENSE", "THIRD_PARTY_NOTICES.md", inventory_path,
-                 "docs/native-plugin-license-audit.md", "docs/release-plan.md"]:
+                 "docs/native-plugin-license-audit.md", "docs/release-checklist.md"]:
         payload[path] = (source_root / path).read_bytes()
     payload["README.txt"] = (
         "AIME license materials — partial inventory\n"
