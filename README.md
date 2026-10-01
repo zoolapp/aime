@@ -1,20 +1,20 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/brand/aime/base-v1/lockup-white.png">
-    <img src="assets/brand/aime/base-v1/lockup-color.png" width="300" alt="AIME">
+    <img src="assets/brand/aime/base-v1/lockup-color.png" width="300" alt="AIME · 艾么输入法">
   </picture>
 </p>
 
-<p align="center"><b>Fresh Chinese, freely expressed.</b></p>
+<p align="center"><b>中文常新，自在表达。</b></p>
 
-<p align="center">An open-source Chinese input method for macOS, built on RIME · local first · optional AI</p>
+<p align="center">基于 RIME 的开源 macOS 中文输入法 · 本地优先 · 可选 AI</p>
 
 <p align="center">
-  <a href="https://aime.zool.app/en/">Website</a> ·
-  <a href="https://github.com/zoolapp/aime/releases">Download</a> ·
-  <a href="https://aime.zool.app/en/docs/">Documentation</a> ·
-  <a href="docs/privacy.md">Privacy</a> ·
-  <a href="README.zh.md">中文</a>
+  <a href="https://aime.zool.app">官网</a> ·
+  <a href="https://github.com/zoolapp/aime/releases">下载</a> ·
+  <a href="https://aime.zool.app/docs/">使用文档</a> ·
+  <a href="docs/privacy.md">隐私说明</a> ·
+  <a href="README.en.md">English</a>
 </p>
 
 <p align="center">
@@ -27,95 +27,94 @@
 </p>
 
 <p align="center">
-  <img src="assets/screenshots/settings-overview-light.png" width="860" alt="AIME Settings · Overview">
+  <img src="assets/screenshots/settings-overview-light.png" width="860" alt="艾么输入法设置 · 概览">
 </p>
 
 > [!IMPORTANT]
-> **Developer preview.** The installer is not yet signed with a Developer ID or notarized; until it is, packages on
-> [Releases](https://github.com/zoolapp/aime/releases) are pre-releases — see Install below. AIME is an independent project, not a fork of
-> Squirrel, contains none of its GPL source, and can be installed alongside it.
+> **开发预览版。** 正式安装包尚未完成 Developer ID 签名与公证；在此之前，[Releases](https://github.com/zoolapp/aime/releases) 中的安装包为预发布版本，
+> 安装说明见下文。AIME 是独立项目，不是鼠须管（Squirrel）的分支，不包含其 GPL 源码，可与鼠须管同时安装。
 
-## Why AIME
+## 为什么是 AIME
 
 | | |
 |---|---|
-| **Open source, built on RIME** | Powered by [librime](https://github.com/rime/librime) with [rime-ice](https://github.com/iDvel/rime-ice) as the default schema. Reads your existing RIME configuration and imports from Squirrel read-only. AIME's own code is MIT-licensed. |
-| **Your typing stays on your Mac** | Input is processed locally: no input logs, no collection or upload of what you type, no analytics. Snippets and input statistics never leave the Mac. |
-| **AI-powered, on your terms** | Translate, polish, convert Simplified/Traditional or run your own prompts — hold ⌥, press Space, done at the cursor. Defaults to Apple's on-device model and only touches the text you choose. |
-| **Smoother typing** | librime runs in-process with a natively drawn candidate window — p50 0.34 ms / p99 0.61 ms per key for rime-ice on a development Mac. Snippet categories, phrase codes, a symbol board picked by letter keys, pinned frequent words. |
+| **开源，站在 RIME 肩上** | 以 [librime](https://github.com/rime/librime) 为引擎、[雾凇拼音](https://github.com/iDvel/rime-ice) 为默认方案。读取你已有的 RIME 配置，从鼠须管只读导入，一步迁移。AIME 原创代码以 MIT 许可开源。 |
+| **你的输入，只在你的 Mac 上** | 打字在本机处理，不写输入日志，不收集、不上传你的输入，没有任何统计上报。常用语与输入统计只存于本机。 |
+| **AI 驱动，但由你决定** | 翻译、润色、简繁转换与自定义动作，长按 ⌥ 再按空格即可在光标处完成。默认使用 Apple 端侧模型；只有你主动执行时才处理那一段文字。 |
+| **更丝滑的输入** | librime 进程内运行，候选窗原生自绘；开发机实测雾凇拼音单键 p50 0.34 ms / p99 0.61 ms。常用语分类、短语编码、符号板字母直选、高频词置顶。 |
 
-## Features
+## 功能
 
-- **Quick menu** — hold ⌥ while typing: Space opens AI actions, digits open snippets, symbols, frequent words and settings; no mouse needed.
-- **AI actions** — translate, polish, convert or run custom actions (e.g. Cantonese) on the selection, the text just typed, or the candidate being composed; results appear as candidates and Return replaces the text.
-- **Draft layer (optional)** — typed text waits at the cursor until Return, so a whole sentence can be polished before it is sent.
-- **Visual settings** — 80+ options covering everyday RIME configuration: candidates, Chinese/English switching, fuzzy pinyin, shortcuts, Traditional output, per-app defaults ([research notes](docs/rime-config-reference.md)).
-- **Appearance** — colour scheme gallery with live preview, fonts, horizontal or vertical layout, radii and spacing, custom schemes with contrast warnings.
-- **Vocabulary** — an official online catalogue (versioned, SHA-256 verified, daily or weekly updates), any RIME-compatible word list, and one-click schema packages (rime-ice, Wanxiang, rime-frost) with conflict warnings.
-- **Snippets and phrases** — categorised snippets (phone, email, address…) and a table editor for custom phrases.
-- **Input statistics (optional, local only)** — daily characters, hours and apps, frequent words you can pin.
-- **Sync and backup** — merge learned frequencies across Macs through a RIME sync folder; export and restore a local backup file, with no cloud involved.
-- **First-run guide** — from enabling the input method to choosing full or double pinyin and trying sample phrases, in about a minute.
-- **CLI** — `aime deploy / bench / doctor / import-squirrel / package / get / set / sync` for scripting and CI.
+- **快捷菜单**：打字时长按 ⌥，空格进入 AI 处理，数字键进入常用语、符号、高频词与设置，全程不离开键盘。
+- **AI 处理**：对选中文字、刚打的字或正在选的候选执行翻译、润色、简繁转换，或你自己写提示词的动作（如「粤语」）；结果以候选列表呈现，回车替换。
+- **输入图层（可选）**：打出的字先停在光标处，回车上屏，便于整段润色后再发送。
+- **可视化设置**：候选数量、中英切换、模糊音、简拼纠错、快捷键、简繁输出、按应用默认中英文等 80 余项，覆盖常用 RIME 配置（[调研文档](docs/rime-config-reference.md)）。
+- **外观**：配色画廊与实时预览、字体字号、横排 / 竖排、圆角与间距；可基于任一配色自定义，并提示对比度不足。
+- **词库**：官方在线词库目录（版本与 SHA-256 校验，每天 / 每周自动更新），任意 RIME 兼容词表订阅；雾凇、万象、白霜等方案一键安装，冲突先提示。
+- **常用语与短语**：分类管理手机号、邮箱、地址等常用内容；表格编辑自定义短语。
+- **输入统计（可选，仅本机）**：每日字数、时段与应用分布、高频词，一键置顶为首选。
+- **同步与备份**：基于 RIME 同步目录在多台 Mac 间合并词频；一键导出 / 恢复本地备份文件，不经任何云端。
+- **首次引导**：从启用输入法到选择全拼 / 双拼、试打示例短语，一分钟完成。
+- **命令行**：`aime deploy / bench / doctor / import-squirrel / package / get / set / sync`，便于脚本化与 CI。
 
 <p align="center">
-  <img src="assets/screenshots/settings-appearance-dark.png" width="49%" alt="Appearance (dark)">
-  <img src="assets/screenshots/settings-dictionaries-light.png" width="49%" alt="Vocabulary">
+  <img src="assets/screenshots/settings-appearance-dark.png" width="49%" alt="外观（深色）">
+  <img src="assets/screenshots/settings-dictionaries-light.png" width="49%" alt="词库">
 </p>
 
-## Install
+## 安装
 
-### Pre-release package
+### 预发布安装包
 
-1. Download the latest `AIME-<version>.pkg` from [Releases](https://github.com/zoolapp/aime/releases) and verify it with the `SHA256SUMS.txt` on the same page:
+1. 在 [Releases](https://github.com/zoolapp/aime/releases) 下载最新的 `AIME-<版本>.pkg`，并用同一页面的 `SHA256SUMS.txt` 校验：
 
    ```bash
    shasum -a 256 -c SHA256SUMS.txt --ignore-missing
    ```
 
-2. Pre-releases are not notarized: right-click the package and choose Open, or remove the quarantine attribute first with `xattr -dr com.apple.quarantine AIME-<version>.pkg`.
-3. Open **System Settings › Keyboard › Input Sources › Edit…**, click **+** and add **AIME** under Chinese, Simplified. If it does not appear after the first install, log out and back in.
+2. 未公证的预发布版本需要右键选择「打开」安装，或先移除隔离属性：`xattr -dr com.apple.quarantine AIME-<版本>.pkg`。
+3. 打开 **系统设置 › 键盘 › 输入法 › 编辑…**，点击 **+**，在「简体中文」中添加 **艾么输入法**。首次安装后若未出现，请注销并重新登录。
 
-### Build from source
+### 从源码构建
 
-Requires macOS 26+, Xcode 26+ and [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`).
+需要 macOS 26+、Xcode 26+ 与 [XcodeGen](https://github.com/yonaskolb/XcodeGen)（`brew install xcodegen`）。
 
 ```bash
 git clone https://github.com/zoolapp/aime.git && cd aime
 bash scripts/install-dev.sh
 ```
 
-The script downloads and verifies pinned librime and rime-ice releases, builds the input method, the settings app and the CLI, installs to `~/Library/Input Methods/AIME.app` and registers it.
+脚本会下载并校验固定版本的 librime 与雾凇拼音，构建输入法、设置 App 与命令行工具，安装到 `~/Library/Input Methods/AIME.app` 并注册。
 
-## Migrating from Squirrel
+## 从鼠须管迁移
 
-1. Run "Sync user data" once in Squirrel so the frequency snapshots are current.
-2. In AIME Settings, choose Import on the Overview page, or use the CLI:
+1. 在鼠须管菜单中执行一次「同步用户数据」，使词频快照为最新。
+2. 打开艾么输入法设置，在概览页点击「导入」；或使用命令行：
 
    ```bash
-   ~/Library/Input\ Methods/AIME.app/Contents/Helpers/aime import-squirrel --dry-run   # preview
+   ~/Library/Input\ Methods/AIME.app/Contents/Helpers/aime import-squirrel --dry-run   # 预览计划
    ~/Library/Input\ Methods/AIME.app/Contents/Helpers/aime import-squirrel
    ```
 
-The import is read-only — `~/Library/Rime` is never modified. Your `*.custom.yaml` files are kept as they are in `~/Library/AIME/Rime/aime/imported/`; changes made in the app live in a separate layer that takes precedence and can be reset at any time.
+导入只读，不修改 `~/Library/Rime`。你的 `*.custom.yaml` 原样放入 `~/Library/AIME/Rime/aime/imported/`，界面中的修改写在独立一层并优先生效，可随时恢复。
 
-## Architecture
+## 架构
 
 ```mermaid
 flowchart LR
-  subgraph IME["AIME.app · input method process"]
-    C[IMKit controller] --> R[librime 1.17<br/>+ lua / octagram / predict]
-    C --> P[Candidate window · AppKit]
+  subgraph IME["AIME.app · 输入法进程"]
+    C[IMKit 控制器] --> R[librime 1.17<br/>+ lua / octagram / predict]
+    C --> P[候选窗 · AppKit]
   end
-  S["AIME Settings.app · SwiftUI"] -- writes config layers --> U[(~/Library/AIME/Rime)]
-  S -- deploy request --> IME
+  S["AIME Settings.app · SwiftUI"] -- 写配置层 --> U[(~/Library/AIME/Rime)]
+  S -- 部署请求 --> IME
   R --> U
-  Sq[(~/Library/Rime · read-only)] -. import .-> U
+  Sq[(~/Library/Rime · 只读)] -. 导入 .-> U
 ```
 
-The settings app does not link librime; it reads and writes files and asks the input method to redeploy through distributed notifications. Every setting is composed from three layers: AIME defaults → hand-written patches → changes made in the app. See [Architecture](docs/architecture.md) and the [decision records](docs/decisions/).
+设置 App 不链接 librime，只读写文件，通过分布式通知请求输入法重新部署。每项配置由三层合成：AIME 默认值 → 手写补丁 → 界面修改。详见 [架构说明](docs/architecture.md) 与 [架构决策记录](docs/decisions/)。
 
-## Development
+## 开发
 
 ```bash
 bash scripts/fetch-librime.sh && bash scripts/fetch-dicts.sh
@@ -124,33 +123,33 @@ swift test --package-path Packages/AIMEKit
 xcodegen generate && open AIME.xcodeproj
 ```
 
-Performance gate: `aime bench --schema rime_ice --keys nihaoshijie --iterations 2000 --assert-p99-ms 5`.
-See [CONTRIBUTING.md](CONTRIBUTING.md) for contributing, [docs/releasing.md](docs/releasing.md) for releases, and report security issues privately as described in [SECURITY.md](SECURITY.md).
+性能门禁：`aime bench --schema rime_ice --keys nihaoshijie --iterations 2000 --assert-p99-ms 5`。
+贡献流程见 [CONTRIBUTING.zh.md](CONTRIBUTING.zh.md)，发布流程见 [docs/releasing.md](docs/releasing.md)，安全问题请按 [SECURITY.md](SECURITY.md) 私下报告。
 
-## Privacy
+## 隐私
 
-Input is processed on your Mac; AIME writes no input logs, never uploads pinyin, candidates or learned frequencies, and ships no analytics or crash-reporting SDKs. Subscribed online vocabularies are fetched from their public URLs at the interval you choose.
-Text reaches an AI model only when you run an AI action: Apple's on-device model runs locally; a cloud endpoint you configure yourself must be explicitly allowed to receive text. See [Privacy](docs/privacy.md).
+日常输入在本机处理，不写输入日志，不上传拼音串、候选列表或用户词频，不包含任何统计或崩溃上报 SDK。订阅在线词库时，输入法按你设定的频率请求公开词表。
+只有你主动执行 AI 动作时，目标文字才交给所选模型：默认 Apple 端侧模型在本机运行；若你自行配置云端接口，需单独允许发送文字。详见 [隐私说明](docs/privacy.md)。
 
-## Roadmap
+## 路线图
 
-- [x] librime frontend, candidate window, CLI, developer install and CI
-- [x] Visual settings, appearance preview, per-app options, snippets and custom phrases
-- [x] Official online vocabulary catalogue, schema packages (pinned versions, SHA-256)
-- [x] Quick menu, AI actions (on-device / bring your own endpoint), draft layer
-- [x] Input statistics, first-run guide, local backup and restore
-- [ ] Developer ID signing, notarization and automatic updates
-- [ ] Vertical text orientation, candidate paging indicator
-- [ ] Reproducible librime builds from source
+- [x] librime 前端、候选窗、命令行、开发安装与 CI
+- [x] 可视化设置、外观预览、应用选项、常用语与自定义短语
+- [x] 官方在线词库目录、方案包管理（固定版本与 SHA-256）
+- [x] 快捷菜单、AI 处理（端侧 / 自备接口）、输入图层
+- [x] 输入统计、首次引导、本地备份与恢复
+- [ ] Developer ID 签名、公证与自动更新
+- [ ] 竖排文字方向、候选窗翻页指示
+- [ ] librime 源码可复现构建
 
-## Acknowledgements
+## 致谢
 
-[RIME / librime](https://github.com/rime/librime) · [Squirrel](https://github.com/rime/squirrel) · [rime-ice](https://github.com/iDvel/rime-ice) · [rime_wanxiang](https://github.com/amzxyz/rime_wanxiang) · [rime-frost](https://github.com/gaboolic/rime-frost) · [rime-essay](https://github.com/rime/rime-essay) · [OpenCC](https://github.com/BYVoid/OpenCC) · [Yams](https://github.com/jpsim/Yams)
+[RIME / librime](https://github.com/rime/librime) · [鼠须管](https://github.com/rime/squirrel) · [雾凇拼音](https://github.com/iDvel/rime-ice) · [万象拼音](https://github.com/amzxyz/rime_wanxiang) · [白霜拼音](https://github.com/gaboolic/rime-frost) · [rime-essay](https://github.com/rime/rime-essay) · [OpenCC](https://github.com/BYVoid/OpenCC) · [Yams](https://github.com/jpsim/Yams)
 
-## License
+## 许可
 
-AIME's original code is released under the [MIT License](LICENSE). The bundled native `librime-octagram` plugin and the rime-ice schemas, word lists and Lua scripts remain under GPL-3.0;
-AIME's online word lists are CC BY 4.0. Other third-party components are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), and the native plugin licence review is in [docs/native-plugin-license-audit.md](docs/native-plugin-license-audit.md).
-MIT for the original code does not mean the whole installer is MIT-only.
+AIME 原创代码采用 [MIT](LICENSE) 许可。随应用分发的原生 `librime-octagram` 插件，以及雾凇拼音方案、词表与 Lua 脚本保留 GPL-3.0；
+AIME 在线词表采用 CC BY 4.0。其余第三方组件见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)，原生插件许可核对见 [插件许可审计](docs/native-plugin-license-audit.md)。
+原创代码采用 MIT 不代表整个安装包仅适用 MIT。
 
-<p align="center"><sub>Published and maintained by <a href="https://zool.app">ZOOL LLC</a> · Developed by Luo Lei (<a href="https://github.com/foru17">@foru17</a>) · AIME and 艾么输入法 are product names of ZOOL LLC</sub></p>
+<p align="center"><sub>由 <a href="https://zool.app">ZOOL LLC</a> 发布与维护 · 开发者 Luo Lei（<a href="https://github.com/foru17">@foru17</a>）· AIME 与艾么输入法为 ZOOL LLC 的产品名称</sub></p>

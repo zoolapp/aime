@@ -104,5 +104,5 @@ ruby -ryaml -e '(Dir[".github/ISSUE_TEMPLATE/*.yml"] + [".swiftlint.yml", "proje
 1. 先搜索已有 issue；较大的行为或依赖调整先讨论再实现。
 2. 每个分支／PR 只处理一个问题，小步提交，不顺手重构无关代码。
 3. 运行相关检查，审查 diff 中的凭据、个人数据、生成物与许可证来源，再提交。由 Codex 代提交时，末尾加 `Co-Authored-By: Codex <noreply@openai.com>`。
-4. 填写 PR 模板：问题、改后行为、关联 issue、准确的验证结果与限制。涉及双语 README／贡献指南时同步更新；已实现改动写入 changelog 的 `Unreleased`，待办在 `project-tasks.json` 中跟踪。
+4. 填写 PR 模板：问题、改后行为、关联 issue、准确的验证结果与限制。涉及双语 README／贡献指南时同步更新；已实现改动写入 changelog 的 `Unreleased`，待办用 GitHub Issues 跟踪。
 5. 请求审查并处理反馈。没有运行记录就不能称 CI 已通过，未经授权不得替维护者合并或发布。
