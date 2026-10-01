@@ -1,6 +1,6 @@
 import AIMECore
 import AppKit
-import UserNotifications
+@preconcurrency import UserNotifications
 
 /// Daily update check from the input method. Only the public manifest
 /// (get.zool.app/aime/latest.json) is requested; it runs off the keystroke path and
