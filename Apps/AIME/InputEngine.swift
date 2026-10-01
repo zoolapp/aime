@@ -148,11 +148,15 @@ final class InputEngine {
     private var vocabularyWaiting = false
 
     /// Hourly check (plus one shortly after launch); each feed is fetched at most every
-    /// 12 h. Only the feed URLs go over the network — never anything typed.
+    /// 12 h, the app's release manifest at most daily. Only those public URLs go over
+    /// the network — never anything typed.
     private func scheduleVocabularyUpdates() {
         guard vocabularyTimer == nil else { return }
         let timer = Timer(timeInterval: 3600, repeats: true) { _ in
-            MainActor.assumeIsolated { InputEngine.shared.checkVocabularies() }
+            MainActor.assumeIsolated {
+                InputEngine.shared.checkVocabularies()
+                InputEngine.shared.checkForAppUpdate()
+            }
         }
         timer.tolerance = 600
         RunLoop.main.add(timer, forMode: .common)
@@ -160,6 +164,7 @@ final class InputEngine {
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(90))
             InputEngine.shared.checkVocabularies()
+            InputEngine.shared.checkForAppUpdate()
         }
     }
 

@@ -1,0 +1,18 @@
+艾么输入法（AIME）许可说明 · License notice
+
+AIME 原创代码由 ZOOL LLC 以 MIT 许可发布。本安装包还包含以下第三方组件，各自保留原许可：
+
+  · librime 1.17 引擎及 librime-lua、librime-predict 插件 —— BSD-3-Clause
+  · librime-octagram 插件 —— GPL-3.0
+  · 雾凇拼音（rime-ice）方案、词表与 Lua 脚本 —— GPL-3.0
+  · AIME 在线词表 —— CC BY 4.0；其余组件见 THIRD_PARTY_NOTICES.md
+
+由于包含 GPL-3.0 组件，本安装包作为整体按 GPL-3.0 条款分发；AIME 原创源码本身仍为 MIT（与 GPL-3.0 兼容）。
+对应源码随每个版本发布：https://github.com/zoolapp/aime/releases（附件 AIME-<版本>-source.tar.gz）。
+安装后完整的许可文本与第三方声明位于 AIME.app/Contents/Resources/LicenseMaterials。
+
+AIME's original code is released by ZOOL LLC under the MIT License. This installer also contains
+third-party components under their own licenses (BSD-3-Clause, GPL-3.0, CC BY 4.0, listed above).
+Because it includes GPL-3.0 components, the installer as a whole is distributed under the terms of
+GPL-3.0, while AIME's original source remains MIT. The corresponding source for every release is
+attached to https://github.com/zoolapp/aime/releases as AIME-<version>-source.tar.gz.

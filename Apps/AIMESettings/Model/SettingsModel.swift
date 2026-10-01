@@ -655,4 +655,66 @@ final class SettingsModel {
     func closeBackup(_ opened: BackupManager.Opened) { backupManager.close(opened) }
 
     func dismissError() { lastError = nil }
+
+    // MARK: - App updates
+
+    let currentVersion = AppVersion.current()
+    private(set) var updateState = AppUpdateState()
+    private(set) var updateChecking = false
+    /// 0…1 while the installer downloads.
+    private(set) var updateProgress: Double?
+    private(set) var updateNotice: String?
+    var pendingUpdate: AppRelease? { updateState.pending(current: currentVersion) }
+
+    /// Reads the shared state and checks when a daily check is due (the input method
+    /// usually has done it already).
+    func refreshUpdates() async {
+        updateState = AppUpdateState.load(paths)
+        if updateState.isDue() { await checkForUpdates(userInitiated: false) }
+    }
+
+    func checkForUpdates(userInitiated: Bool) async {
+        guard !updateChecking else { return }
+        updateChecking = true
+        defer { updateChecking = false }
+        if userInitiated { updateNotice = nil }
+        do {
+            let release = try await AppUpdateChecker().check(paths: paths, current: currentVersion)
+            updateState = AppUpdateState.load(paths)
+            if userInitiated, release == nil { updateNotice = "已是最新版本" }
+        } catch {
+            if userInitiated { updateNotice = "检查失败：\(error.localizedDescription)" }
+        }
+    }
+
+    func setAutoUpdate(_ on: Bool) {
+        updateState.autoCheck = on
+        try? updateState.save(paths)
+    }
+
+    func skipUpdate() {
+        guard let release = updateState.available else { return }
+        updateState.skipped = release.appVersion.description
+        try? updateState.save(paths)
+    }
+
+    /// Downloads and verifies the installer (SHA-256 and Developer ID signature), then
+    /// hands it to macOS Installer, which asks for the administrator password.
+    func installUpdate() async {
+        guard let release = pendingUpdate, updateProgress == nil else { return }
+        updateNotice = nil
+        updateProgress = 0
+        defer { updateProgress = nil }
+        let paths = paths
+        do {
+            let package = try await AppUpdateChecker().download(release, paths: paths) { value in
+                Task { @MainActor [weak self] in if self?.updateProgress != nil { self?.updateProgress = value } }
+            }
+            try await Task.detached { try AppUpdateChecker.verifySignature(of: package) }.value
+            NSWorkspace.shared.open(package)
+            updateNotice = "已打开安装器，按提示完成更新"
+        } catch {
+            updateNotice = "更新失败：\(error.localizedDescription)"
+        }
+    }
 }

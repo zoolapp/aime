@@ -41,7 +41,7 @@ Do not commit downloaded binaries, generated projects, build output, or local in
 - Keep librime in the input-method process and CLI; the settings app does not link it. Keep networking and AI outside the keystroke path. CI enforces key-event p99 ≤ 5 ms with `aime bench`; report measurements for your workload rather than treating the threshold as a universal guarantee.
 - Enable Swift strict concurrency. Keep technical identifiers and commit messages in English; update both language versions of paired documents.
 - Preserve `~/Library/Rime` during import. Write AIME data only to its independent directory; test `__patch` layer precedence and dry-run validation with temporary fixtures.
-- AI is optional, manually invoked, and defaults to Apple's on-device model. Never give AI access to active input or the user-frequency database; no telemetry. Preview configuration diffs before applying. Store provider keys in Keychain, never repository files or test logs. See [privacy notes](docs/privacy.md).
+- AI is optional, manually invoked, and defaults to Apple's on-device model. AI only receives the text of an action the user explicitly runs (input-layer draft, selection, or text just committed); never pinyin strings, candidate lists, the user-frequency database, or statistics; no telemetry. Preview configuration diffs before applying. Provider keys live in the owner-only file `~/Library/Application Support/AIME/credentials.json` (tests use `AIME_CREDENTIALS_FILE`), never repository files or test logs. See [privacy notes](docs/privacy.md).
 - Keep dictionary downloads separate from application source, with pinned provenance, SHA-256 checks, and upstream license notices.
 
 ## Licensing: no copied GPL source
@@ -50,11 +50,11 @@ Do not commit downloaded binaries, generated projects, build output, or local in
 
 `scripts/fetch-dicts.sh` downloads GPL-3.0 rime-ice data at build time. It ships as a separate work in the app's `Contents/SharedSupport/`, with its `LICENSE`; it is not committed to this repository. This data distribution does not permit importing GPL implementation code into AIME's MIT source. Preserve upstream license and distribution obligations. For every new dependency or dataset, record its upstream URL, version/commit, license, and notices in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). If provenance or permission is unclear, resolve it before inclusion; never assume a public repository means MIT.
 
-Original code contributions are under MIT. The included [`aime_tech_2026` dictionary](dicts/aime_tech_2026/README.md) uses CC BY 4.0 and requires attribution and provenance for contributed data. Validate its TSV sources with `swift scripts/build-dicts.swift --check`; `fetch-dicts.sh` builds the bundled `aime_tech.txt`.
+Original code contributions are under MIT. Word lists are maintained in [zoolapp/aime-dicts](https://github.com/zoolapp/aime-dicts) (CC BY 4.0); contribute entries there with attribution and provenance.
 
 ## Tests and verification
 
-After the build setup above, run checks relevant to your change. The package contains 51 Swift Testing tests, including real librime deployment tests:
+After the build setup above, run checks relevant to your change. The package uses Swift Testing, including real librime deployment tests:
 
 ```bash
 swift test --package-path Packages/AIMEKit

@@ -39,7 +39,15 @@ cat > "$STAGE/distribution.xml" <<XML
   <pkg-ref id="app.zool.inputmethod.aime.pkg" version="$VERSION" onConclusion="none">AIME-component.pkg</pkg-ref>
 </installer-gui-script>
 XML
-cp scripts/pkg/resources/*.html LICENSE "$STAGE/"
+cp scripts/pkg/resources/*.html "$STAGE/"
+# The installer's license page: what the package contains, then MIT and GPL-3.0 in full.
+{
+  cat scripts/pkg/LICENSE-header.txt
+  printf '\n\n==== MIT License (AIME original code) ====\n\n'
+  cat LICENSE
+  printf '\n\n==== GNU General Public License v3.0 ====\n\n'
+  cat licenses/native-plugins/librime-octagram.LICENSE.txt
+} > "$STAGE/LICENSE"
 
 SIGN_ARGS=()
 [[ -n "${AIME_INSTALLER_IDENTITY:-}" ]] && SIGN_ARGS=(--sign "$AIME_INSTALLER_IDENTITY")

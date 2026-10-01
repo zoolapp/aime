@@ -196,6 +196,7 @@ jobs:
           path: |
             dist/release/AIME-*.pkg
             dist/release/AIME-*.zip
+            dist/release/AIME-*-source.tar.gz
             dist/release/SHA256SUMS.txt
             dist/release/RELEASE_NOTES.md
           if-no-files-found: error

@@ -7,50 +7,31 @@ Versioned releases are intended to follow [Semantic Versioning](https://semver.o
 
 ## [Unreleased]
 
-### Added
+## [0.1.0] - 2026-10-01
 
-- ZOOL LLC development signing configuration (team `PX694P4CGY`); certificate-backed builds use secure timestamps.
-- **Online vocabularies**: subscribe to any GitHub / raw URL (RIME `dict.yaml`, `word<TAB>code<TAB>weight` tables or
-  plain word lists); checked hourly, each feed at most every 12 h with ETag; shows entry count, new words and the
-  remote update time; works in full pinyin and 小鹤双拼. CLI `aime subscribe`.
-- **高频词 statistics** (opt-in, local only): day / week / month dashboard, pin a word as a custom phrase, block, clear.
-- **AI polish**: select text anywhere and press ⌃⌥P for 润色 / 正式 / 简洁 rewrites in the candidate window.
-- Settings without free-text input: key recorder, font picker, switch lists and presets.
-- Candidate window appear and resize motion (Core Animation, respects Reduce Motion).
+首个公开的开发预览版。
 
-### Fixed
+### 输入
 
-- The bundled `aime_tech_2026` vocabulary was never loaded (`enable_user_dict: false` makes librime skip the table),
-  and tagged rows lost their weights.
+- 基于 librime 1.17 的 macOS 输入法，默认雾凇拼音，支持全拼与多种双拼；原生自绘候选窗，横排 / 竖排、亮暗配色。
+- **快捷菜单**：打字时长按 ⌥，空格进入 AI 处理，数字键进入常用语、符号板、高频词与设置。
+- **AI 处理**：对选中文字、刚打的字或正在选的候选执行翻译、润色或自定义动作，结果以候选呈现、回车替换。
+  可用 Apple 端侧模型（取决于设备与地区）或自备 OpenAI 兼容接口；简繁转换在本机完成。
+- **输入图层（可选）**：上屏前先在光标处停留成草稿，便于整段处理后再发送。
+- 常用语分类、自定义短语、按应用默认中英文。
 
-## [0.1.0] - 2026-09-29
+### 设置
 
-First MVP.
+- 可视化设置 80 余项，配色画廊与实时预览；方案与词库一键安装（固定版本与 SHA-256），官方在线词库每天 / 每周自动更新。
+- 从鼠须管只读导入；本地备份与恢复；RIME 同步目录合并词频。
+- 输入统计（可选，默认关闭，仅本机）；首次引导。
+- **自动更新**：每天检查公开的版本清单，下载后校验 SHA-256 与开发者签名，再交给系统安装器；可关闭。
 
-### Added
+### 发行
 
-- **Input method** (`AIME.app`): InputMethodKit frontend for librime 1.17 with lua / octagram / predict plugins,
-  AppKit + Core Text candidate panel (linear / stacked, light / dark schemes, translucency, mouse selection),
-  per-app options (default English, no inline, Vim mode), status bubbles, input menu actions.
-- **Settings** (`AIME Settings.app`): overview, schema list, catalog-driven panes (input habits, switching, fuzzy
-  pinyin, shortcuts), appearance with live preview and scheme gallery, app options, dictionary packages, custom
-  phrases, sync directory, AI assistant, advanced YAML editing with dry-run validation and rollback.
-- **CLI** `aime`: deploy (with `--dry-run`), bench (`--assert-p99-ms`), doctor, import-squirrel, package
-  list/install/uninstall, get/set, sync, register.
-- **Config layering**: defaults / imported / generated layers composed into a literal patch; collection maps merge
-  per item; workspace lock and deploy request ids.
-- **Squirrel import**: read-only import of `~/Library/Rime` including custom patches, Lua, color schemes and
-  frequency snapshots.
-- **Dictionaries**: registry of pinned, sha256-verified packages (rime-ice, Wanxiang, rime-frost, rime-essay) with
-  transactional install, backups and shared-file ownership; bundled `aime_tech_2026` vocabulary (473 entries).
-- **RIME configuration reference** (`docs/rime-config-reference.md`) and a catalog of 79 settings.
-- **AI assistant** (optional): natural-language configuration proposals validated against the catalog, vocabulary
-  extraction with locally computed pinyin; Apple on-device model or OpenAI-compatible endpoint with Keychain key.
-- Architecture docs, ADR-0001–0004, privacy notes, CI (build, test, benchmark gate, unsigned artifact).
-
-### Performance
-
-- rime-ice with Lua extensions: p50 0.34 ms / p99 0.61 ms per keystroke (`aime bench`, Apple Silicon).
+- 安装包由 ZOOL LLC 的 Developer ID 签名并经 Apple 公证。
+- 安装包含 GPL-3.0 组件，整体按 GPL-3.0 条款分发；附带对应源码包 `AIME-0.1.0-source.tar.gz`。
+- 命令行工具 `aime`（deploy / bench / doctor / import-squirrel / package / get / set / sync / subscribe），目前仅支持 Apple 芯片。
 
 [Unreleased]: https://github.com/zoolapp/aime/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/zoolapp/aime/releases/tag/v0.1.0

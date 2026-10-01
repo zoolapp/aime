@@ -12,11 +12,14 @@ struct OverviewView: View {
         PaneColumn {
             VStack(alignment: .leading, spacing: 20) {
                 hero
+                if model.pendingUpdate != nil { UpdateCard() }
                 statusGrid
                 importCard
                 quickLinks
+                VersionFooter()
             }
         }
+        .task { await model.refreshUpdates() }
     }
 
     private var hero: some View {
@@ -169,5 +172,73 @@ struct Tag: View {
             .font(.caption.weight(.medium))
             .padding(.horizontal, 10).padding(.vertical, 5)
             .background(.thinMaterial, in: Capsule())
+    }
+}
+
+/// Shown on the overview when a newer release is available.
+struct UpdateCard: View {
+    @Environment(SettingsModel.self) private var model
+
+    var body: some View {
+        if let release = model.pendingUpdate {
+            HStack(alignment: .center, spacing: 16) {
+                Image(systemName: "arrow.down.circle.fill").font(.title).foregroundStyle(Theme.accentText)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("新版本 \(release.appVersion.description) 可以更新").font(.headline)
+                    Text(detail(release)).font(.callout).foregroundStyle(Theme.secondaryText)
+                    if let notes = release.notes, !notes.isEmpty {
+                        Text(notes).font(.callout).foregroundStyle(Theme.secondaryText).lineLimit(3)
+                    }
+                    if let progress = model.updateProgress {
+                        ProgressView(value: progress).frame(maxWidth: 260)
+                    } else if let notice = model.updateNotice {
+                        Text(notice).font(.caption).foregroundStyle(Theme.secondaryText)
+                    }
+                }
+                Spacer()
+                Button("跳过此版本") { model.skipUpdate() }
+                    .disabled(model.updateProgress != nil)
+                Button("下载并安装") { Task { await model.installUpdate() } }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(model.updateProgress != nil)
+            }
+            .padding(18)
+            .background(Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Theme.accent.opacity(0.45)))
+        }
+    }
+
+    private func detail(_ release: AppRelease) -> String {
+        var parts = ["当前 \(model.currentVersion.description)"]
+        if let date = release.date { parts.append("发布于 \(date)") }
+        if let size = release.installer?.size { parts.append(String(format: "%.1f MB", Double(size) / 1_000_000)) }
+        parts.append("下载后校验 SHA-256 与开发者签名，再交给系统安装器")
+        return parts.joined(separator: " · ")
+    }
+}
+
+/// Version, automatic checking and a manual check, at the bottom of the overview.
+struct VersionFooter: View {
+    @Environment(SettingsModel.self) private var model
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text("艾么输入法 \(model.currentVersion.description)").font(.caption).foregroundStyle(Theme.secondaryText)
+            Spacer()
+            if let notice = model.updateNotice, model.pendingUpdate == nil {
+                Text(notice).font(.caption).foregroundStyle(Theme.secondaryText)
+            }
+            Toggle("自动检查更新", isOn: Binding(get: { model.updateState.autoCheck }, set: { model.setAutoUpdate($0) }))
+                .toggleStyle(.checkbox).font(.caption)
+                .help("每天请求一次 get.zool.app 上公开的版本清单，不发送任何输入内容")
+            Button {
+                Task { await model.checkForUpdates(userInitiated: true) }
+            } label: {
+                if model.updateChecking { ProgressView().controlSize(.small) } else { Text("检查更新") }
+            }
+            .controlSize(.small)
+            .disabled(model.updateChecking)
+        }
+        .padding(.top, 4)
     }
 }

@@ -41,7 +41,7 @@ bash scripts/install-dev.sh
 - librime 用于输入法进程与 CLI，设置 App 不链接它。网络与 AI 工作置于按键路径之外。CI 通过 `aime bench` 强制检查按键 p99 ≤ 5 ms；报告实际负载的测量结果，不把门槛当作所有环境下的保证。
 - 启用 Swift strict concurrency。技术标识符和提交说明使用英文；有中英对等版本的文档同步更新。
 - 导入时保护 `~/Library/Rime`，AIME 数据仅写入独立目录；用临时样本测试 `__patch` 分层优先级和 dry-run 校验。
-- AI 可选、由用户手动触发，默认使用 Apple 端侧模型。永不让 AI 访问正在输入的内容或用户词频库；无遥测。应用配置修改前预览 diff。服务商 key 存入 Keychain，不能进入仓库文件或测试日志。详见[隐私说明](docs/privacy.md)。
+- AI 可选、由用户手动触发，默认使用 Apple 端侧模型。AI 只接收用户主动执行动作的那段文字（输入图层草稿、选区或刚上屏的字），拼音串、候选列表、用户词频与统计一律不交给 AI；无遥测。应用配置修改前预览 diff。服务商 key 存在仅本人可读写的 `~/Library/Application Support/AIME/credentials.json`（测试用 `AIME_CREDENTIALS_FILE` 指向临时文件），不能进入仓库文件或测试日志。详见[隐私说明](docs/privacy.md)。
 - 词库下载与应用源码分离，固定来源版本，执行 SHA-256 校验并保留上游许可声明。
 
 ## 许可证红线：禁止复制 GPL 源码
@@ -50,11 +50,11 @@ bash scripts/install-dev.sh
 
 `scripts/fetch-dicts.sh` 在构建时下载 GPL-3.0 的 rime-ice 数据，作为独立作品随 App 的 `Contents/SharedSupport/` 分发并附带其 `LICENSE`，不提交进本仓库。数据分发不代表允许把 GPL 实现代码引入 AIME 的 MIT 源码。须保留上游许可证并遵守分发要求。新增依赖或数据集时，在 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) 记录上游 URL、版本／commit、许可证及声明。来源或授权不明确时，先核实再引入，不能因仓库公开就视为 MIT。
 
-原创代码贡献采用 MIT。已收录的 [`aime_tech_2026` 词库](dicts/aime_tech_2026/README.md) 采用 CC BY 4.0，词条贡献须保留署名与来源。用 `swift scripts/build-dicts.swift --check` 校验 TSV 源文件；`fetch-dicts.sh` 生成随应用分发的 `aime_tech.txt`。
+原创代码贡献采用 MIT。词表在 [zoolapp/aime-dicts](https://github.com/zoolapp/aime-dicts) 维护（CC BY 4.0），词条请到该仓库贡献，并保留署名与来源。
 
 ## 测试与验证
 
-完成上述构建准备后，按改动范围运行检查。Swift 包包含 51 个 Swift Testing 测试，覆盖真实 librime 部署：
+完成上述构建准备后，按改动范围运行检查。Swift 包使用 Swift Testing，包含真实 librime 部署测试：
 
 ```bash
 swift test --package-path Packages/AIMEKit

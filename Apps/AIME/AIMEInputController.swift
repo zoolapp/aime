@@ -542,6 +542,9 @@ final class AIMEInputController: IMKInputController {
             return item
         }
         menu.addItem(item(String(localized: "艾么输入法设置…"), #selector(openSettings(_:)), ","))
+        if let update = engine.pendingUpdate {
+            menu.addItem(item(String(localized: "更新到 \(update.version)…"), #selector(openUpdate(_:))))
+        }
         menu.addItem(.separator())
         menu.addItem(item(String(localized: "重新部署"), #selector(deploy(_:))))
         menu.addItem(item(String(localized: "同步用户数据"), #selector(syncUserData(_:))))
@@ -554,7 +557,9 @@ final class AIMEInputController: IMKInputController {
 
     /// Opens AIME Settings, optionally on a pane ("stats", "ai", …). A running
     /// Settings app is told to switch through a distributed notification.
-    func openSettings(pane: String?) {
+    func openSettings(pane: String?) { Self.openSettings(pane: pane) }
+
+    static func openSettings(pane: String?) {
         let configuration = NSWorkspace.OpenConfiguration()
         if let pane { configuration.arguments = ["--pane", pane] }
         let embedded = Bundle.main.bundleURL.appendingPathComponent("Contents/Applications/AIME Settings.app")
@@ -568,6 +573,7 @@ final class AIMEInputController: IMKInputController {
         }
     }
 
+    @objc func openUpdate(_ sender: Any?) { openSettings(pane: "overview") }
     @objc func deploy(_ sender: Any?) { engine.redeploy() }
     @objc func syncUserData(_ sender: Any?) { engine.syncUserData() }
     @objc func openUserFolder(_ sender: Any?) { NSWorkspace.shared.open(engine.paths.userDataDir) }

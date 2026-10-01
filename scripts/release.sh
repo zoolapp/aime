@@ -2,7 +2,8 @@
 # Builds the release artefacts for one version into dist/release/ (or $AIME_RELEASE_DIR):
 #   AIME-<version>.pkg    installer (scripts/package.sh)
 #   AIME-<version>.zip    AIME.app (with the CLI and AIME Settings.app inside)
-#   SHA256SUMS.txt        checksums of the two files above
+#   AIME-<version>-source.tar.gz  corresponding source (scripts/source-archive.sh; the pkg has GPL parts)
+#   SHA256SUMS.txt        checksums of the three files above
 #   RELEASE_NOTES.md      CHANGELOG section + signing status + checksums (not an asset)
 #
 # Usage: bash scripts/release.sh <version>      e.g. 0.2.0 or 0.2.0-beta.1 (a leading "v" is ok)
@@ -83,7 +84,9 @@ if [[ "$NOTARIZE" == 1 ]]; then
 fi
 
 ditto -c -k --keepParent "$APP" "$ZIP"
-(cd "$OUT" && shasum -a 256 "$(basename "$PKG")" "$(basename "$ZIP")" > SHA256SUMS.txt)
+SRC="$OUT/AIME-$VERSION-source.tar.gz"
+bash scripts/source-archive.sh "$VERSION" "$OUT"
+(cd "$OUT" && shasum -a 256 "$(basename "$PKG")" "$(basename "$ZIP")" "$(basename "$SRC")" > SHA256SUMS.txt)
 
 # Release notes: the CHANGELOG section for this version, else a template.
 NOTES="$OUT/RELEASE_NOTES.md"
@@ -121,6 +124,11 @@ MD
   esac
   echo
   echo "安装后在「系统设置 › 键盘 › 输入法」中添加「艾么输入法」；首次安装可能需要注销并重新登录一次。"
+  echo
+  echo "## 许可与源码"
+  echo
+  echo "AIME 原创代码采用 MIT。安装包包含 GPL-3.0 组件（librime-octagram 插件、雾凇拼音方案与 Lua 脚本），因此安装包整体按 GPL-3.0 条款分发；"
+  echo "对应源码见附件 \`AIME-$VERSION-source.tar.gz\`（AIME、librime、三个原生插件与雾凇拼音的固定版本，来源与哈希见包内 SOURCES.txt）。"
   echo
   echo "最低系统：macOS 26。输入法与设置应用为 universal（Apple Silicon + Intel）；内置的 \`aime\` 命令行工具随构建机架构（当前为 Apple Silicon）。"
   echo
