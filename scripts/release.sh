@@ -52,22 +52,28 @@ echo "==> AIME $VERSION ($STATUS)"
 PENDING="$OUT/NOTARY_PENDING.txt"
 notarize() {  # <file>: 0 accepted, 2 still in progress; exits on rejection
   local file="$1" result id status
-  result="$(xcrun notarytool submit "$file" --key "$AIME_NOTARY_KEY_PATH" --key-id "$AIME_NOTARY_KEY_ID" \
-    --issuer "$AIME_NOTARY_ISSUER_ID" --wait --timeout "${AIME_NOTARY_WAIT:-20m}" --output-format json)" || true
+  local auth=(--key "$AIME_NOTARY_KEY_PATH" --key-id "$AIME_NOTARY_KEY_ID" --issuer "$AIME_NOTARY_ISSUER_ID")
+  # Submit first, then wait: `submit --wait` prints nothing when it times out, which
+  # would lose the submission id.
+  result="$(xcrun notarytool submit "$file" "${auth[@]}" --output-format json)" || true
   id="$(plutil -extract id raw -o - - <<<"$result" 2>/dev/null || true)"
+  [[ -n "$id" ]] || { echo "notarization upload of $(basename "$file") failed: $result" >&2; exit 1; }
+  echo "==> submitted $(basename "$file") for notarization (submission $id)"
+  result="$(xcrun notarytool wait "$id" "${auth[@]}" --timeout "${AIME_NOTARY_WAIT:-20m}" --output-format json 2>/dev/null)" || true
   status="$(plutil -extract status raw -o - - <<<"$result" 2>/dev/null || true)"
+  [[ -n "$status" ]] || status="$(xcrun notarytool info "$id" "${auth[@]}" --output-format json 2>/dev/null \
+    | plutil -extract status raw -o - - 2>/dev/null || true)"
   if [[ "$status" == Accepted ]]; then
     echo "==> notarized $(basename "$file") (submission $id)"
     return 0
   fi
-  if [[ -n "$id" && ( -z "$status" || "$status" == "In Progress" ) ]]; then
+  if [[ -z "$status" || "$status" == "In Progress" ]]; then
     echo "==> notarization of $(basename "$file") still in progress (submission $id)"
     printf '%s\t%s\n' "$(basename "$file")" "$id" >> "$PENDING"
     return 2
   fi
   echo "notarization of $(basename "$file") failed: $result" >&2
-  [[ -n "$id" ]] && xcrun notarytool log "$id" --key "$AIME_NOTARY_KEY_PATH" \
-    --key-id "$AIME_NOTARY_KEY_ID" --issuer "$AIME_NOTARY_ISSUER_ID" >&2 || true
+  xcrun notarytool log "$id" "${auth[@]}" >&2 || true
   exit 1
 }
 

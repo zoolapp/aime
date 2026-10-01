@@ -85,3 +85,68 @@ import Testing
         #expect(release.supportsThisSystem(OperatingSystemVersion(majorVersion: 26, minorVersion: 0, patchVersion: 0)))
     }
 }
+
+/// Serves canned responses for update tests (no network).
+final class StubProtocol: URLProtocol, @unchecked Sendable {
+    nonisolated(unsafe) static var responses: [String: (Int, Data)] = [:]
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        let (status, body) = Self.responses[request.url!.absoluteString] ?? (404, Data())
+        let response = HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: body)
+        client?.urlProtocolDidFinishLoading(self)
+    }
+    override func stopLoading() {}
+}
+
+@Suite(.serialized) struct AppUpdateNetworkTests {
+    let session: URLSession = {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [StubProtocol.self]
+        return URLSession(configuration: configuration)
+    }()
+    let manifestURL = URL(string: "https://get.example/aime/latest.json")!
+
+    func temporaryPaths() -> AIMEPaths {
+        AIMEPaths(userDataDir: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString))
+    }
+
+    @Test func rejectsAnUnsignedManifest() async {
+        StubProtocol.responses = [manifestURL.absoluteString: (200, Data(#"{"product":"aime","version":"9.0.0","files":{}}"#.utf8))]
+        let checker = AppUpdateChecker(manifestURL: manifestURL, session: session)
+        await #expect(throws: AppUpdateError.badResponse(404)) { try await checker.fetchLatest() }
+        StubProtocol.responses[manifestURL.absoluteString + ".sig"] = (200, Data("AAAA\n".utf8))
+        await #expect(throws: AppUpdateError.untrustedManifest) { try await checker.fetchLatest() }
+    }
+
+    @Test func downloadVerifiesTheChecksumAndCleansUp() async throws {
+        let paths = temporaryPaths()
+        defer { try? FileManager.default.removeItem(at: paths.userDataDir) }
+        let payload = Data(repeating: 7, count: 200_000)
+        let file = AppRelease.File(name: "AIME-9.0.0.pkg", size: payload.count, sha256: String(repeating: "0", count: 64))
+        let release = AppRelease(product: "aime", version: "9.0.0", files: ["pkg": file])
+        StubProtocol.responses = [release.url(for: file).absoluteString: (200, payload)]
+        let checker = AppUpdateChecker(manifestURL: manifestURL, session: session)
+        await #expect(throws: AppUpdateError.checksumMismatch) { _ = try await checker.download(release, paths: paths) }
+        let updates = paths.cacheDir.appendingPathComponent("updates")
+        let left = (try? FileManager.default.contentsOfDirectory(atPath: updates.path)) ?? []
+        #expect(left.isEmpty, "partial download removed: \(left)")
+
+        StubProtocol.responses = [:]
+        await #expect(throws: AppUpdateError.badResponse(404)) { _ = try await checker.download(release, paths: paths) }
+    }
+
+    @Test func downloadKeepsAVerifiedPackage() async throws {
+        let paths = temporaryPaths()
+        defer { try? FileManager.default.removeItem(at: paths.userDataDir) }
+        let payload = Data("installer bytes".utf8)
+        let sha = SHA256.hash(data: payload).map { String(format: "%02x", $0) }.joined()
+        let file = AppRelease.File(name: "AIME-9.0.0.pkg", size: payload.count, sha256: sha)
+        let release = AppRelease(product: "aime", version: "9.0.0", files: ["pkg": file])
+        StubProtocol.responses = [release.url(for: file).absoluteString: (200, payload)]
+        let url = try await AppUpdateChecker(manifestURL: manifestURL, session: session).download(release, paths: paths)
+        #expect(try Data(contentsOf: url) == payload)
+    }
+}

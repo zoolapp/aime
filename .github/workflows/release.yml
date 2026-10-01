@@ -253,3 +253,32 @@ jobs:
           [[ "$PRERELEASE" == true ]] && flags+=(--prerelease)
           gh release create "$TAG" --repo "$GITHUB_REPOSITORY" "${flags[@]}" \
             "AIME-$VERSION.pkg" "AIME-$VERSION.zip" "AIME-$VERSION-source.tar.gz" SHA256SUMS.txt
+
+      # get.zool.app serves zool-assets/<product>/releases/<version>/ and <product>/latest.json.
+      # Versioned files go up every time; the manifest only for a notarized release, so
+      # nobody is offered a build Apple has not accepted (scripts/finish-notarization.sh
+      # publishes it later otherwise). Missing credentials fail the job rather than
+      # silently leaving the update channel stale.
+      - name: Publish to R2 (get.zool.app)
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          VERSION: ${{ needs.build.outputs.version }}
+          STATUS: ${{ needs.build.outputs.status }}
+        run: |
+          set -euo pipefail
+          [[ -n "$AWS_ACCESS_KEY_ID" && -n "$AWS_SECRET_ACCESS_KEY" && -n "$R2_ENDPOINT" ]] \
+            || { echo "::error::R2 credentials are not configured"; exit 1; }
+          cd dist
+          for f in "AIME-$VERSION.pkg" "AIME-$VERSION.zip" "AIME-$VERSION-source.tar.gz" SHA256SUMS.txt; do
+            aws s3 cp "$f" "s3://zool-assets/aime/releases/$VERSION/$f" --endpoint-url "$R2_ENDPOINT" --only-show-errors
+          done
+          if [[ "$STATUS" == notarized ]]; then
+            aws s3 cp latest.json.sig s3://zool-assets/aime/latest.json.sig --endpoint-url "$R2_ENDPOINT" --content-type text/plain --only-show-errors
+            aws s3 cp latest.json s3://zool-assets/aime/latest.json --endpoint-url "$R2_ENDPOINT" --content-type application/json --only-show-errors
+            echo "published latest.json for $VERSION"
+          else
+            echo "::warning::$STATUS: versioned files uploaded; latest.json left unchanged until notarization finishes"
+          fi
