@@ -17,7 +17,7 @@ OUT="${2:-$ROOT/build/public-export}"
 # Paths published as they are (files or whole directories).
 INCLUDE=(
   .editorconfig .gitignore .swiftlint.yml .github
-  README.md README.en.md LICENSE THIRD_PARTY_NOTICES.md CHANGELOG.md
+  README.md README.en.md LICENSE THIRD_PARTY_NOTICES.md CHANGELOG.md CHANGELOG.en.md
   CONTRIBUTING.md CONTRIBUTING.zh.md CODE_OF_CONDUCT.md SECURITY.md
   project.yml Apps Packages SharedSupport config dicts licenses scripts Vendor
   assets/icon.png assets/screenshots assets/brand/aime/base-v1

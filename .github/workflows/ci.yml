@@ -20,6 +20,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check changelog
+        run: python3 -m unittest discover -s scripts/tests -p 'test_changelog.py' -v
+
       - name: Set up build (Xcode, XcodeGen, librime, dictionaries)
         uses: ./.github/actions/setup-build
 

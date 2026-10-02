@@ -1,44 +1,49 @@
-# Changelog
+# 更新日志
 
-All notable changes to AIME will be documented in this file.
+AIME 每个版本面向用户的变动都记在这里，官网「更新日志」页由本文件生成。English: [CHANGELOG.en.md](CHANGELOG.en.md)。
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
-Versioned releases are intended to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+格式参照 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循[语义化版本](https://semver.org/lang/zh-CN/)：
+
+- 每个版本一节：`## [版本号] - YYYY-MM-DD`，下一行用引用写发布状态（如 `> 开发预览 · Developer ID 签名 · 公证处理中`）。
+- 条目按类型分组，只用这六类，按此顺序：**新增**、**变更**、**修复**、**移除**、**安全**、**已知问题**。没有内容的类型不写。
+- 一条说一件用户能感知的事：先说在哪里、发生了什么，再说现在怎样；不写内部实现和提交号。
+- 未发布的改动写在 `## [Unreleased]` 下，发版时整体移到新版本。
 
 ## [Unreleased]
 
 ## [0.1.1] - 2026-10-02
 
+> 开发预览 · Developer ID 签名 · 公证处理中
+
 ### 修复
 
 - 首次引导「按应用自动切换中英文」：扫描结束后列表可能只剩分隔线、看不到应用与选项，现在总会完整显示。
-- 同一步的应用扫描明显变快（扫描动画不再每帧重新读取应用图标，过去两三百个应用要二十多秒）。
+- 同一步的应用扫描明显变快：扫描动画不再每帧重新读取应用图标，过去两三百个应用要二十多秒。
 
 ## [0.1.0] - 2026-10-01
 
+> 开发预览 · Developer ID 签名 · 公证处理中
+
 首个公开的开发预览版。
 
-### 输入
+### 新增
 
 - 基于 librime 1.17 的 macOS 输入法，默认雾凇拼音，支持全拼与多种双拼；原生自绘候选窗，横排 / 竖排、亮暗配色。
 - **快捷菜单**：打字时长按 ⌥，空格进入 AI 处理，数字键进入常用语、符号板、高频词与设置。
-- **AI 处理**：对选中文字、刚打的字或正在选的候选执行翻译、润色或自定义动作，结果以候选呈现、回车替换。
-  可用 Apple 端侧模型（取决于设备与地区）或自备 OpenAI 兼容接口；简繁转换在本机完成。
+- **AI 处理**：对选中文字、刚打的字或正在选的候选执行翻译、润色或自定义动作，结果以候选呈现、回车替换。可用 Apple 端侧模型（取决于设备与地区）或自备 OpenAI 兼容接口；简繁转换在本机完成。
 - **输入图层（可选）**：上屏前先在光标处停留成草稿，便于整段处理后再发送。
 - 常用语分类、自定义短语、按应用默认中英文。
-
-### 设置
-
 - 可视化设置 80 余项，配色画廊与实时预览；方案与词库一键安装（固定版本与 SHA-256），官方在线词库每天 / 每周自动更新。
 - 从鼠须管只读导入；本地备份与恢复；RIME 同步目录合并词频。
 - 输入统计（可选，默认关闭，仅本机）；首次引导。
 - **自动更新**：每天检查公开的版本清单，下载后校验 SHA-256 与开发者签名，再交给系统安装器；可关闭。
-
-### 发行
-
-- 安装包由 ZOOL LLC 的 Developer ID 签名并经 Apple 公证。
+- 命令行工具 `aime`（deploy / bench / doctor / import-squirrel / package / get / set / sync / subscribe）。
 - 安装包含 GPL-3.0 组件，整体按 GPL-3.0 条款分发；附带对应源码包 `AIME-0.1.0-source.tar.gz`。
-- 命令行工具 `aime`（deploy / bench / doctor / import-squirrel / package / get / set / sync / subscribe），目前仅支持 Apple 芯片。
+
+### 已知问题
+
+- 安装包已用 ZOOL LLC 的 Developer ID 签名，Apple 公证仍在处理中；首次打开需在 Finder 中右键 › 打开。
+- 命令行工具 `aime` 目前仅支持 Apple 芯片。
 
 [Unreleased]: https://github.com/zoolapp/aime/compare/v0.1.1...HEAD
 [0.1.1]: https://github.com/zoolapp/aime/compare/v0.1.0...v0.1.1

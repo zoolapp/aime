@@ -7,8 +7,10 @@
 
 1. 同步版本号：`project.yml` 的 `MARKETING_VERSION` 和 `Packages/AIMEKit/Sources/aime/AIME.swift` 的 CLI `version`。
    tag 去掉 `v` 和 `-` 后缀后必须与这两处一致（`v0.2.0-beta.1` 对应 `0.2.0`），不一致时工作流直接失败。
-2. 更新 `CHANGELOG.md`：把 Unreleased 下的内容移到 `## [0.2.0] - YYYY-MM-DD`。
-   这一节会原样写进 Release 说明；找不到对应小节时改用模板。
+2. 更新 `CHANGELOG.md` 与 `CHANGELOG.en.md`：把 Unreleased 下的内容移到 `## [0.2.0] - YYYY-MM-DD`，
+   下一行写发布状态（`> 开发预览 · Developer ID 签名 · 公证处理中`），条目只用新增 / 变更 / 修复 / 移除 / 安全 / 已知问题六类。
+   中文这一节会原样写进 Release 说明，官网「更新日志」页也由这两个文件生成（aime-web 的 `npm run sync:changelog`）。
+   `python3 -m unittest discover -s scripts/tests -p 'test_changelog.py'` 检查格式、中英一致，以及最新版本与 `MARKETING_VERSION` 一致；CI 也会跑。
 3. 提交并等 CI 通过，然后打 tag 并推送：
 
    ```bash
