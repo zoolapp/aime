@@ -60,7 +60,15 @@ public struct ConfigAssistant: Sendable {
 
         var proposals: [Proposal] = []
         var rejected: [String] = []
-        for change in object.changes ?? [] {
+        let changes = object.changes ?? []
+        let grouped = Dictionary(grouping: changes, by: \.id)
+        var seen: Set<String> = []
+        for change in changes {
+            guard seen.insert(change.id).inserted else { continue }
+            guard grouped[change.id, default: []].allSatisfy({ $0.value == change.value }) else {
+                rejected.append("\(change.id)：同一设置存在不同取值的重复提案，已全部拒绝")
+                continue
+            }
             guard let setting = catalog.setting(change.id), setting.type != .custom else {
                 rejected.append("\(change.id)：目录中没有这个设置")
                 continue
@@ -89,10 +97,16 @@ public struct ConfigAssistant: Sendable {
             if let text = value.stringValue?.lowercased(), ["true", "false"].contains(text) { return .bool(text == "true") }
             return nil
         case .int, .double:
-            guard let number = value.doubleValue ?? value.stringValue.flatMap(Double.init) else { return nil }
+            guard let number = value.doubleValue ?? value.stringValue.flatMap(Double.init), number.isFinite else { return nil }
             if let min = setting.min, number < min { return nil }
             if let max = setting.max, number > max { return nil }
-            return setting.type == .int ? .int(Int(number.rounded())) : .double(number)
+            if setting.type == .int {
+                guard let integer = Int(exactly: number.rounded()) else { return nil }
+                if let min = setting.min, Double(integer) < min { return nil }
+                if let max = setting.max, Double(integer) > max { return nil }
+                return .int(integer)
+            }
+            return .double(number)
         case .enum:
             guard let options = setting.options, let match = options.first(where: { $0.value == value || $0.value.stringValue == value.stringValue })
             else { return nil }

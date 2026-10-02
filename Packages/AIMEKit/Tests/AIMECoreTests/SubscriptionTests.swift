@@ -93,6 +93,46 @@ struct SubscriptionTests {
         #expect(ConfigLayers(paths: paths).generatedValue(.schema("rime_ice"), keypath: "aime_online") != nil)
     }
 
+    @Test(arguments: [false, true])
+    func tableSignatureDetectsSameSizeAndTimestampChanges(shipped: Bool) async throws {
+        try "schema_list:\n  - schema: rime_ice\n".write(
+            to: paths.sharedDataDir!.appendingPathComponent("default.yaml"), atomically: true, encoding: .utf8)
+        let manager = stubManager()
+        let target: URL
+        if shipped {
+            target = paths.sharedDataDir!.appendingPathComponent("aime/aime_tech.tsv")
+        } else {
+            let added = try await manager.add(url: "https://example.invalid/feed.txt", name: nil)
+            target = manager.cacheURL(added.id)
+        }
+        let initial = Data("原词\tyuan ci\t50\n".utf8)
+        let updated = Data("原词\tyuan ci\t80\n".utf8)
+        let timestamp = Date(timeIntervalSince1970: 1_700_000_000)
+        try initial.write(to: target, options: .atomic)
+        try FileManager.default.setAttributes([.modificationDate: timestamp], ofItemAtPath: target.path)
+        let beforeAttributes = try FileManager.default.attributesOfItem(atPath: target.path)
+        let before = manager.tableSignature(schemas: ["rime_ice"], items: manager.subscriptions())
+        #expect(try manager.ensureTables())
+        #expect(try manager.ensureTables() == false)
+
+        try updated.write(to: target, options: .atomic)
+        try FileManager.default.setAttributes([.modificationDate: timestamp], ofItemAtPath: target.path)
+        let afterAttributes = try FileManager.default.attributesOfItem(atPath: target.path)
+        #expect(beforeAttributes[.modificationDate] as? Date == afterAttributes[.modificationDate] as? Date)
+        #expect(beforeAttributes[.size] as? Int == afterAttributes[.size] as? Int)
+        let after = manager.tableSignature(schemas: ["rime_ice"], items: manager.subscriptions())
+        #expect(before != after)
+        #expect(after.contains(PackageManager.sha256(of: updated)))
+        #expect(try manager.ensureTables())
+        let table = try String(contentsOf: paths.userDataDir.appendingPathComponent("aime_online.txt"), encoding: .utf8)
+        #expect(table.contains("原词\tyuanci\t80"))
+
+        // A timestamp-only change must not invalidate content-addressed tables.
+        try FileManager.default.setAttributes([.modificationDate: timestamp.addingTimeInterval(3600)], ofItemAtPath: target.path)
+        #expect(manager.tableSignature(schemas: ["rime_ice"], items: manager.subscriptions()) == after)
+        #expect(try manager.ensureTables() == false)
+    }
+
     @Test func shippedCatalogDecodes() throws {
         let repo = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
@@ -108,6 +148,145 @@ struct SubscriptionTests {
 }
 
 extension SubscriptionTests {
+    @Test(arguments: [false, true])
+    func pendingUpdateDoesNotRestoreRemovedSubscription(fails: Bool) async throws {
+        let manager = stubManager()
+        let added = try await manager.add(url: "https://example.invalid/feed.txt", name: nil)
+        let gate = SubscriptionFetchGate()
+        let updating = SubscriptionManager(paths: paths, fetch: { _, _ in
+            await gate.pause()
+            if fails { throw SubscriptionError.http(503) }
+            return .init(data: Data("新词\txin ci\t60\n".utf8), etag: "new", lastModified: nil, status: 200)
+        })
+        let task = Task { try await updating.update(id: added.id, force: true) }
+        await gate.waitForEntry()
+        try manager.remove(id: added.id)
+        await gate.resume()
+        #expect(try await task.value == nil)
+        #expect(manager.subscriptions().isEmpty)
+        #expect(!FileManager.default.fileExists(atPath: manager.cacheURL(added.id).path))
+    }
+
+    @Test(arguments: [false, true])
+    func pendingUpdatePreservesIntervalAndOtherSubscriptions(fails: Bool) async throws {
+        let manager = stubManager()
+        let added = try await manager.add(url: "https://example.invalid/feed.txt", name: nil)
+        let gate = SubscriptionFetchGate()
+        let updating = SubscriptionManager(paths: paths, fetch: { _, _ in
+            await gate.pause()
+            if fails { throw SubscriptionError.http(503) }
+            return .init(data: Data("原词\tyuan ci\t50\n新词\txin ci\t60\n".utf8), etag: "new", lastModified: nil, status: 200)
+        })
+        let task = Task { try await updating.update(id: added.id, force: true) }
+        await gate.waitForEntry()
+        try manager.setInterval(id: added.id, .weekly)
+        let other = try await manager.add(url: "https://example.invalid/other.txt", name: "另一份词库")
+        let savedOther = manager.subscriptions().first { $0.id == other.id }
+        await gate.resume()
+        let result = try await task.value
+        #expect(result?.updateInterval == .weekly)
+        #expect(result?.entryCount == (fails ? 1 : 2))
+        #expect((result?.lastError != nil) == fails)
+        #expect(manager.subscriptions().first { $0.id == added.id }?.updateInterval == .weekly)
+        #expect(manager.subscriptions().first { $0.id == other.id } == savedOther)
+        #expect(manager.subscriptions().count == 2)
+    }
+
+    @Test(arguments: [false, true])
+    func pendingUpdateDiscardsChangedSource(checksumOnly: Bool) async throws {
+        let manager = stubManager()
+        let added = try await manager.add(url: "https://example.invalid/feed.txt", name: nil)
+        let originalCache = try Data(contentsOf: manager.cacheURL(added.id))
+        let gate = SubscriptionFetchGate()
+        let updating = SubscriptionManager(paths: paths, fetch: { _, _ in
+            await gate.pause()
+            return .init(data: Data("新词\txin ci\t60\n".utf8), etag: "stale", lastModified: nil, status: 200)
+        })
+        let task = Task { try await updating.update(id: added.id, force: true) }
+        await gate.waitForEntry()
+        let catalog = VocabularyCatalog(version: 2, name: "AIME", homepage: nil, updated: nil, feeds: [
+            .init(id: "feed", name: "词库", description: "", category: "ai", entries: nil,
+                  url: checksumOnly ? added.url : URL(string: "https://example.invalid/v2/feed.txt")!,
+                  version: nil, updated: nil, sha256: String(repeating: "a", count: 64), size: nil),
+        ])
+        try manager.follow(catalog)
+        let current = manager.subscriptions()
+        await gate.resume()
+        #expect(try await task.value == nil)
+        #expect(manager.subscriptions() == current)
+        #expect(try Data(contentsOf: manager.cacheURL(added.id)) == originalCache)
+    }
+
+    private func stubManager() -> SubscriptionManager {
+        SubscriptionManager(paths: paths, fetch: { _, _ in
+            .init(data: Data("原词\tyuan ci\t50\n".utf8), etag: "original", lastModified: nil, status: 200)
+        })
+    }
+
+    @Test func updateDueIgnoresHistoricalNewEntriesWhenNotDue() async throws {
+        let manager = stubManager()
+        let added = try await manager.add(url: "https://example.invalid/feed.txt", name: nil)
+        let due = added.lastChecked!.addingTimeInterval(25 * 3600)
+        let updating = SubscriptionManager(paths: paths, fetch: { _, etag in
+            #expect(etag == "original")
+            return .init(data: Data("原词\tyuan ci\t50\n新词\txin ci\t60\n".utf8), etag: "new", lastModified: nil, status: 200)
+        })
+        #expect(await updating.updateDue(now: due))
+        #expect(manager.subscriptions().first?.newEntries == 1)
+        let notDue = SubscriptionManager(paths: paths, fetch: { _, _ in
+            Issue.record("未到期或仅手动订阅不应发起下载")
+            throw SubscriptionError.http(500)
+        })
+        #expect(await notDue.updateDue(now: due.addingTimeInterval(3600)) == false)
+        #expect(await notDue.updateDue(now: due.addingTimeInterval(7200)) == false)
+        #expect(try await notDue.update(id: added.id, now: due.addingTimeInterval(7200))?.contentChanged == false)
+        #expect(manager.subscriptions().first?.newEntries == 1)
+        try manager.setInterval(id: added.id, .manual)
+        #expect(await notDue.updateDue(now: due.addingTimeInterval(30 * 24 * 3600)) == false)
+    }
+
+    @Test(arguments: ["新词\txin ci\t50\n", "原词\tyuan ci\t80\n", "原词\tyuan qi\t50\n"])
+    func updateDueDetectsEqualCountContentChanges(content: String) async throws {
+        let manager = stubManager()
+        let added = try await manager.add(url: "https://example.invalid/feed.txt", name: nil)
+        let updating = SubscriptionManager(paths: paths, fetch: { _, _ in
+            .init(data: Data(content.utf8), etag: nil, lastModified: nil, status: 200)
+        })
+        #expect(await updating.updateDue(now: added.lastChecked!.addingTimeInterval(25 * 3600)))
+        #expect(manager.subscriptions().first?.entryCount == 1)
+        #expect(try String(contentsOf: manager.cacheURL(added.id), encoding: .utf8) == content)
+        #expect(try await updating.update(id: added.id, force: true)?.contentChanged == false)
+    }
+
+    @Test(arguments: [200, 304, 503])
+    func updateDueDoesNotReportUnchangedOrFailedDownloads(status: Int) async throws {
+        let manager = stubManager()
+        let added = try await manager.add(url: "https://example.invalid/feed.txt", name: nil)
+        let content = Data("原词\tyuan ci\t50\n新词\txin ci\t60\n".utf8)
+        let initialUpdate = SubscriptionManager(paths: paths, fetch: { _, _ in
+            .init(data: content, etag: "new", lastModified: nil, status: 200)
+        })
+        let result = try #require(await initialUpdate.update(id: added.id, force: true))
+        #expect(result.contentChanged && result.item.newEntries == 1)
+        let checked = SubscriptionManager(paths: paths, fetch: { _, _ in
+            .init(data: status == 200 ? content : nil, etag: "new", lastModified: nil, status: status)
+        })
+        #expect(await checked.updateDue(now: result.item.lastChecked!.addingTimeInterval(25 * 3600)) == false)
+        #expect(try Data(contentsOf: manager.cacheURL(added.id)) == content)
+        #expect((manager.subscriptions().first?.lastError != nil) == (status == 503))
+    }
+
+    @Test func cacheWriteFailureDoesNotReportContentChanged() async throws {
+        let manager = stubManager()
+        let added = try await manager.add(url: "https://example.invalid/feed.txt", name: nil)
+        try FileManager.default.removeItem(at: manager.cacheURL(added.id))
+        // A directory at the cache path deterministically prevents atomic file replacement.
+        try FileManager.default.createDirectory(at: manager.cacheURL(added.id), withIntermediateDirectories: true)
+        let result = try #require(await manager.update(id: added.id, force: true))
+        #expect(result.contentChanged == false)
+        #expect(result.item.lastError != nil)
+    }
+
     @Test func intervalsDecideAutomaticUpdates() async throws {
         let source = root.appendingPathComponent("feed.txt")
         try "氛围编程\n".write(to: source, atomically: true, encoding: .utf8)
@@ -153,6 +332,28 @@ extension SubscriptionTests {
     }
 }
 
+private actor SubscriptionFetchGate {
+    private var entered = false
+    private var entryWaiter: CheckedContinuation<Void, Never>?
+    private var release: CheckedContinuation<Void, Never>?
+
+    func pause() async {
+        entered = true
+        entryWaiter?.resume()
+        entryWaiter = nil
+        await withCheckedContinuation { release = $0 }
+    }
+
+    func waitForEntry() async {
+        if !entered { await withCheckedContinuation { entryWaiter = $0 } }
+    }
+
+    func resume() {
+        release?.resume()
+        release = nil
+    }
+}
+
 extension SubscriptionTests {
     @Test func olderSubscriptionsAreAdoptedByFileName() async throws {
         let old = root.appendingPathComponent("github/ai-terms-dev-tools.txt")
@@ -174,4 +375,3 @@ extension SubscriptionTests {
         #expect(try await manager.update(id: adopted.id, force: true)?.entryCount == 2)
     }
 }
-

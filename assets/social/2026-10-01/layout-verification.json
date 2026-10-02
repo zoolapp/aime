@@ -1,0 +1,258 @@
+[
+  {
+    "name": "github-social",
+    "width": 1280,
+    "height": 640,
+    "bounds": [
+      {
+        "key": "preview",
+        "text": "0.1.x 开发预览",
+        "x": 1100.119661743164,
+        "y": 82,
+        "width": 115.88033825683594,
+        "size": 18
+      },
+      {
+        "key": "headline1",
+        "text": "有些话，",
+        "x": 76,
+        "y": 258,
+        "width": 256,
+        "size": 64
+      },
+      {
+        "key": "headline2",
+        "text": "适合静静打出来。",
+        "x": 76,
+        "y": 342,
+        "width": 512,
+        "size": 64
+      },
+      {
+        "key": "category",
+        "text": "基于 RIME 的开源 macOS 中文输入法",
+        "x": 80,
+        "y": 411,
+        "width": 415.6657104492188,
+        "size": 25
+      },
+      {
+        "key": "values",
+        "text": "本地输入  ·  按需 AI  ·  词库订阅更新",
+        "x": 80,
+        "y": 458,
+        "width": 372.5592094726563,
+        "size": 22
+      },
+      {
+        "key": "url",
+        "text": "aime.zool.app",
+        "x": 80,
+        "y": 581,
+        "width": 150.0566651611328,
+        "size": 22
+      },
+      {
+        "key": "tagline",
+        "text": "中文常新，自在表达。",
+        "x": 996,
+        "y": 581,
+        "width": 220,
+        "size": 22
+      }
+    ],
+    "result": "PASS"
+  },
+  {
+    "name": "x-social",
+    "width": 1200,
+    "height": 630,
+    "bounds": [
+      {
+        "key": "preview",
+        "text": "0.1.x 开发预览",
+        "x": 1020.1196617431641,
+        "y": 82,
+        "width": 115.88033825683594,
+        "size": 18
+      },
+      {
+        "key": "headline1",
+        "text": "有些话，",
+        "x": 76,
+        "y": 258,
+        "width": 256,
+        "size": 64
+      },
+      {
+        "key": "headline2",
+        "text": "适合静静打出来。",
+        "x": 76,
+        "y": 342,
+        "width": 512,
+        "size": 64
+      },
+      {
+        "key": "category",
+        "text": "基于 RIME 的开源 macOS 中文输入法",
+        "x": 80,
+        "y": 411,
+        "width": 415.6657104492188,
+        "size": 25
+      },
+      {
+        "key": "values",
+        "text": "本地输入  ·  按需 AI  ·  词库订阅更新",
+        "x": 80,
+        "y": 458,
+        "width": 372.5592094726563,
+        "size": 22
+      },
+      {
+        "key": "url",
+        "text": "aime.zool.app",
+        "x": 80,
+        "y": 571,
+        "width": 150.0566651611328,
+        "size": 22
+      },
+      {
+        "key": "tagline",
+        "text": "中文常新，自在表达。",
+        "x": 916,
+        "y": 571,
+        "width": 220,
+        "size": 22
+      }
+    ],
+    "result": "PASS"
+  },
+  {
+    "name": "github-social-en",
+    "width": 1280,
+    "height": 640,
+    "bounds": [
+      {
+        "key": "previewEn",
+        "text": "0.1.x Developer preview",
+        "x": 1013.2327125244141,
+        "y": 82,
+        "width": 202.76728747558593,
+        "size": 18
+      },
+      {
+        "key": "headline1En",
+        "text": "Some words,",
+        "x": 76,
+        "y": 258,
+        "width": 407.14125781250004,
+        "size": 64
+      },
+      {
+        "key": "headline2En",
+        "text": "better typed in quiet.",
+        "x": 76,
+        "y": 342,
+        "width": 665.0615585937501,
+        "size": 64
+      },
+      {
+        "key": "categoryEn",
+        "text": "Open-source Chinese input for macOS · RIME",
+        "x": 80,
+        "y": 411,
+        "width": 544.0381546020508,
+        "size": 25
+      },
+      {
+        "key": "valuesEn",
+        "text": "Local input  ·  Optional AI  ·  Vocabulary feeds",
+        "x": 80,
+        "y": 458,
+        "width": 493.455132446289,
+        "size": 22
+      },
+      {
+        "key": "url",
+        "text": "aime.zool.app",
+        "x": 80,
+        "y": 581,
+        "width": 150.0566651611328,
+        "size": 22
+      },
+      {
+        "key": "taglineEn",
+        "text": "New words, freely yours.",
+        "x": 961.2141274414063,
+        "y": 581,
+        "width": 254.78587255859372,
+        "size": 22
+      }
+    ],
+    "result": "PASS"
+  },
+  {
+    "name": "x-social-en",
+    "width": 1200,
+    "height": 630,
+    "bounds": [
+      {
+        "key": "previewEn",
+        "text": "0.1.x Developer preview",
+        "x": 933.2327125244141,
+        "y": 82,
+        "width": 202.76728747558593,
+        "size": 18
+      },
+      {
+        "key": "headline1En",
+        "text": "Some words,",
+        "x": 76,
+        "y": 258,
+        "width": 407.14125781250004,
+        "size": 64
+      },
+      {
+        "key": "headline2En",
+        "text": "better typed in quiet.",
+        "x": 76,
+        "y": 342,
+        "width": 665.0615585937501,
+        "size": 64
+      },
+      {
+        "key": "categoryEn",
+        "text": "Open-source Chinese input for macOS · RIME",
+        "x": 80,
+        "y": 411,
+        "width": 544.0381546020508,
+        "size": 25
+      },
+      {
+        "key": "valuesEn",
+        "text": "Local input  ·  Optional AI  ·  Vocabulary feeds",
+        "x": 80,
+        "y": 458,
+        "width": 493.455132446289,
+        "size": 22
+      },
+      {
+        "key": "url",
+        "text": "aime.zool.app",
+        "x": 80,
+        "y": 571,
+        "width": 150.0566651611328,
+        "size": 22
+      },
+      {
+        "key": "taglineEn",
+        "text": "New words, freely yours.",
+        "x": 881.2141274414063,
+        "y": 571,
+        "width": 254.78587255859372,
+        "size": 22
+      }
+    ],
+    "result": "PASS"
+  }
+]

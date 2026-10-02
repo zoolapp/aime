@@ -138,6 +138,63 @@ struct PatchLayeringTests {
         #expect(try String(contentsOf: layers.shimURL(.default), encoding: .utf8) == good)
     }
 
+    @Test func dirtyTargetsSurvivePreparationAndRetryUntilMarkedDeployed() throws {
+        let fm = FileManager.default
+        try layers.setGenerated(.default, keypath: "menu/page_size", value: 7)
+        try layers.setGenerated(.frontend, keypath: "style/color_scheme", value: "aime_light")
+        try fm.createDirectory(at: paths.stagingDir, withIntermediateDirectories: true)
+        let untouched = paths.builtConfig("untouched.schema")
+        try "schema: {}\n".write(to: untouched, atomically: true, encoding: .utf8)
+        let expected = ["aime", "default"]
+
+        // A failed deploy may leave partial output. Each retry must invalidate it,
+        // even when the composed shims have not changed since the previous attempt.
+        for _ in 0..<2 {
+            for configID in expected {
+                try "partial: true\n".write(to: paths.builtConfig(configID), atomically: true, encoding: .utf8)
+            }
+            #expect(try layers.prepareForDeploy() == expected)
+            #expect(fm.fileExists(atPath: layers.deployingListURL.path))
+            #expect(layers.dirtyTargets() == Set(expected))
+            for configID in expected {
+                #expect(!fm.fileExists(atPath: paths.builtConfig(configID).path))
+            }
+            #expect(fm.fileExists(atPath: untouched.path))
+        }
+
+        layers.markDeployed()
+        #expect(!fm.fileExists(atPath: layers.deployingListURL.path))
+        #expect(layers.dirtyTargets().isEmpty)
+        #expect(try layers.prepareForDeploy().isEmpty)
+        layers.markDeployed() // Acknowledging an already clean workspace is harmless.
+        #expect(layers.dirtyTargets().isEmpty)
+    }
+
+    @Test func editDuringDeployOutlivesItsAcknowledgement() throws {
+        try layers.setGenerated(.default, keypath: "menu/page_size", value: 7)
+        #expect(try layers.prepareForDeploy() == ["default"])
+        // The user changes the same target again while librime is still building.
+        try layers.setGenerated(.default, keypath: "menu/page_size", value: 9)
+        layers.markDeployed()
+        #expect(layers.dirtyTargets() == ["default"])
+        #expect(try layers.prepareForDeploy() == ["default"])
+    }
+
+    @Test func failedPreparationPreservesDirtyTargetsAndBuiltOutput() throws {
+        let fm = FileManager.default
+        try layers.setGenerated(.default, keypath: "menu/page_size", value: 7)
+        try fm.createDirectory(at: paths.stagingDir, withIntermediateDirectories: true)
+        let built = paths.builtConfig("default")
+        let previous = "menu: {page_size: 5}\n"
+        try previous.write(to: built, atomically: true, encoding: .utf8)
+        try "patch: [unclosed\n".write(to: layers.importedURL(.default), atomically: true, encoding: .utf8)
+
+        #expect(throws: (any Error).self) { try layers.prepareForDeploy() }
+        #expect(fm.fileExists(atPath: layers.dirtyListURL.path))
+        #expect(layers.dirtyTargets() == ["default"])
+        #expect(try String(contentsOf: built, encoding: .utf8) == previous)
+    }
+
     @Test func foreignCustomFileIsBackedUpNotDeleted() throws {
         try FileManager.default.createDirectory(at: paths.importedDir, withIntermediateDirectories: true)
         try "patch: {a: 1}\n".write(to: layers.importedURL(.default), atomically: true, encoding: .utf8)

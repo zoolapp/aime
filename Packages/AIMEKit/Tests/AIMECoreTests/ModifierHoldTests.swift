@@ -51,4 +51,38 @@ struct ModifierHoldTests {
         #expect(token == nil)
         #expect(!hold.isArmed)
     }
+
+    @Test func resetInvalidatesPendingTimerEvenAfterRearming() throws {
+        var hold = ModifierHold(key: .option)
+        let armedToken = hold.modifiersChanged(option)
+        let oldToken = try #require(armedToken)
+        hold.reset()
+        #expect(!hold.isArmed && !hold.isFired)
+        #expect(hold.token == oldToken + 1)
+        let staleFire = hold.fire(token: oldToken)
+        #expect(!staleFire)
+
+        let rearmedToken = hold.modifiersChanged(option)
+        let newToken = try #require(rearmedToken)
+        let staleFireAfterRearming = hold.fire(token: oldToken)
+        #expect(!staleFireAfterRearming && hold.isArmed)
+        let freshFire = hold.fire(token: newToken)
+        #expect(freshFire)
+    }
+
+    @Test func resetClearsFiredStateWithoutConsumingNextRelease() throws {
+        var hold = ModifierHold(key: .option)
+        let armedToken = hold.modifiersChanged(option)
+        let token = try #require(armedToken)
+        let fired = hold.fire(token: token)
+        #expect(fired)
+        hold.reset()
+        #expect(!hold.isFired && !hold.isArmed)
+        #expect(hold.key == .option)
+        #expect(hold.withoutHoldKey(option) == option)
+        let consumed = hold.consumeRelease(0)
+        #expect(!consumed)
+        let newToken = hold.modifiersChanged(option)
+        #expect(newToken != nil)
+    }
 }

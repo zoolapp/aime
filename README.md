@@ -27,20 +27,29 @@
 </p>
 
 <p align="center">
-  <img src="assets/screenshots/settings-overview-light.png" width="860" alt="艾么输入法设置 · 概览">
+  <img src="assets/social/2026-10-01/hero-v4.jpg" width="860" alt="AIME · 中文常新，自在表达。开源、隐私、AI 时代的输入法；斜侧笔记本与键盘场景展示输入法交互，基于原生界面参考的宣传合成图，内容为虚构示例。">
 </p>
 
 > [!IMPORTANT]
-> **开发预览版（0.1.x）。** 功能仍在快速迭代，[Releases](https://github.com/zoolapp/aime/releases) 中的安装包标为预发布，安装说明见下文。AIME 是独立项目，不是鼠须管（Squirrel）的分支，不包含其 GPL 源码，可与鼠须管同时安装。
+> **开发预览版（0.1.x）。** 功能仍在快速迭代；当前公开 v0.1.0 Release 标为「公证处理中」，下载前请核对 [Releases](https://github.com/zoolapp/aime/releases) 的最新说明与校验文件。AIME 是独立项目，不是鼠须管（Squirrel）的分支，不包含其 GPL 源码，可与鼠须管同时安装。
+
+## 有些话，适合静静打出来
+
+语音输入很方便。但不想说话的时候、在共享空间里不便开口的时候，或想边写边想、慢慢斟酌一句话的时候，键盘依然有它的位置。
+
+AIME 为这些时刻而做：保留 RIME 的开放与自由，用原生界面管理输入习惯，在需要时加入 AI 辅助。无内置广告，日常输入在本机处理，方案、外观与词库由你选择。
+
+如果你希望保留全拼／双拼和自己的词库，又想少写一些配置文件；如果你重视安静写作、工具透明和表达的掌控感，可以试试 AIME。
 
 ## 为什么是 AIME
 
 | | |
 |---|---|
 | **开源，站在 RIME 肩上** | 以 [librime](https://github.com/rime/librime) 为引擎、[雾凇拼音](https://github.com/iDvel/rime-ice) 为默认方案。可从鼠须管只读导入已有配置，不改动原目录。AIME 原创代码以 MIT 许可开源。 |
-| **日常输入在本机处理** | 组字、候选与个人词频都在本机，不写输入日志，不内置任何统计或崩溃上报。常用语与输入统计只存于本机。 |
+| **日常输入在本机处理** | 组字、候选与个人词频都在本机，不写输入日志，不内置广告、遥测或崩溃上报。常用语与可选输入统计只存于本机。 |
 | **AI 由你主动调用** | 翻译、润色与自定义动作，长按 ⌥ 再按空格即可在光标处完成；只有你主动执行时才处理那一段文字。可用 Apple 端侧模型（取决于设备与地区），或配置自己的 OpenAI 兼容接口。简繁转换在本机完成。 |
-| **更顺手的输入** | librime 进程内运行，候选窗原生自绘（开发机雾凇拼音单键 p99 0.61 ms，见性能门禁）。常用语分类、短语编码、符号板字母直选、高频词置顶。 |
+| **输入习惯，由你调整** | 用可视化设置管理方案、配色与快捷键；原生候选窗、常用语分类、短语编码、符号板字母直选，让日常输入少些切换。 |
+| **词库常新，生态开放** | 官方词库可按每天／每周自动检查，也可仅手动更新；版本与 SHA-256 校验后使用。可订阅 RIME 兼容词表、安装社区方案，从鼠须管只读导入。感谢上游维护者与贡献者。 |
 
 ## 功能
 
@@ -58,6 +67,10 @@
 - **命令行**：`aime deploy / bench / doctor / import-squirrel / package / get / set / sync`，便于脚本化与 CI。
 
 <p align="center">
+  <img src="assets/screenshots/settings-overview-light.png" width="860" alt="艾么输入法设置 · 概览">
+</p>
+
+<p align="center">
   <img src="assets/screenshots/settings-appearance-dark.png" width="49%" alt="外观（深色）">
   <img src="assets/screenshots/settings-dictionaries-light.png" width="49%" alt="词库">
 </p>
@@ -72,7 +85,7 @@
    shasum -a 256 -c SHA256SUMS.txt --ignore-missing
    ```
 
-2. 双击安装。安装包由 Zool LLC 的 Developer ID 签名并经 Apple 公证。
+2. 先阅读该版本的签名与公证状态，再按 Release 说明安装。当前 v0.1.0 仍为开发预览，不要将可下载等同于已公证；遇到系统安全提示时先核对版本说明。
 3. 打开 **系统设置 › 键盘 › 输入法 › 编辑…**，点击 **+**，在「简体中文」中添加 **艾么输入法**。首次安装后若未出现，请注销并重新登录。
 
 ### 从源码构建
@@ -127,6 +140,10 @@ xcodegen generate && open AIME.xcodeproj
 
 性能门禁：`aime bench --schema rime_ice --keys nihaoshijie --iterations 2000 --assert-p99-ms 5`。
 贡献流程见 [CONTRIBUTING.zh.md](CONTRIBUTING.zh.md)，发布流程见 [docs/releasing.md](docs/releasing.md)，安全问题请按 [SECURITY.md](SECURITY.md) 私下报告。
+
+## 文档与参与
+
+[文档导航](docs/README.md) 汇总使用、配置、开发与分发说明。遇到问题可提交 [Issue](https://github.com/zoolapp/aime/issues)；贡献代码请读 [贡献指南](CONTRIBUTING.zh.md)，公共词表贡献请到 [aime-dicts](https://github.com/zoolapp/aime-dicts)。欢迎分享输入习惯、方案与主题，反馈示例请使用虚构文字，不附带个人词频或完整配置目录。
 
 ## 隐私
 

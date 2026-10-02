@@ -630,17 +630,16 @@ final class SettingsModel {
         revision += 1
     }
 
-    /// Pins a frequent word as the first candidate of its code in the current phrase table.
-    /// The code follows the layout of the schemas that use that table (全拼 or 双拼).
-    /// The code a pinned word gets in the active phrase table (双拼 tables use 双拼 codes).
-    private func pinCode(_ word: String) -> String? {
+    /// The code a word gets in the active phrase table: 双拼 tables use 双拼 codes, so
+    /// pinned words and AI-extracted terms are typeable in the schema that reads them.
+    func phraseCode(_ word: String) -> String? {
         guard let pinyin = VocabularyParser.pinyin(for: word) else { return nil }
         let layout = phraseTable.schemas.lazy.compactMap(DoublePinyin.layout(forSchema:)).first
         return layout?.code(forPinyin: pinyin) ?? pinyin.replacingOccurrences(of: " ", with: "")
     }
 
     func pinUsageWord(_ word: String) -> String? {
-        guard let code = pinCode(word) else { return nil }
+        guard let code = phraseCode(word) else { return nil }
         updatePhrases { _ = $0.add(.init(text: word, code: code)) }
         savePhrases()
         revision += 1
@@ -652,7 +651,7 @@ final class SettingsModel {
     /// Removes the entry pinning added. A phrase the user wrote by hand under another
     /// code is left alone (returns false so the view can point to 自定义短语).
     func unpinUsageWord(_ word: String) -> Bool {
-        guard let code = pinCode(word), phrases.phrases.contains(where: { $0.text == word && $0.code == code }) else { return false }
+        guard let code = phraseCode(word), phrases.phrases.contains(where: { $0.text == word && $0.code == code }) else { return false }
         updatePhrases { $0.remove(text: word, code: code) }
         savePhrases()
         revision += 1
@@ -666,11 +665,16 @@ final class SettingsModel {
 
     func setSyncDir(_ path: String?) { perform { try store.setSyncDir(path) } }
 
-    func syncNow() async {
+    @discardableResult
+    func syncNow() async -> Bool {
         deployState = .deploying
-        let result = await deployer.run(["sync"])
-        deployState = result.ok ? .succeeded(Date()) : .failed(result.output)
+        let outcome = await deployer.sync()
+        switch outcome {
+        case .success: deployState = .succeeded(Date())
+        case let .failure(message): deployState = .failed(message)
+        }
         revision += 1
+        return outcome == .success
     }
 
     // MARK: - Backup (local only)
@@ -682,14 +686,16 @@ final class SettingsModel {
     /// Exports fresh frequency snapshots (RIME sync), then writes the backup file.
     func createBackup(to url: URL, includeStats: Bool) async {
         backupActivity = "正在导出词频快照…"
-        await syncNow()
+        let synced = await syncNow()
         backupActivity = "正在打包…"
         defer { backupActivity = nil }
         let manager = backupManager
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
         do {
             let manifest = try await Task.detached { try manager.create(at: url, includeStats: includeStats, appVersion: version) }.value
-            backupNotice = "已备份 \(manifest.files.count) 个文件到 \(url.lastPathComponent)"
+            backupNotice = synced
+                ? "已备份 \(manifest.files.count) 个文件到 \(url.lastPathComponent)"
+                : "已备份 \(manifest.files.count) 个文件到 \(url.lastPathComponent)，但词频同步失败，备份未包含最新词频"
         } catch {
             lastError = "备份失败：\(error)"
         }

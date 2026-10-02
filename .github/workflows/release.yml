@@ -162,6 +162,9 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
           AIME_MANIFEST_KEY: ${{ secrets.AIME_MANIFEST_KEY }}
+          # Shorten (e.g. 3m) while Apple holds submissions for review: the wait only
+          # burns runner minutes; scripts/finish-notarization.sh staples later.
+          AIME_NOTARY_WAIT: ${{ vars.AIME_NOTARY_WAIT || '20m' }}
         run: bash scripts/release.sh "$VERSION"
 
       - name: Verify artefacts

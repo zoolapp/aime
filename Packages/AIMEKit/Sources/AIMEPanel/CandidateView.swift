@@ -798,7 +798,8 @@ public final class CandidateView: NSView {
                 NSAttributedString.Key(kCTForegroundColorAttributeName as String): nsColor(theme.commentTextColor).cgColor,
             ]))
             hintLine = (line, NSPoint(x: insetX + 2, y: bottom + 8 + hintFont.ascender))
-            bottom += 8 + ceil(hintFont.ascender - hintFont.descender)
+            // A little air below the hint so it does not sit on the panel's edge.
+            bottom += 8 + ceil(hintFont.ascender - hintFont.descender) + 3
             contentWidth = max(contentWidth, insetX + ceil(CTLineGetTypographicBounds(line, nil, nil, nil)) + 4)
         }
         contentSize = NSSize(width: ceil(contentWidth + insetX), height: ceil(bottom + insetY))

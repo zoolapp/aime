@@ -35,9 +35,9 @@ struct AITests {
         """
         let assistant = ConfigAssistant(provider: MockProvider(reply: reply), catalog: catalog)
         let result = try await assistant.propose("候选 7 个，竖排，zh z 不分") { $0.id == "menu.page_size" ? 5 : nil }
-        #expect(result.proposals.map(\.setting.id) == ["menu.page_size", "appearance.layout", "spelling.fuzzy.zh_z"])
+        #expect(result.proposals.map(\.setting.id) == ["menu.page_size", "spelling.fuzzy.zh_z"])
         #expect(result.proposals[0].current == 5 && result.proposals[0].proposed == 7)
-        #expect(result.proposals[2].proposed == true)
+        #expect(result.proposals[1].proposed == true)
         #expect(result.rejected.count == 2)
         #expect(result.explanation == "已调整")
     }

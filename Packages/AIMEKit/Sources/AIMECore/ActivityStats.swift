@@ -126,6 +126,8 @@ extension UsageStatsStore {
         return (try? JSONDecoder().decode(DayActivity.self, from: data)) ?? DayActivity()
     }
 
+    /// Synchronous read-modify-write; UsageRecorder calls this on the same
+    /// background write chain as word counts and clear, never in a separate task.
     public func mergeActivity(_ delta: DayActivity, into day: String) throws {
         guard !delta.isEmpty else { return }
         try prepareDirectory()

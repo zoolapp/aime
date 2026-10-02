@@ -34,9 +34,9 @@ import Testing
             symbols: symbols, frequentWords: [("智能体", 42), ("提示词", 30)], usageStatsEnabled: true, polishEnabled: true,
             customActions: ["粤语"],
             snippets: [
-                .init(id: "phone", title: "手机号", symbol: nil, items: ["+852 6100 6100"]),
-                .init(id: "mail", title: "邮箱", symbol: nil, items: ["hello@zool.app"]),
-                .init(id: "addr", title: "地址", symbol: nil, items: ["香港中环皇后大道中 99 号"]),
+                .init(id: "phone", title: "手机号", symbol: nil, items: ["+852 6100 6100", "+86 139 1234 5678", "+1 (415) 555-0100"]),
+                .init(id: "mail", title: "邮箱", symbol: nil, items: ["hello@zool.app", "luolei@work.example", "me@personal.example"]),
+                .init(id: "addr", title: "地址", symbol: nil, items: ["香港中环皇后大道中 99 号", "成都市锦江区春熙路 1 号"]),
             ])
         content.hasActionTarget = true
         var menu = QuickMenu(content: content)
@@ -46,6 +46,10 @@ import Testing
         menu = QuickMenu(content: content)
         _ = menu.handle(.digit(1))
         shots.append(("menu-snippets", Self.state(menu)))
+        _ = menu.handle(.down)
+        shots.append(("menu-snippets-second", Self.state(menu)))
+        _ = menu.handle(.digit(2))
+        shots.append(("menu-snippets-mail", Self.state(menu)))
         menu = QuickMenu(content: content)
         _ = menu.handle(.digit(2))
         shots.append(("menu-symbols", Self.state(menu)))

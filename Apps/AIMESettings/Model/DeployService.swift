@@ -62,17 +62,28 @@ final class DeployService {
         if usesInputMethod {
             // Never start a second writer on timeout: the input method may still be
             // deploying. Report the unknown outcome instead.
-            return await deployViaInputMethod(automatic: automatic, progress: progress)
+            return await requestViaInputMethod(mode: automatic ? "auto" : "full", progress: progress)
                 ?? .failure("输入法未在 3 分钟内返回部署结果，可能仍在部署；请稍后查看日志 \(paths.logDir.path)")
         }
         let result = await run(["deploy"])
         return result.ok ? .success : .failure(Self.summarize(result.output))
     }
 
+    /// Merges user dictionaries with the sync directory. The running input method holds
+    /// the userdbs open, so it must do the export itself; the CLI only works without it.
+    func sync() async -> Outcome {
+        if usesInputMethod {
+            return await requestViaInputMethod(mode: "sync", progress: { _, _ in })
+                ?? .failure("输入法未在 3 分钟内返回同步结果，可能仍在同步；请稍后查看日志 \(paths.logDir.path)")
+        }
+        let result = await run(["sync"])
+        return result.ok ? .success : .failure(Self.summarize(result.output))
+    }
+
     /// Validates pending changes in a throwaway copy of the workspace.
     func dryRun() async -> CommandResult { await run(["deploy", "--dry-run"]) }
 
-    private func deployViaInputMethod(automatic: Bool, progress: @escaping @MainActor (String, Int) -> Void) async -> Outcome? {
+    private func requestViaInputMethod(mode: String, progress: @escaping @MainActor (String, Int) -> Void) async -> Outcome? {
         let center = DistributedNotificationCenter.default()
         let request = UUID().uuidString
         nonisolated(unsafe) let progressToken = center.addObserver(
@@ -97,7 +108,7 @@ final class DeployService {
             continuation.onTermination = { _ in center.removeObserver(token) }
         }
         center.postNotificationName(Notification.Name("app.zool.aime.reload"), object: nil,
-                                    userInfo: ["request": request, "mode": automatic ? "auto" : "full"], deliverImmediately: true)
+                                    userInfo: ["request": request, "mode": mode], deliverImmediately: true)
         return await withTaskGroup(of: Outcome?.self) { group in
             group.addTask { for await outcome in stream { return outcome }; return nil }
             group.addTask { try? await Task.sleep(for: .seconds(180)); return nil }

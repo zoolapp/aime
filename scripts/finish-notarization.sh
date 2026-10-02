@@ -61,11 +61,30 @@ rm -f "$DIR/NOTARY_PENDING.txt"
 cat "$DIR/SHA256SUMS.txt"
 
 [[ "$PUBLISH" == --publish ]] || { echo "stapled; re-run with --publish to replace the release files"; exit 0; }
+NEWER_LIVE=""
+# A late notarization of an older release must not roll the update channel back.
+LIVE="$(curl -fsS https://get.zool.app/aime/latest.json | python3 -c 'import json,sys; print(json.load(sys.stdin)["version"])')" \
+  || { echo "cannot read the live latest.json; not touching it" >&2; exit 1; }
+if ! python3 - "$VERSION" "$LIVE" <<'PY'
+import re, sys
+def key(v):  # 1.2.3 > 1.2.3-beta.1; numeric parts compare as numbers
+    core, _, pre = v.partition("-")
+    nums = tuple(int(x) for x in core.split("."))
+    return nums + ((1,) if not pre else (0,) + tuple((0, int(p)) if p.isdigit() else (1, p) for p in re.split(r"[.]", pre)),)
+sys.exit(0 if key(sys.argv[1]) >= key(sys.argv[2]) else 1)
+PY
+then
+  NEWER_LIVE="$LIVE"
+fi
 gh release upload "v$VERSION" -R zoolapp/aime --clobber "$PKG" "$ZIP" "$SRC" "$DIR/SHA256SUMS.txt"
 gh release edit "v$VERSION" -R zoolapp/aime --title "AIME $VERSION"
 for f in "$PKG" "$ZIP" "$SRC" "$DIR/SHA256SUMS.txt"; do
   (cd "$ROOT/../zool-get" && npx wrangler r2 object put "zool-assets/aime/releases/$VERSION/$(basename "$f")" --file "$f" --remote >/dev/null)
 done
+if [[ -n "$NEWER_LIVE" ]]; then
+  echo "published $VERSION files (notarized); latest.json stays at $NEWER_LIVE (newer)"
+  exit 0
+fi
 (cd "$ROOT/../zool-get" && npx wrangler r2 object put zool-assets/aime/latest.json.sig --file "$DIR/latest.json.sig" \
   --content-type text/plain --remote >/dev/null && npx wrangler r2 object put zool-assets/aime/latest.json \
   --file "$DIR/latest.json" --content-type application/json --remote >/dev/null)

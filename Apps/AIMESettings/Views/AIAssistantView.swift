@@ -317,7 +317,7 @@ struct AIAssistantView: View {
                     })) {
                         HStack {
                             Text(term.text)
-                            Text(term.code).font(.caption.monospaced()).foregroundStyle(.secondary)
+                            Text(model.phraseCode(term.text) ?? term.code).font(.caption.monospaced()).foregroundStyle(.secondary)
                             if !term.note.isEmpty { Text(term.note).font(.caption2).foregroundStyle(.tertiary) }
                         }
                     }
@@ -328,7 +328,7 @@ struct AIAssistantView: View {
                         Spacer()
                         Button("加入自定义短语（\(chosen.count)）") {
                             model.updatePhrases { phrases in
-                                for term in terms where chosen.contains(term.id) { phrases.add(.init(text: term.text, code: term.code)) }
+                                for term in terms where chosen.contains(term.id) { phrases.add(.init(text: term.text, code: model.phraseCode(term.text) ?? term.code)) }
                             }
                             model.savePhrases()
                             message = "已加入 \(chosen.count) 个词，正在自动应用"

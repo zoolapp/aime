@@ -12,6 +12,32 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-10-02
+
+> Developer preview · Developer ID signed · notarization pending
+
+### Fixed
+
+- Settings › Sync & Backup › Sync Now: while the input method was running, a sync that actually failed still reported success. The input method now exports its own frequencies and failures are reported. A backup made after a failed sync now says it lacks the latest frequencies.
+- Online word lists: AIME could redeploy every hour even when nothing was due (candidates cleared, "Deploying…" shown); it now redeploys only after downloading new content. Removing a subscription or changing its interval during an update is no longer overwritten.
+- Restoring a backup: settings layers that were empty in the backup left the old settings in place; they are now replaced in full. A restore that fails midway rolls back to the state before it.
+- After a failed deploy, the next deploy skipped the parts that failed and the candidate window's appearance could be wiped; the last working appearance is now kept and failed parts are rebuilt next time. Settings changed during a deploy are no longer missed.
+- Typing statistics: switching windows quickly could drop counts, and cleared statistics could come back.
+- Settings › Advanced: switching the file being edited during validation could write or roll back the wrong file; the target is now locked while validating.
+- AI settings assistant: an invalid number from the model (such as NaN or infinity) crashed the Settings app; such suggestions are now rejected. Duplicate suggestions for one setting are merged, and conflicting ones are rejected together.
+- AI term extraction: terms added under Xiaohe Shuangpin got full-pinyin codes and could not be typed; they now get Shuangpin codes.
+- Quick menu: holding ⌥ while switching to another window could pop the menu up afterwards.
+- The quick menu's symbol board hint no longer sits on the panel's bottom edge.
+
+### Security
+
+- Restoring rejects backups that contain symbolic links, would write outside the AIME folder, or are abnormally large.
+
+### Known issues
+
+- The installer is signed with ZOOL LLC's Developer ID; Apple notarization is still pending, so the first launch needs Control-click › Open in Finder.
+- VoiceOver does not read candidates in the candidate window yet.
+
 ## [0.1.1] - 2026-10-02
 
 > Developer preview · Developer ID signed · notarization pending
@@ -46,6 +72,7 @@ The first public developer preview.
 - The installer is signed with ZOOL LLC's Developer ID; Apple notarization is still pending, so the first launch needs Control-click › Open in Finder.
 - The `aime` command-line tool supports Apple silicon only.
 
-[Unreleased]: https://github.com/zoolapp/aime/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/zoolapp/aime/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/zoolapp/aime/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/zoolapp/aime/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/zoolapp/aime/releases/tag/v0.1.0

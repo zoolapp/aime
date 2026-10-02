@@ -120,6 +120,8 @@ final class AIMEInputController: IMKInputController {
             DebugLog.write("deactivate app=\(this.bundleID ?? "?")")
             this.rememberAsciiMode()
             this.recentText.reset()
+            this.menuHold.reset()
+            this.lastModifiers = []
             this.closeMenu()
             this.cancelPolish()
             this.commitPending(client)

@@ -55,8 +55,10 @@ enum Workspace {
         let missing = schemas.filter {
             !FileManager.default.fileExists(atPath: staging.appendingPathComponent("\($0).schema.yaml").path)
         }
+        let succeeded = !failed && frontendOK && built != nil && missing.isEmpty
+        if succeeded { layers.markDeployed() }
         return DeployResult(
-            succeeded: !failed && frontendOK && built != nil && missing.isEmpty,
+            succeeded: succeeded,
             schemas: schemas, missing: missing, duration: Date().timeIntervalSince(start)
         )
     }

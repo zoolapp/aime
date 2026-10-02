@@ -62,6 +62,114 @@ struct UsageStatsTests {
         #expect(store.summary(days: 1).total == 0)
     }
 
+    @Test func concurrentFlushesPreserveBothCounters() async throws {
+        defer { try? FileManager.default.removeItem(at: store.directory) }
+        let recorder = UsageRecorder(store: store)
+        recorder.isEnabled = true
+        let now = Date()
+        let day = UsageStatsStore.dayKey(now)
+        var writes: [Task<Void, Never>] = []
+        // Enqueue all 64 without awaiting any, just as in the F07 reproducer.
+        for _ in 0..<64 {
+            recorder.record("智能体", app: "com.apple.TextEdit", now: now)
+            writes.append(try #require(recorder.flush()))
+        }
+        for write in writes { await write.value }
+        #expect(store.counts(day: day) == ["智能体": 64])
+        let activity = store.activity(day: day)
+        #expect(activity.commits == 64)
+        #expect(activity.han == 192)
+        #expect(activity.hours.reduce(0, +) == 192)
+        #expect(activity.apps == ["com.apple.TextEdit": 192])
+    }
+
+    @Test func discardInvalidatesQueuedWritesInsideTheSequence() async {
+        defer { try? FileManager.default.removeItem(at: store.directory) }
+        let recorder = UsageRecorder(store: store)
+        recorder.isEnabled = true
+        let gate = StatsWriteGate()
+        recorder.enqueueWrite { gate.block() }
+        await gate.waitUntilBlocked()
+        defer { gate.open() }
+        let now = Date()
+        let day = UsageStatsStore.dayKey(now)
+        recorder.record("旧词", app: nil, now: now)
+        let oldWrite = recorder.flush()
+        recorder.discard()
+        recorder.record("新词", app: nil, now: now)
+        let newWrite = recorder.flush()
+        gate.open()
+        await oldWrite?.value
+        await newWrite?.value
+        #expect(store.counts(day: day) == ["新词": 1])
+        #expect(store.activity(day: day).commits == 1)
+    }
+
+    @Test func clearOrdersInFlightAndQueuedWritesBeforeNewCounts() async {
+        defer { try? FileManager.default.removeItem(at: store.directory) }
+        let recorder = UsageRecorder(store: store)
+        recorder.isEnabled = true
+        let gate = StatsWriteGate()
+        let store = store
+        let now = Date()
+        let day = UsageStatsStore.dayKey(now)
+        var activity = DayActivity()
+        activity.add(han: 2, words: 0, hour: 12, app: nil)
+        let oldActivity = activity
+        // Pause an in-flight mutation between the two real disk writes. Clear
+        // must wait for it, even though it can no longer be invalidated.
+        recorder.enqueueWrite {
+            try? store.merge(["旧词": 1], into: day)
+            gate.block()
+            try? store.mergeActivity(oldActivity, into: day)
+        }
+        await gate.waitUntilBlocked()
+        defer { gate.open() }
+        for _ in 0..<64 {
+            recorder.record("旧词", app: nil, now: now)
+            recorder.flush()
+        }
+        recorder.record("未写", app: nil, now: now)
+        let cleared = recorder.clear()
+        #expect(recorder.pending.isEmpty && recorder.pendingActivity.isEmpty)
+        // A late event carrying the old epoch must also be rejected, even when
+        // it enters the queue after clear.
+        recorder.enqueueWrite(generation: 0) {
+            try? store.merge(["迟到": 1], into: day)
+            try? store.mergeActivity(oldActivity, into: day)
+        }
+        recorder.record("新词", app: nil, now: now)
+        let newWrite = recorder.flush()
+        gate.open()
+        await cleared.value
+        await newWrite?.value
+        #expect(store.counts(day: day) == ["新词": 1])
+        #expect(store.activity(day: day).commits == 1)
+        #expect(store.activity(day: day).han == 2)
+    }
+
+    @Test func flushAndClearReturnWhileBackgroundWriterIsBlocked() async throws {
+        defer { try? FileManager.default.removeItem(at: store.directory) }
+        let recorder = UsageRecorder(store: store)
+        recorder.isEnabled = true
+        let gate = StatsWriteGate()
+        recorder.enqueueWrite { gate.block() }
+        await gate.waitUntilBlocked()
+        defer { gate.open() }
+        recorder.record("智能体", app: nil)
+        let clock = ContinuousClock()
+        let start = clock.now
+        let flushed = try #require(recorder.flush())
+        let cleared = recorder.clear()
+        #expect(start.duration(to: clock.now) < .seconds(1))
+        #expect(recorder.pending.isEmpty && recorder.pendingActivity.isEmpty)
+        gate.open()
+        await flushed.value
+        await cleared.value
+        #expect(store.days().isEmpty)
+        #expect(store.activityDays().isEmpty)
+    }
+
     @Test func prunesOldDays() throws {
         let old = Calendar.current.date(byAdding: .day, value: -100, to: Date())!
         try store.merge(["旧词": 1], into: UsageStatsStore.dayKey(old))
@@ -90,6 +198,27 @@ struct UsageStatsTests {
         #expect(elapsed < .milliseconds(200)) // < 10 µs per commit, even in debug builds
         #expect(recorder.pending["智能体"] == 4000)
     }
+}
+
+/// A bounded stand-in for slow disk I/O on the recorder's real write sequence.
+private final class StatsWriteGate: Sendable {
+    private let entered = DispatchSemaphore(value: 0)
+    private let released = DispatchSemaphore(value: 0)
+
+    func block() {
+        #expect(!Thread.isMainThread)
+        entered.signal()
+        #expect(released.wait(timeout: .now() + 10) == .success)
+    }
+
+    func waitUntilBlocked() async {
+        let started = await Task.detached { self.didEnter() }.value
+        #expect(started)
+    }
+
+    private func didEnter() -> Bool { entered.wait(timeout: .now() + 10) == .success }
+
+    func open() { released.signal() }
 }
 
 extension UsageStatsTests {

@@ -290,9 +290,15 @@ struct Sync: AsyncParsableCommand {
         let lock = try Workspace.lock(workspace.paths)
         defer { _ = lock }
         let engine = RimeEngine.shared
+        // librime logs per-dictionary failures but still finishes the task; the only
+        // signal is the deploy failure notification (e.g. the input method holds a userdb).
+        var failed = false
+        engine.notificationHandler = { if case .deployFailed = $0 { failed = true } }
         engine.initialize(try workspace.traits())
         guard engine.syncUserData() else { throw ValidationError("sync could not start") }
         engine.joinMaintenance()
+        try? await Task.sleep(for: .milliseconds(50)) // let queued main-queue notifications run
+        if failed { throw ValidationError("sync failed; user dictionaries in use or unreadable (see the librime log)") }
         print("synced with \(engine.userDataSyncDir)")
     }
 }

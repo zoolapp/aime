@@ -39,6 +39,10 @@ final class InputEngine {
     private var deployLock: WorkspaceLock?
     /// Requests answered when the running deploy finishes.
     private var pendingRequests: [String?] = []
+    /// Set while a deploy prepared by `runDeploy` is running (see `finishDeploy`).
+    private var awaitingDeployAck = false
+    /// Set while a user dictionary sync (not a deploy) holds the workspace.
+    private var syncInProgress = false
     /// Requests that arrived while a deploy was running; run together afterwards.
     private var queuedRequests: [(request: String?, incremental: Bool)] = []
     private var lockRetryTask: Task<Void, Never>?
@@ -74,9 +78,11 @@ final class InputEngine {
         // is already built and skip our own maintenance pass.
         deployLock = WorkspaceLock.acquire(paths)
         if deployLock != nil { importExistingRimeConfigOnFirstRun() }
+        // nil when nothing was prepared (lock held elsewhere, or a broken layer).
+        var dirty: [String]?
         if deployLock != nil {
             do {
-                try ConfigLayers(paths: paths).prepareForDeploy(extraTargets: shippedTargets())
+                dirty = try ConfigLayers(paths: paths).prepareForDeploy(extraTargets: shippedTargets())
             } catch {
                 logger.error("config layers invalid, keeping previous build: \(String(describing: error), privacy: .public)")
             }
@@ -94,7 +100,14 @@ final class InputEngine {
         frontendDeployed = engine.deployConfigFile("aime.yaml")
         reloadFrontend()
         // Deploys only what changed since the last run (first run builds everything).
-        if !engine.startMaintenance(fullCheck: false) { deployLock = nil }
+        // Pending targets had their build output removed, so check fully: librime's
+        // timestamp check alone would skip a target whose sources did not change.
+        awaitingDeployAck = dirty != nil
+        if !engine.startMaintenance(fullCheck: dirty?.isEmpty == false) {
+            if dirty?.isEmpty == true { ConfigLayers(paths: paths).markDeployed() }
+            awaitingDeployAck = false
+            deployLock = nil
+        }
         observeReloadRequests()
         scheduleVocabularyUpdates()
         startUsageStats()
@@ -113,12 +126,7 @@ final class InputEngine {
         }
         center.addObserver(forName: UsageStatsStore.clearedNotification, object: nil, queue: .main) { _ in
             MainActor.assumeIsolated {
-                InputEngine.shared.usage.discard()
-                // A flush already in flight may land after Settings deleted the files.
-                Task.detached(priority: .utility) {
-                    try? await Task.sleep(for: .seconds(2))
-                    UsageStatsStore().clear()
-                }
+                InputEngine.shared.usage.clear()
             }
         }
         // Buffered counts are written every 5 minutes and when the user leaves a text field.
@@ -244,8 +252,13 @@ final class InputEngine {
             forName: Self.reloadNotification, object: nil, queue: .main
         ) { note in
             let request = note.userInfo?["request"] as? String
-            let incremental = note.userInfo?["mode"] as? String == "auto"
-            MainActor.assumeIsolated { InputEngine.shared.redeploy(request: request, incremental: incremental) }
+            let mode = note.userInfo?["mode"] as? String
+            MainActor.assumeIsolated {
+                // Sync runs here because this process holds the user dictionaries open;
+                // a second process cannot export them (LevelDB lock).
+                if mode == "sync" { return InputEngine.shared.syncUserData(request: request) }
+                InputEngine.shared.redeploy(request: request, incremental: mode == "auto")
+            }
         }
     }
 
@@ -304,7 +317,7 @@ final class InputEngine {
             // Appearance / app options only: no librime maintenance, sessions untouched.
             progress("frontend", 0)
             let ok = dirty.isEmpty || RimeEngine.shared.deployConfigFile("aime.yaml")
-            if ok { frontendDeployed = true }
+            if ok { frontendDeployed = true; layers.markDeployed() }
             reloadFrontend()
             withExtendedLifetime(lock) {}
             answer(ok: ok, message: ok ? nil : "外观配置编译失败，详见日志")
@@ -312,6 +325,7 @@ final class InputEngine {
         }
         progress("schemas", dirty.filter { $0 != "aime" }.count)
         deployLock = lock
+        awaitingDeployAck = true
         pendingRequests = requests
         activeController?.cancelPolish()
         activeController?.flushBeforeEngineRestart()
@@ -330,16 +344,26 @@ final class InputEngine {
         }
     }
 
-    func syncUserData() {
+    /// `request` (from Settings) gets its own answer through `finishDeploy`, which
+    /// librime's deploy success/failure notification triggers when the sync ends.
+    func syncUserData(request: String? = nil) {
         guard deployLock == nil, let lock = WorkspaceLock.acquire(paths) else {
             showStatus("另一个部署正在进行")
+            if let request { postResult(ok: false, request: request, message: "另一个部署正在进行，请稍后再同步") }
             return
         }
         deployLock = lock
+        syncInProgress = true
+        if let request { pendingRequests.append(request) }
         activeController?.flushBeforeEngineRestart()
         RimeEngine.shared.cleanupAllSessions()
         generation += 1
-        if !RimeEngine.shared.syncUserData() { deployLock = nil }
+        if !RimeEngine.shared.syncUserData() {
+            deployLock = nil
+            syncInProgress = false
+            for request in pendingRequests { postResult(ok: false, request: request, message: "同步未能开始，详见日志") }
+            pendingRequests = []
+        }
     }
 
     /// The primary schema is the first of the schema list (输入方案 › 已启用). librime
@@ -357,9 +381,15 @@ final class InputEngine {
     }
 
     private func finishDeploy(ok: Bool) {
+        // Only a deploy that went through prepareForDeploy is acknowledged; a user
+        // dictionary sync also ends here and must not clear pending targets.
+        if ok, awaitingDeployAck { ConfigLayers(paths: paths).markDeployed() }
+        awaitingDeployAck = false
         if ok { followPrimarySchema() }
+        let failure = syncInProgress ? "同步失败，详见日志" : "部署失败，详见日志"
+        syncInProgress = false
         deployLock = nil
-        for request in pendingRequests { postResult(ok: ok, request: request, message: ok ? nil : "部署失败，详见日志") }
+        for request in pendingRequests { postResult(ok: ok, request: request, message: ok ? nil : failure) }
         pendingRequests = []
         drainDeployQueue()
     }
@@ -381,17 +411,23 @@ final class InputEngine {
     private func handle(_ notification: RimeNotification) {
         switch notification {
         case .deployStarted:
-            showStatus("部署中…")
+            showStatus(syncInProgress ? "同步中…" : "部署中…")
         case .deploySucceeded:
             reloadFrontend()
-            showStatus(frontendDeployed ? "部署完成" : "外观配置部署失败")
-            finishDeploy(ok: frontendDeployed)
+            if syncInProgress {
+                // A sync does not rebuild the frontend; its own result is what counts.
+                showStatus("同步完成")
+                finishDeploy(ok: true)
+            } else {
+                showStatus(frontendDeployed ? "部署完成" : "外观配置部署失败")
+                finishDeploy(ok: frontendDeployed)
+            }
             if mergeSnapshotsAfterDeploy {
                 mergeSnapshotsAfterDeploy = false
                 syncUserData()
             }
         case .deployFailed:
-            showStatus("部署失败")
+            showStatus(syncInProgress ? "同步失败" : "部署失败")
             finishDeploy(ok: false)
         case let .optionChanged(name, enabled):
             guard Date().timeIntervalSince(lastUserKeyAt) < 0.6,
@@ -429,7 +465,11 @@ final class InputEngine {
     // MARK: - Theme & app options
 
     func reloadFrontend() {
-        frontend = (try? ConfigValue.load(contentsOf: paths.builtConfig("aime"))) ?? .map([])
+        guard let loaded = try? ConfigValue.load(contentsOf: paths.builtConfig("aime")) else {
+            logger.error("frontend config unavailable or invalid; keeping previous configuration")
+            return
+        }
+        frontend = loaded
         asciiState.scope = frontend.value(at: "ascii_state/scope")?.stringValue.flatMap(AsciiStateScope.init(rawValue:)) ?? .global
         refreshTheme(force: true)
     }

@@ -35,6 +35,13 @@ public struct ModifierHold: Sendable, Equatable {
 
     public init(key: Key = .option) { self.key = key }
 
+    /// Ends the input context and invalidates any timer from its previous hold.
+    public mutating func reset() {
+        isArmed = false
+        isFired = false
+        token += 1
+    }
+
     /// Feed every modifier change. Returns a token when the caller should start the
     /// timer (`duration`) and then call `fire(token:)`.
     public mutating func modifiersChanged(_ flags: UInt) -> Int? {

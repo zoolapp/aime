@@ -229,7 +229,7 @@ public struct ConfigLayers: Sendable {
     /// built files are dropped right before the next deploy (`prepareForDeploy`), which
     /// keeps `build/` readable for the settings UI in the meantime.
     public func invalidateBuild(_ target: ConfigTarget) {
-        var dirty = dirtyTargets()
+        var dirty = Self.readList(dirtyListURL)
         dirty.insert(target.configID)
         try? FileManager.default.createDirectory(at: paths.aimeDir, withIntermediateDirectories: true)
         try? dirty.sorted().joined(separator: "\n").write(to: dirtyListURL, atomically: true, encoding: .utf8)
@@ -237,14 +237,25 @@ public struct ConfigLayers: Sendable {
 
     var dirtyListURL: URL { paths.aimeDir.appendingPathComponent(".dirty") }
 
+    /// Targets taken by a deploy that has not been acknowledged yet (`markDeployed`).
+    /// Edits made while it runs go to `dirtyListURL`, so they are never acknowledged
+    /// by a deploy that may have read the files before they changed.
+    var deployingListURL: URL { paths.aimeDir.appendingPathComponent(".dirty.deploying") }
+
+    /// Everything still waiting for a successful deploy.
     public func dirtyTargets() -> Set<String> {
-        guard let text = try? String(contentsOf: dirtyListURL, encoding: .utf8) else { return [] }
+        Self.readList(dirtyListURL).union(Self.readList(deployingListURL))
+    }
+
+    static func readList(_ url: URL) -> Set<String> {
+        guard let text = try? String(contentsOf: url, encoding: .utf8) else { return [] }
         return Set(text.split(separator: "\n").map(String.init).filter { !$0.isEmpty })
     }
 
     /// Re-composes every managed shim (picking up hand edits to imported files and new
     /// shipped defaults), then removes built output of dirty targets so librime rebuilds
-    /// them. Call immediately before starting maintenance.
+    /// them. Call immediately before starting maintenance; acknowledge success with
+    /// `markDeployed()` so failed deployments remain retryable.
     @discardableResult
     public func prepareForDeploy(extraTargets: [ConfigTarget] = []) throws -> [String] {
         migrateStyleOverrides()
@@ -260,11 +271,20 @@ public struct ConfigLayers: Sendable {
             try installShim(target)
         }
         let dirty = dirtyTargets().sorted()
+        // Hand the pending targets to this deploy (keeping any a failed one left behind);
+        // later edits start a fresh dirty list.
+        try? dirty.joined(separator: "\n").write(to: deployingListURL, atomically: true, encoding: .utf8)
+        try? FileManager.default.removeItem(at: dirtyListURL)
         for configID in dirty {
             try? FileManager.default.removeItem(at: paths.builtConfig(configID))
         }
-        try? FileManager.default.removeItem(at: dirtyListURL)
         return dirty
+    }
+
+    /// Acknowledges the deploy started by the last `prepareForDeploy`. Without it (a
+    /// failed deploy) its targets stay pending and the next deploy rebuilds them.
+    public func markDeployed() {
+        try? FileManager.default.removeItem(at: deployingListURL)
     }
 
     /// Visual settings made in AIME Settings live under `style/aime/*` (they win over the

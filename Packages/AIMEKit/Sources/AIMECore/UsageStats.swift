@@ -239,9 +239,10 @@ public final class UsageRecorder {
     /// Characters, commits, hours and apps since the last flush.
     public private(set) var pendingActivity = DayActivity()
     private var pendingDay: String?
-    /// Bumped by `discard()`; a flush that started before a clear is dropped.
+    /// Bumped by `discard()`; queued flushes from an older generation are dropped.
     private var generation = 0
     private let store: UsageStatsStore
+    private var writeChain: Task<Void, Never>?
 
     public init(store: UsageStatsStore = UsageStatsStore()) { self.store = store }
 
@@ -268,6 +269,32 @@ public final class UsageRecorder {
         generation += 1
     }
 
+    /// Clears after any in-flight write and before any subsequent flush. No disk
+    /// work runs on the caller, and old queued deltas cannot restore cleared data.
+    @discardableResult
+    public func clear() -> Task<Void, Never> {
+        discard()
+        let store = store
+        return enqueueWrite { store.clear() }
+    }
+
+    /// All recorder disk mutations share this sequence, including both counters
+    /// and clear. The generation check belongs after the predecessor completes.
+    @discardableResult
+    func enqueueWrite(generation expected: Int? = nil, _ write: @escaping @Sendable () -> Void) -> Task<Void, Never> {
+        let previous = writeChain
+        let task = Task.detached(priority: .utility) { [weak self] in
+            await previous?.value
+            if let expected {
+                let current = await MainActor.run { self?.generation }
+                guard current == expected else { return }
+            }
+            write()
+        }
+        writeChain = task
+        return task
+    }
+
     /// Writes the buffer in the background. Returns the task for tests.
     @discardableResult
     public func flush() -> Task<Void, Never>? {
@@ -278,9 +305,7 @@ public final class UsageRecorder {
         pending.removeAll(keepingCapacity: true)
         pendingActivity = DayActivity()
         let store = store
-        return Task.detached(priority: .utility) { [weak self] in
-            let current = await MainActor.run { self?.generation }
-            guard current == started else { return }
+        return enqueueWrite(generation: started) {
             try? store.merge(delta, into: day)
             try? store.mergeActivity(activity, into: day)
         }

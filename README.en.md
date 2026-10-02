@@ -27,22 +27,30 @@
 </p>
 
 <p align="center">
-  <img src="assets/screenshots/settings-overview-light.png" width="860" alt="AIME Settings · Overview">
+  <img src="assets/social/2026-10-01/hero-v4.jpg" width="860" alt="AIME: New words, freely yours. Open source, privacy, an input method for the AI era. An angled laptop screen and keyboard show input interaction; a promotional composite based on native UI references, using synthetic examples.">
 </p>
 
 > [!IMPORTANT]
-> **Developer preview (0.1.x).** Features are still moving quickly; packages on
-> [Releases](https://github.com/zoolapp/aime/releases) are marked as pre-releases — see Install below. AIME is an independent project, not a fork of
+> **Developer preview (0.1.x).** Features are still moving quickly. The current public v0.1.0 release is labeled “notarization in progress”; check the latest [release notes and checksums](https://github.com/zoolapp/aime/releases) before downloading. AIME is an independent project, not a fork of
 > Squirrel, contains none of its GPL source, and can be installed alongside it.
+
+## Some words are better typed in quiet
+
+Voice input is useful. So is a keyboard: when you do not feel like speaking, when you share a space, or when you want to think as you write and take your time with a sentence.
+
+AIME is built for those moments. It keeps RIME's openness and flexibility, adds native controls for your typing habits, and brings in AI when you ask. There are no built-in ads; everyday input is processed on your Mac, and you choose your schemas, appearance and vocabulary.
+
+If you want to keep full or double pinyin and your own word lists while editing fewer configuration files, or value quiet writing and control over your tools, give AIME a try.
 
 ## Why AIME
 
 | | |
 |---|---|
 | **Open source, built on RIME** | Powered by [librime](https://github.com/rime/librime) with [rime-ice](https://github.com/iDvel/rime-ice) as the default schema. Reads your existing RIME configuration and imports from Squirrel read-only. AIME's own code is MIT-licensed. |
-| **Everyday typing is processed on your Mac** | Composition, candidates and learned frequencies stay local: no input logs, no analytics or crash reporting. Snippets and input statistics are stored only on the Mac. |
+| **Everyday typing is processed on your Mac** | Composition, candidates and learned frequencies stay local: no input logs, built-in ads, telemetry or crash reporting. Snippets and optional input statistics are stored only on the Mac. |
 | **AI when you ask for it** | Translate, polish or run your own prompts — hold ⌥, press Space, done at the cursor. Only the text you choose is processed, by Apple's on-device model (availability depends on device and region) or an OpenAI-compatible endpoint you configure. Simplified/Traditional conversion runs locally. |
-| **Smoother typing** | librime runs in-process with a natively drawn candidate window (p99 0.61 ms per key for rime-ice on a development Mac, see the latency gate). Snippet categories, phrase codes, a symbol board picked by letter keys, pinned frequent words. |
+| **Typing habits you can adjust** | Visual settings for schemas, colours and shortcuts; a native candidate window, snippet categories, phrase codes and a symbol board picked by letter keys keep everyday tasks at the keyboard. |
+| **Fresh vocabulary, an open ecosystem** | Official feeds support daily, weekly or manual checks and verify versions and SHA-256 before use. Subscribe to RIME-compatible word lists, install community schemas and import from Squirrel read-only. Credit goes to upstream maintainers and contributors. |
 
 ## Features
 
@@ -60,6 +68,10 @@
 - **CLI** — `aime deploy / bench / doctor / import-squirrel / package / get / set / sync` for scripting and CI.
 
 <p align="center">
+  <img src="assets/screenshots/settings-overview-light.png" width="860" alt="AIME Settings · Overview">
+</p>
+
+<p align="center">
   <img src="assets/screenshots/settings-appearance-dark.png" width="49%" alt="Appearance (dark)">
   <img src="assets/screenshots/settings-dictionaries-light.png" width="49%" alt="Vocabulary">
 </p>
@@ -74,7 +86,7 @@
    shasum -a 256 -c SHA256SUMS.txt --ignore-missing
    ```
 
-2. Double-click to install. The package is signed with ZOOL LLC's Developer ID and notarized by Apple.
+2. Read that release's signing and notarization status, then follow its installation instructions. v0.1.0 is currently a developer preview; an available download does not mean notarization is complete. Check the release notes if macOS displays a security warning.
 3. Open **System Settings › Keyboard › Input Sources › Edit…**, click **+** and add **AIME** under Chinese, Simplified. If it does not appear after the first install, log out and back in.
 
 ### Build from source
@@ -129,6 +141,10 @@ xcodegen generate && open AIME.xcodeproj
 
 Performance gate: `aime bench --schema rime_ice --keys nihaoshijie --iterations 2000 --assert-p99-ms 5`.
 See [CONTRIBUTING.md](CONTRIBUTING.md) for contributing, [docs/releasing.md](docs/releasing.md) for releases, and report security issues privately as described in [SECURITY.md](SECURITY.md).
+
+## Documentation and participation
+
+The [documentation index](docs/README.md) collects usage, configuration, development and distribution guides. Report reproducible problems in [Issues](https://github.com/zoolapp/aime/issues), read the [contribution guide](CONTRIBUTING.md) for code changes, and contribute public word lists to [aime-dicts](https://github.com/zoolapp/aime-dicts). Share schemas, themes and typing habits using synthetic examples; keep personal word frequencies and full configuration directories out of reports.
 
 ## Privacy
 

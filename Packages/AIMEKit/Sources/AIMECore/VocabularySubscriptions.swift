@@ -1,4 +1,5 @@
 public import Foundation
+import CryptoKit
 
 /// One vocabulary entry: text + space-separated full pinyin (or a Latin code).
 public struct VocabularyEntry: Sendable, Hashable {
@@ -131,6 +132,18 @@ public struct SubscriptionManager: Sendable {
         public var status: Int
     }
 
+    /// Per-call outcome; historical newEntries remains display metadata on the item.
+    @dynamicMemberLookup
+    public struct UpdateResult: Sendable {
+        public let item: VocabularySubscription
+        public let contentChanged: Bool
+
+        /// Preserve item field reads for existing CLI/settings callers.
+        public subscript<Value>(dynamicMember keyPath: KeyPath<VocabularySubscription, Value>) -> Value {
+            item[keyPath: keyPath]
+        }
+    }
+
     public let paths: AIMEPaths
     /// (url, etag) → response. Injected in tests.
     public var fetch: @Sendable (URL, String?) async throws -> Response
@@ -158,6 +171,18 @@ public struct SubscriptionManager: Sendable {
         try encoder.encode(list).write(to: listURL, options: .atomic)
     }
 
+    /// Serialize subscription metadata/cache commits across the IME and settings processes.
+    /// This separate lock is never held over a network await or a workspace deploy.
+    private func withSubscriptionLock<T>(_ body: () throws -> T) throws -> T {
+        try FileManager.default.createDirectory(at: paths.aimeDir, withIntermediateDirectories: true)
+        let fd = open(paths.aimeDir.appendingPathComponent(".subscriptions.lock").path, O_CREAT | O_RDWR, 0o600)
+        guard fd >= 0 else { throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO) }
+        defer { close(fd) }
+        guard flock(fd, LOCK_EX) == 0 else { throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO) }
+        defer { flock(fd, LOCK_UN) }
+        return try body()
+    }
+
     /// github.com/<o>/<r>/blob/<ref>/<path> → raw.githubusercontent.com/<o>/<r>/<ref>/<path>
     public static func normalize(_ string: String) -> URL? {
         var text = string.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -172,96 +197,129 @@ public struct SubscriptionManager: Sendable {
     @discardableResult
     public func add(url string: String, name: String?, feed: VocabularyCatalog.Feed? = nil) async throws -> VocabularySubscription {
         guard let url = Self.normalize(string) else { throw SubscriptionError.invalidURL }
-        var list = subscriptions()
-        if let existing = list.first(where: { $0.url == url }) { return existing }
-        let base = url.deletingPathExtension().lastPathComponent.lowercased().filter { $0.isLetter || $0.isNumber }
-        var id = base.isEmpty ? "sub" : String(base.prefix(24))
-        while list.contains(where: { $0.id == id }) { id += "x" }
-        var subscription = VocabularySubscription(id: id, name: name?.isEmpty == false ? name! : url.lastPathComponent,
-                                                  url: url, addedAt: Date())
-        subscription.feedID = feed?.id
-        subscription.expectedSHA256 = feed?.sha256
-        list.append(subscription)
-        try save(list)
-        return try await update(id: id, force: true) ?? subscription
+        let (subscription, inserted) = try withSubscriptionLock {
+            var list = subscriptions()
+            if let existing = list.first(where: { $0.url == url }) { return (existing, false) }
+            let base = url.deletingPathExtension().lastPathComponent.lowercased().filter { $0.isLetter || $0.isNumber }
+            var id = base.isEmpty ? "sub" : String(base.prefix(24))
+            while list.contains(where: { $0.id == id }) { id += "x" }
+            var subscription = VocabularySubscription(id: id, name: name?.isEmpty == false ? name! : url.lastPathComponent,
+                                                      url: url, addedAt: Date())
+            subscription.feedID = feed?.id
+            subscription.expectedSHA256 = feed?.sha256
+            list.append(subscription)
+            try save(list)
+            return (subscription, true)
+        }
+        guard inserted else { return subscription }
+        return try await update(id: subscription.id, force: true)?.item ?? subscription
     }
 
     public func remove(id: String) throws {
-        try save(subscriptions().filter { $0.id != id })
-        try? FileManager.default.removeItem(at: cacheURL(id))
+        try withSubscriptionLock {
+            try save(subscriptions().filter { $0.id != id })
+            try? FileManager.default.removeItem(at: cacheURL(id))
+        }
     }
 
     public func setInterval(id: String, _ interval: VocabularySubscription.UpdateInterval) throws {
-        var list = subscriptions()
-        guard let index = list.firstIndex(where: { $0.id == id }) else { return }
-        list[index].interval = interval
-        try save(list)
+        try withSubscriptionLock {
+            var list = subscriptions()
+            guard let index = list.firstIndex(where: { $0.id == id }) else { return }
+            list[index].interval = interval
+            try save(list)
+        }
     }
 
     /// Points catalog subscriptions at the catalog's current file and checksum. Returns
     /// the ids whose file changed (a new version to download).
     @discardableResult
     public func follow(_ catalog: VocabularyCatalog) throws -> [String] {
-        var list = subscriptions()
-        var changed: [String] = []
-        for index in list.indices {
-            // Subscriptions made before feeds carried ids (or by pasting a link to an
-            // official file) are adopted when the file name matches a catalog feed.
-            if list[index].feedID == nil,
-               let match = catalog.feeds.first(where: { $0.url.lastPathComponent == list[index].url.lastPathComponent }) {
-                list[index].feedID = match.id
+        return try withSubscriptionLock {
+            var list = subscriptions()
+            var changed: [String] = []
+            for index in list.indices {
+                // Subscriptions made before feeds carried ids (or by pasting a link to an
+                // official file) are adopted when the file name matches a catalog feed.
+                if list[index].feedID == nil,
+                   let match = catalog.feeds.first(where: { $0.url.lastPathComponent == list[index].url.lastPathComponent }) {
+                    list[index].feedID = match.id
+                }
+                guard let feedID = list[index].feedID, let feed = catalog.feeds.first(where: { $0.id == feedID }) else { continue }
+                if list[index].url != feed.url || list[index].expectedSHA256 != feed.sha256 {
+                    list[index].url = feed.url
+                    list[index].expectedSHA256 = feed.sha256
+                    list[index].etag = nil
+                    changed.append(list[index].id)
+                }
             }
-            guard let feedID = list[index].feedID, let feed = catalog.feeds.first(where: { $0.id == feedID }) else { continue }
-            if list[index].url != feed.url || list[index].expectedSHA256 != feed.sha256 {
-                list[index].url = feed.url
-                list[index].expectedSHA256 = feed.sha256
-                list[index].etag = nil
-                changed.append(list[index].id)
-            }
+            if !changed.isEmpty { try save(list) }
+            return changed
         }
-        if !changed.isEmpty { try save(list) }
-        return changed
     }
 
     /// Updates one subscription. Without `force`, respects its update interval.
+    /// contentChanged is true only after different cache bytes were successfully written.
     @discardableResult
-    public func update(id: String, force: Bool = false, now: Date = Date()) async throws -> VocabularySubscription? {
-        var list = subscriptions()
-        guard let index = list.firstIndex(where: { $0.id == id }) else { return nil }
-        var item = list[index]
+    public func update(id: String, force: Bool = false, now: Date = Date()) async throws -> UpdateResult? {
+        guard let requested = subscriptions().first(where: { $0.id == id }) else { return nil }
         if !force {
-            guard let interval = item.updateInterval.seconds else { return item } // 仅手动
-            if let last = item.lastChecked, now.timeIntervalSince(last) < interval { return item }
-        }
-        item.lastChecked = now
-        do {
-            let response = try await fetch(item.url, item.etag)
-            guard (200..<300).contains(response.status) || response.status == 304 else { throw SubscriptionError.http(response.status) }
-            if let data = response.data {
-                guard data.count <= Self.maxBytes else { throw SubscriptionError.tooLarge }
-                let entries = VocabularyParser.parse(String(decoding: data, as: UTF8.self))
-                guard !entries.isEmpty else { throw SubscriptionError.empty }
-                if let expected = item.expectedSHA256, PackageManager.sha256(of: data) != expected.lowercased() {
-                    throw SubscriptionError.checksum
-                }
-                let previous = Set(VocabularyParser.parse((try? String(contentsOf: cacheURL(id), encoding: .utf8)) ?? "").map(\.text))
-                let added = entries.map(\.text).filter { !previous.contains($0) }
-                try FileManager.default.createDirectory(at: cacheURL(id).deletingLastPathComponent(), withIntermediateDirectories: true)
-                try data.write(to: cacheURL(id), options: .atomic)
-                item.entryCount = entries.count
-                item.newEntries = previous.isEmpty ? 0 : added.count
-                if !previous.isEmpty, !added.isEmpty { item.recentWords = Array(added.prefix(20)) }
-                item.etag = response.etag
+            guard let interval = requested.updateInterval.seconds else { return UpdateResult(item: requested, contentChanged: false) } // 仅手动
+            if let last = requested.lastChecked, now.timeIntervalSince(last) < interval {
+                return UpdateResult(item: requested, contentChanged: false)
             }
-            item.remoteUpdated = response.lastModified ?? item.remoteUpdated
-            if let commitDate = try? await Self.githubCommitDate(for: item.url) { item.remoteUpdated = commitDate }
-            item.lastError = nil
-        } catch {
-            item.lastError = String(describing: error)
         }
-        list[index] = item
-        try save(list)
-        return item
+        let fetched: Result<Response, any Error>
+        var commitDate: Date?
+        do {
+            let response = try await fetch(requested.url, requested.etag)
+            guard (200..<300).contains(response.status) || response.status == 304 else { throw SubscriptionError.http(response.status) }
+            commitDate = try? await Self.githubCommitDate(for: requested.url)
+            fetched = .success(response)
+        } catch {
+            fetched = .failure(error)
+        }
+        return try withSubscriptionLock {
+            // Re-read after every network await; never resurrect a removed or retargeted feed.
+            var list = subscriptions()
+            guard let index = list.firstIndex(where: { $0.id == id }),
+                  list[index].url == requested.url,
+                  list[index].expectedSHA256 == requested.expectedSHA256 else { return nil }
+            // Start with the current item so edits to interval/name/catalog fields survive.
+            var item = list[index]
+            item.lastChecked = now
+            var contentChanged = false
+            do {
+                let response = try fetched.get()
+                if let data = response.data {
+                    guard data.count <= Self.maxBytes else { throw SubscriptionError.tooLarge }
+                    let entries = VocabularyParser.parse(String(decoding: data, as: UTF8.self))
+                    guard !entries.isEmpty else { throw SubscriptionError.empty }
+                    if let expected = item.expectedSHA256, PackageManager.sha256(of: data) != expected.lowercased() {
+                        throw SubscriptionError.checksum
+                    }
+                    let previousData = try? Data(contentsOf: cacheURL(id))
+                    let previous = Set(VocabularyParser.parse(previousData.map { String(decoding: $0, as: UTF8.self) } ?? "").map(\.text))
+                    let added = entries.map(\.text).filter { !previous.contains($0) }
+                    if previousData != data {
+                        try FileManager.default.createDirectory(at: cacheURL(id).deletingLastPathComponent(), withIntermediateDirectories: true)
+                        try data.write(to: cacheURL(id), options: .atomic)
+                        contentChanged = true
+                    }
+                    item.entryCount = entries.count
+                    item.newEntries = previous.isEmpty ? 0 : added.count
+                    if !previous.isEmpty, !added.isEmpty { item.recentWords = Array(added.prefix(20)) }
+                    item.etag = response.etag
+                }
+                item.remoteUpdated = commitDate ?? response.lastModified ?? item.remoteUpdated
+                item.lastError = nil
+            } catch {
+                item.lastError = String(describing: error)
+            }
+            list[index] = item
+            try save(list)
+            return UpdateResult(item: item, contentChanged: contentChanged)
+        }
     }
 
     /// Updates every subscription that is due (automatic mode). Catalog subscriptions
@@ -276,8 +334,7 @@ public struct SubscriptionManager: Sendable {
             try? follow(fresh)
         }
         for item in subscriptions() {
-            let before = item.entryCount
-            if let after = try? await update(id: item.id, force: false, now: now), after.entryCount != before || after.newEntries > 0 {
+            if let result = try? await update(id: item.id, force: false, now: now), result.contentChanged {
                 changed = true
             }
         }
@@ -427,14 +484,13 @@ public struct SubscriptionManager: Sendable {
     }
 
     func tableSignature(schemas: [String], items: [VocabularySubscription]) -> String {
-        func stamp(_ url: URL) -> String {
-            let attributes = try? FileManager.default.attributesOfItem(atPath: url.path)
-            let date = (attributes?[.modificationDate] as? Date)?.timeIntervalSince1970 ?? 0
-            return "\(Int(date))/\(attributes?[.size] as? Int ?? 0)"
+        func digest(_ url: URL) -> String {
+            guard let data = try? Data(contentsOf: url) else { return "missing" }
+            return SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
         }
-        var parts = ["v1", schemas.sorted().joined(separator: ",")]
-        if let shipped = paths.sharedDataDir?.appendingPathComponent("aime/aime_tech.tsv") { parts.append(stamp(shipped)) }
-        for item in items.sorted(by: { $0.id < $1.id }) { parts.append("\(item.id)=\(stamp(cacheURL(item.id)))") }
+        var parts = ["v2", schemas.sorted().joined(separator: ",")]
+        if let shipped = paths.sharedDataDir?.appendingPathComponent("aime/aime_tech.tsv") { parts.append(digest(shipped)) }
+        for item in items.sorted(by: { $0.id < $1.id }) { parts.append("\(item.id)=\(digest(cacheURL(item.id)))") }
         return parts.joined(separator: "|")
     }
 

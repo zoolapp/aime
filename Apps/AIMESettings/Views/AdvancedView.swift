@@ -25,6 +25,7 @@ struct AdvancedView: View {
                     ForEach(targets, id: \.id) { Text($0.title).tag($0.id) }
                 }
                 .frame(width: 280)
+                .disabled(validating)
                 Spacer()
                 Button { NSWorkspace.shared.open(model.paths.userDataDir) } label: { Label("打开用户目录", systemImage: "folder") }
                 Button { NSWorkspace.shared.open(model.paths.logDir) } label: { Label("日志", systemImage: "doc.text.magnifyingglass") }
@@ -65,10 +66,22 @@ struct AdvancedView: View {
     }
 
     private func save() async {
+        guard !validating else { return }
+        let savedTarget = configTarget
+        let submittedText = text
+        let importedURL = model.store.layers.importedURL(savedTarget)
+        let existed = FileManager.default.fileExists(atPath: importedURL.path)
+        let backup: String
         do {
-            _ = try ConfigValue.parse(yaml: text)
+            _ = try ConfigValue.parse(yaml: submittedText)
         } catch {
             validation = "YAML 语法错误：\(error)"
+            return
+        }
+        do {
+            backup = existed ? try String(contentsOf: importedURL, encoding: .utf8) : ""
+        } catch {
+            validation = "读取原配置失败，未保存：\(error)"
             return
         }
         validating = true
@@ -78,23 +91,29 @@ struct AdvancedView: View {
             validating = false
             model.resumeAutoDeploy()
         }
-        let backup = loadedText
-        let existed = FileManager.default.fileExists(atPath: model.store.layers.importedURL(configTarget).path)
-        model.perform { try model.store.layers.writeImported(configTarget, yaml: text) }
+        model.perform { try model.store.layers.writeImported(savedTarget, yaml: submittedText) }
+        if let error = model.lastError {
+            validation = "保存失败：\(error)"
+            return
+        }
         let result = await model.deployer.dryRun()
         if result.ok {
-            loadedText = text
+            loadedText = submittedText
             validation = "✓ 校验通过，正在自动应用"
         } else {
             // Roll back so a broken patch never reaches the input method. A layer that did
             // not exist before is removed rather than replaced by the editor placeholder.
             model.perform {
                 if existed {
-                    try model.store.layers.writeImported(configTarget, yaml: backup)
+                    try model.store.layers.writeImported(savedTarget, yaml: backup)
                 } else {
-                    try FileManager.default.removeItem(at: model.store.layers.importedURL(configTarget))
-                    try model.store.layers.installShim(configTarget)
+                    try FileManager.default.removeItem(at: importedURL)
+                    try model.store.layers.installShim(savedTarget)
                 }
+            }
+            if let error = model.lastError {
+                validation = "部署校验失败，回滚失败：\(error)"
+                return
             }
             validation = "部署校验失败，已回滚：\n" + DeployService.summarize(result.output)
         }
