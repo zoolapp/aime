@@ -32,7 +32,7 @@ jobs:
           bash scripts/stage-plugins.sh
 
       - name: Test package
-        run: swift test --package-path Packages/AIMEKit
+        run: swift test --package-path Packages/AIMEKit --no-parallel  # RimeEngine.shared is process-wide
 
       - name: Build release CLI and stage plugins
         run: |

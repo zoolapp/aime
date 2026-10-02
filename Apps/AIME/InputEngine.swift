@@ -125,9 +125,9 @@ final class InputEngine {
             MainActor.assumeIsolated { InputEngine.shared.reloadFeatures() }
         }
         center.addObserver(forName: UsageStatsStore.clearedNotification, object: nil, queue: .main) { _ in
-            MainActor.assumeIsolated {
-                InputEngine.shared.usage.clear()
-            }
+            // `clear()` returns its write task; discard it so the closure stays Void
+            // (Xcode 26 rejects the inferred Task return type).
+            MainActor.assumeIsolated { _ = InputEngine.shared.usage.clear() }
         }
         // Buffered counts are written every 5 minutes and when the user leaves a text field.
         let timer = Timer(timeInterval: 300, repeats: true) { _ in
