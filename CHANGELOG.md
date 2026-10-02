@@ -7,6 +7,13 @@ Versioned releases are intended to follow [Semantic Versioning](https://semver.o
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-02
+
+### 修复
+
+- 首次引导「按应用自动切换中英文」：扫描结束后列表可能只剩分隔线、看不到应用与选项，现在总会完整显示。
+- 同一步的应用扫描明显变快（扫描动画不再每帧重新读取应用图标，过去两三百个应用要二十多秒）。
+
 ## [0.1.0] - 2026-10-01
 
 首个公开的开发预览版。
@@ -33,5 +40,6 @@ Versioned releases are intended to follow [Semantic Versioning](https://semver.o
 - 安装包含 GPL-3.0 组件，整体按 GPL-3.0 条款分发；附带对应源码包 `AIME-0.1.0-source.tar.gz`。
 - 命令行工具 `aime`（deploy / bench / doctor / import-squirrel / package / get / set / sync / subscribe），目前仅支持 Apple 芯片。
 
-[Unreleased]: https://github.com/zoolapp/aime/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/zoolapp/aime/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/zoolapp/aime/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/zoolapp/aime/releases/tag/v0.1.0

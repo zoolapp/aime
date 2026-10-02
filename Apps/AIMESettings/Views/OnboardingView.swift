@@ -466,9 +466,14 @@ private struct AppsStep: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var seen: [ScannedIcon] = []
     @State private var scannedCount = 0
-    @State private var shownRows = 0
 
-    struct ScannedIcon: Identifiable, Equatable { let id: String; let path: String; let slot: Int }
+    /// The icon is loaded once here: the orbit redraws every frame, and asking NSWorkspace
+    /// for 14 icons per frame starved the main actor the scan reports progress on.
+    struct ScannedIcon: Identifiable, Equatable {
+        let id: String
+        let image: NSImage
+        let slot: Int
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -485,17 +490,15 @@ private struct AppsStep: View {
             if model.appScanPhase != .review { await model.scanInstalledApps() }
         }
         .onChange(of: model.appScanPhase) { _, phase in
-            if case let .scanning(_, name, path?) = phase, !name.isEmpty, !seen.contains(where: { $0.path == path }) {
+            if case let .scanning(_, name, path?) = phase, !name.isEmpty, !seen.contains(where: { $0.id == path }) {
                 let slot = scannedCount % OrbitScanner.slots
                 scannedCount += 1
                 withAnimation(reduceMotion ? nil : .spring(duration: 0.5, bounce: 0.32)) {
                     seen.removeAll { $0.slot == slot }
-                    seen.append(ScannedIcon(id: path, path: path, slot: slot))
+                    seen.append(ScannedIcon(id: path, image: NSWorkspace.shared.icon(forFile: path), slot: slot))
                 }
             }
-            if phase == .review { revealRows() }
         }
-        .onAppear { if model.appScanPhase == .review { revealRows() } }
     }
 
     private func scanning(fraction: Double, name: String) -> some View {
@@ -525,10 +528,12 @@ private struct AppsStep: View {
                 VStack(spacing: 0) {
                     ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                         if index > 0 { Divider().opacity(0.5) }
+                        // Rows arrive one after another as an insertion transition: their
+                        // resting state is visible, so a missed or interrupted animation can
+                        // never leave the list blank (it once stayed at opacity 0).
                         SuggestionRow(suggestion: item)
                             .padding(.vertical, 6)
-                            .opacity(index < shownRows ? 1 : 0)
-                            .offset(y: index < shownRows ? 0 : 10)
+                            .transition(rowTransition(index))
                     }
                 }
                 .padding(.horizontal, 14).padding(.vertical, 6)
@@ -548,13 +553,10 @@ private struct AppsStep: View {
         return "找到 " + parts.joined(separator: "、") + tail + "。"
     }
 
-    /// Rows arrive one after another (instantly with Reduce Motion).
-    private func revealRows() {
-        let count = model.appSuggestions.count
-        guard !reduceMotion else { shownRows = count; return }
-        for index in 0...count {
-            withAnimation(.spring(duration: 0.4, bounce: 0.2).delay(Double(index) * 0.045)) { shownRows = index }
-        }
+    private func rowTransition(_ index: Int) -> AnyTransition {
+        guard !reduceMotion else { return .identity }
+        return .opacity.combined(with: .offset(y: 10))
+            .animation(.spring(duration: 0.4, bounce: 0.2).delay(Double(min(index, 12)) * 0.045))
     }
 }
 
@@ -582,7 +584,7 @@ private struct OrbitScanner: View {
                     .rotationEffect(.degrees(turn * 360 * 6))
                 ForEach(icons) { icon in
                     let slot = position(icon.slot, turn: turn)
-                    Image(nsImage: NSWorkspace.shared.icon(forFile: icon.path))
+                    Image(nsImage: icon.image)
                         .resizable()
                         .frame(width: slot.size, height: slot.size)
                         .shadow(color: .black.opacity(0.14), radius: 8, y: 4)
