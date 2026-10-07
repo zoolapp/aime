@@ -3,6 +3,12 @@
 # Sources is per user, so this must run as that user, not as root.
 login_user="$(/usr/bin/stat -f%Su /dev/console)"
 app="/Library/Input Methods/AIME.app"
+# Fail the install visibly if the payload did not land here, rather than report success
+# for an input method the system cannot find.
+if [[ ! -x "$app/Contents/MacOS/AIME" ]]; then
+  echo "AIME: $app is missing after install" >&2
+  exit 1
+fi
 if [[ -n "$login_user" && "$login_user" != "root" ]]; then
   /usr/bin/sudo -u "$login_user" "$app/Contents/MacOS/AIME" --install || true
 fi

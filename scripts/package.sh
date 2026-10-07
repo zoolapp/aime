@@ -19,7 +19,17 @@ ditto --noextattr --noqtn "build/Release/AIME.app/Contents/Applications/AIME Set
 # Extended attributes would be archived as ._* AppleDouble files in the payload.
 xattr -cr "$STAGE/root"
 
+# Bundles are relocatable by default: Installer would follow any other AIME.app with the
+# same bundle ID (a dev build, a copy in Downloads) and update it in place instead of
+# installing to /Library/Input Methods, leaving the input method unregistered.
+pkgbuild --analyze --root "$STAGE/root" "$STAGE/components.plist" >/dev/null
+plutil -convert xml1 "$STAGE/components.plist"
+perl -0pi -e 's#(<key>BundleIsRelocatable</key>\s*)<true/>#$1<false/>#g' "$STAGE/components.plist"
+if grep -A1 BundleIsRelocatable "$STAGE/components.plist" | grep -q '<true/>'; then
+  echo "error: a bundle is still relocatable" >&2; exit 1
+fi
 COPYFILE_DISABLE=1 pkgbuild --root "$STAGE/root" --install-location / \
+  --component-plist "$STAGE/components.plist" \
   --identifier app.zool.inputmethod.aime.pkg --version "$VERSION" \
   --scripts scripts/pkg/scripts "$STAGE/AIME-component.pkg" >/dev/null
 

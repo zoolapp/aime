@@ -12,6 +12,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-10-07
+
+> Stable release · Developer ID signed · notarized by Apple
+
+### Fixed
+
+- When installing with the package or Homebrew while another copy of AIME.app existed elsewhere (for example an old copy in Downloads), the installer updated that copy instead of installing to /Library/Input Methods, so AIME was missing from System Settings. It now always installs to /Library/Input Methods.
+- If the input method does not end up where expected after installation, the installer now reports a failure instead of success.
+
 ## [0.1.4] - 2026-10-07
 
 > Stable release · Developer ID signed · notarized by Apple
@@ -127,7 +136,8 @@ The first public developer preview.
 - The installer is signed with ZOOL LLC's Developer ID; Apple notarization is still pending, so the first launch needs Control-click › Open in Finder.
 - The `aime` command-line tool supports Apple silicon only.
 
-[Unreleased]: https://github.com/zoolapp/aime/compare/v0.1.4...HEAD
+[Unreleased]: https://github.com/zoolapp/aime/compare/v0.1.5...HEAD
+[0.1.5]: https://github.com/zoolapp/aime/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/zoolapp/aime/compare/v0.1.2...v0.1.4
 [0.1.2]: https://github.com/zoolapp/aime/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/zoolapp/aime/compare/v0.1.0...v0.1.1

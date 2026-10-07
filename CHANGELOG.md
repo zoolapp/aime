@@ -11,6 +11,15 @@ AIME 每个版本面向用户的变动都记在这里，官网「更新日志」
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-10-07
+
+> 正式版 · Developer ID 签名 · 已通过 Apple 公证
+
+### 修复
+
+- 用安装包或 Homebrew 安装时，如果电脑上别处还留着一份 AIME.app（例如「下载」文件夹里的旧副本），安装器会去更新那一份，而不是装到「/Library/Input Methods」，结果系统设置里找不到艾么输入法。现在总是装到「/Library/Input Methods」。
+- 安装后输入法没有装到预期位置时，安装器会明确报告失败，不再显示安装成功。
+
 ## [0.1.4] - 2026-10-07
 
 > 正式版 · Developer ID 签名 · 已通过 Apple 公证
@@ -126,7 +135,8 @@ AIME 每个版本面向用户的变动都记在这里，官网「更新日志」
 - 安装包已用 ZOOL LLC 的 Developer ID 签名，Apple 公证仍在处理中；首次打开需在 Finder 中右键 › 打开。
 - 命令行工具 `aime` 目前仅支持 Apple 芯片。
 
-[Unreleased]: https://github.com/zoolapp/aime/compare/v0.1.4...HEAD
+[Unreleased]: https://github.com/zoolapp/aime/compare/v0.1.5...HEAD
+[0.1.5]: https://github.com/zoolapp/aime/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/zoolapp/aime/compare/v0.1.2...v0.1.4
 [0.1.2]: https://github.com/zoolapp/aime/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/zoolapp/aime/compare/v0.1.0...v0.1.1
