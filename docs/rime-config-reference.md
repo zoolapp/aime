@@ -272,7 +272,7 @@ translator:
   contextual_suggestions: false
 ```
 
-「词库 → 整句语言模型」提供可选万象 LTS 简体模型，约 405 MB；默认不下载、不启用。注册表固定 GitHub asset ID `607935157` 与 SHA-256，安装时使用文件下载与分块校验，模型由 [RIME-LMDG](https://github.com/amzxyz/RIME-LMDG) 提供，CC BY 4.0。输入、候选和用户词频不参与下载请求；评分在本机完成。
+「词库 → 整句语言模型」提供可选万象 LTS 简体模型，约 398 MB；默认不下载、不启用。上游会原地替换 LTS 附件，注册表因此固定 AIME 在 assets.zool.app 上的原样副本（2026-10-06 发布的 LTS）与 SHA-256，安装时使用文件下载与分块校验，模型由 [RIME-LMDG](https://github.com/amzxyz/RIME-LMDG) 提供，CC BY 4.0。输入、候选和用户词频不参与下载请求；评分在本机完成。
 
 12 条固定合成句的真实 librime 比较中，首选匹配从 9/12 到 11/12，2 条改善、0 条退化；这只是小样本回归，不代表普遍准确率。见 [验收记录](input-improvements-2026-10-05.md)。此功能改善当前整句评分；后续词预测还需要经过来源与许可验证的独立预测词表。
 

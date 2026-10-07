@@ -84,7 +84,8 @@ for (set, light, dark) in [("BrandLockup", "lockup-color.png", "lockup-white.png
     }
 }
 
-// Keep the approved 16pt vector PDF byte-for-byte; the system supplies template tint.
-try Data(contentsOf: root.appendingPathComponent("assets/brand/aime/base-v1/menu/AIME-bookmark.pdf"))
+// The input source icon (「艾」 in a 22×16 pt rounded rectangle) is drawn by
+// scripts/gen-input-source-icon.swift; keep its PDF byte-for-byte. The system tints it.
+try Data(contentsOf: root.appendingPathComponent("assets/brand/aime/input-source-v2/AIME-ai.pdf"))
     .write(to: root.appendingPathComponent("Apps/AIME/Resources/AIME.pdf"))
 print("icons written from approved soft-bookmark brand master")

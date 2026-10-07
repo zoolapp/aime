@@ -168,16 +168,14 @@
         "octagram"
       ],
       "source": {
-        "type": "github-release-asset",
-        "repo": "amzxyz/RIME-LMDG",
-        "tag": "LTS",
-        "asset": "wanxiang-lts-zh-hans.gram",
-        "assetID": 607935157,
+        "type": "raw",
+        "url": "https://assets.zool.app/aime/models/wanxiang-lts-zh-hans/c330bca73a4102b097fd6b239e6d10097a41995864f13004dec06e8cec98f2cc/wanxiang-lts-zh-hans.gram",
+        "tag": "LTS-2026-10-06",
         "filename": "wanxiang-lts-zh-hans.gram"
       },
-      "sha256": "e3f958d2557a2c027543e874c802dcce9022b9b6fe1673d97c0bd1ef30592264",
-      "size": 404661292,
-      "audience": "适合经常输入长句、希望改善整句首选的人；约 405 MB，安装后需在整句设置中启用。"
+      "sha256": "c330bca73a4102b097fd6b239e6d10097a41995864f13004dec06e8cec98f2cc",
+      "size": 398309420,
+      "audience": "适合经常输入长句、希望改善整句首选的人；约 398 MB，安装后需在整句设置中启用。"
     }
   ]
 }

@@ -12,6 +12,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-10-07
+
+> Stable release · Developer ID signed · notarized by Apple
+
+### Changed
+
+- The menu bar input source icon is now 「艾」 in a rounded square, the same style as macOS's own input sources and Squirrel, so it lines up with them in width and spacing.
+
+### Fixed
+
+- Settings › Vocabulary › sentence language model: downloading "Wanxiang · Simplified sentence model" failed with HTTP 403 or 404. Upstream replaced the model file in place, and GitHub rate-limits anonymous downloads, so the old address stopped working. AIME now fetches the upstream release of 2026-10-06 (about 398 MB) from its own download server and verifies it by SHA-256.
+- With Wanxiang Pinyin, once Backspace had emptied the composition, further Backspace presses could not delete committed text until another key was pressed. Now only a held Backspace stops at the empty composition to protect committed text; single presses delete as usual.
+
 ## [0.1.5] - 2026-10-07
 
 > Stable release · Developer ID signed · notarized by Apple
@@ -136,7 +149,8 @@ The first public developer preview.
 - The installer is signed with ZOOL LLC's Developer ID; Apple notarization is still pending, so the first launch needs Control-click › Open in Finder.
 - The `aime` command-line tool supports Apple silicon only.
 
-[Unreleased]: https://github.com/zoolapp/aime/compare/v0.1.5...HEAD
+[Unreleased]: https://github.com/zoolapp/aime/compare/v0.1.6...HEAD
+[0.1.6]: https://github.com/zoolapp/aime/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/zoolapp/aime/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/zoolapp/aime/compare/v0.1.2...v0.1.4
 [0.1.2]: https://github.com/zoolapp/aime/compare/v0.1.1...v0.1.2

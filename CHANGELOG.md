@@ -11,6 +11,19 @@ AIME 每个版本面向用户的变动都记在这里，官网「更新日志」
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-10-07
+
+> 正式版 · Developer ID 签名 · 已通过 Apple 公证
+
+### 变更
+
+- 菜单栏输入法图标改为圆角方块里的「艾」字，和系统自带输入法、鼠须管的图标同一样式，并排时宽度和间距一致。
+
+### 修复
+
+- 设置 › 词库 › 整句语言模型：下载「万象 · 简体整句模型」时提示 HTTP 403 或 404、无法安装。上游原地替换了模型文件，加上 GitHub 对未登录下载限制请求次数，原来的下载地址已经失效。现在改为从 AIME 自己的下载服务器获取上游 2026-10-06 发布的版本（约 398 MB），并按 SHA-256 校验。
+- 使用万象拼音时，用退格把组字删空后，再按退格删不掉已上屏的文字，直到按下其他键才恢复。现在只有按住退格不放时，才会停在组字删空处，避免误删已上屏的文字；单次按退格照常删除。
+
 ## [0.1.5] - 2026-10-07
 
 > 正式版 · Developer ID 签名 · 已通过 Apple 公证
@@ -135,7 +148,8 @@ AIME 每个版本面向用户的变动都记在这里，官网「更新日志」
 - 安装包已用 ZOOL LLC 的 Developer ID 签名，Apple 公证仍在处理中；首次打开需在 Finder 中右键 › 打开。
 - 命令行工具 `aime` 目前仅支持 Apple 芯片。
 
-[Unreleased]: https://github.com/zoolapp/aime/compare/v0.1.5...HEAD
+[Unreleased]: https://github.com/zoolapp/aime/compare/v0.1.6...HEAD
+[0.1.6]: https://github.com/zoolapp/aime/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/zoolapp/aime/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/zoolapp/aime/compare/v0.1.2...v0.1.4
 [0.1.2]: https://github.com/zoolapp/aime/compare/v0.1.1...v0.1.2

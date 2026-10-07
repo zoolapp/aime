@@ -20,7 +20,7 @@ INCLUDE=(
   README.md README.en.md LICENSE THIRD_PARTY_NOTICES.md CHANGELOG.md CHANGELOG.en.md
   CONTRIBUTING.md CONTRIBUTING.zh.md CODE_OF_CONDUCT.md SECURITY.md
   project.yml Apps Packages SharedSupport config dicts licenses scripts Vendor
-  assets/icon.png assets/screenshots assets/brand/aime/base-v1 assets/social/2026-10-01
+  assets/icon.png assets/screenshots assets/brand/aime/base-v1 assets/brand/aime/input-source-v2 assets/social/2026-10-01
   docs/README.md docs/architecture.md docs/decisions docs/privacy.md docs/rime-config-reference.md
   docs/releasing.md docs/release-checklist.md docs/themes.md docs/troubleshooting.md
   docs/license-packaging-verification.md docs/native-plugin-license-audit.md

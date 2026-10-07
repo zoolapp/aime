@@ -1,0 +1,18 @@
+{
+  "subject": "AIME input source (menu bar) icon",
+  "issue": "https://github.com/zoolapp/aime/issues/4",
+  "approved": "2026-10-07, option B 「艾」 of three candidates (bookmark, 艾, AI)",
+  "shape": "22×16 pt rounded rectangle (radius 3.5 pt) with the merged glyph outline subtracted, matching macOS input source icons",
+  "glyph": "艾 (U+827E)",
+  "font": "Noto Sans SC",
+  "fontSource": "../base-v1/font-source.json",
+  "fontSHA256": "a3041811a78c361b1de50f953c805e0244951c21c5bd412f7232ef0d899af0da",
+  "weight": 650,
+  "size": 12.5,
+  "license": "SIL Open Font License 1.1 (../base-v1/licenses/NotoSansSC-OFL.txt); the outline is artwork made with the font, the font itself is not distributed",
+  "generator": "scripts/gen-input-source-icon.swift",
+  "files": {
+    "AIME-ai.pdf": "5902ffbd5245ca7e0b1d4204617908ab5f2a529dba47fdf8ae4bd77105cd58f9",
+    "AIME-ai.svg": "3a97b4ba9909bc16e9c5f9c688e47fb34e6f321afaa9dcad07a0f61ec65454ac"
+  }
+}

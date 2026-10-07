@@ -256,6 +256,11 @@ final class AIMEInputController: IMKInputController {
             engine.cancelStatus()
             forwardedToRime = true
             handled = session.processKey(keysym, modifiers: mask)
+            // IMK never delivers key-ups. Report the release of each real press (not
+            // auto-repeats), as Weasel and fcitx do, so schemas can tell taps from a held
+            // key: 万象's backspace limit otherwise swallows every ⌫ once the
+            // composition is empty (zoolapp/aime#2).
+            if !event.isARepeat { session.processKey(keysym, modifiers: mask | RimeKey.releaseMask) }
             DebugLog.write("keyDown kind=\(keysym < 0x80 ? "ascii" : "special") mask=\(mask) handled=\(handled) ascii=\(session.option("ascii_mode"))")
             if !handled {
                 // Keys librime leaves alone (English mode, spaces, punctuation): with the

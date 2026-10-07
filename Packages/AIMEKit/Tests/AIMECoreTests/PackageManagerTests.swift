@@ -160,19 +160,21 @@ private actor PackageFileDownloadStub {
 
 extension PackageManagerTests {
     @Test func immutableModelAssetIsPinnedAndUsesBinaryAcceptHeader() throws {
+        // Upstream replaces LTS assets in place, so the registry pins AIME's own copy.
         let pkg = try #require(DictionaryRegistry.bundled.package("wanxiang-lts-zh-hans"))
         #expect(pkg.kind == .model && pkg.schemas.isEmpty)
-        #expect(pkg.source.assetID == 607935157)
-        #expect(pkg.source.tag == "LTS" && pkg.version == "asset-607935157")
-        var nextAsset = pkg
-        nextAsset.source.assetID = 607935158
-        #expect(nextAsset.version == "asset-607935158" && nextAsset.version != pkg.version)
-        #expect(pkg.size == 404661292)
-        #expect(pkg.sha256 == "e3f958d2557a2c027543e874c802dcce9022b9b6fe1673d97c0bd1ef30592264")
-        #expect(pkg.source.downloadURL?.absoluteString == "https://api.github.com/repos/amzxyz/RIME-LMDG/releases/assets/607935157")
-        #expect(pkg.source.downloadRequest?.value(forHTTPHeaderField: "Accept") == "application/octet-stream")
+        #expect(pkg.source.type == "raw" && pkg.version == "LTS-2026-10-06")
+        #expect(pkg.size == 398309420)
+        #expect(pkg.sha256 == "c330bca73a4102b097fd6b239e6d10097a41995864f13004dec06e8cec98f2cc")
+        #expect(pkg.source.downloadURL?.absoluteString == "https://assets.zool.app/aime/models/wanxiang-lts-zh-hans/\(pkg.sha256)/wanxiang-lts-zh-hans.gram")
         #expect(pkg.source.filename == "wanxiang-lts-zh-hans.gram")
         #expect(pkg.license == "CC-BY-4.0" && pkg.attribution?.isEmpty == false)
+
+        var asset = pkg
+        asset.source = .init(type: "github-release-asset", repo: "amzxyz/RIME-LMDG", tag: "LTS", assetID: 607935157)
+        #expect(asset.version == "asset-607935157")
+        #expect(asset.source.downloadURL?.absoluteString == "https://api.github.com/repos/amzxyz/RIME-LMDG/releases/assets/607935157")
+        #expect(asset.source.downloadRequest?.value(forHTTPHeaderField: "Accept") == "application/octet-stream")
 
         let oldSource = try JSONDecoder().decode(DictionaryPackage.Source.self, from: Data(#"{"type":"raw","url":"https://example.com/essay.txt","filename":"essay.txt"}"#.utf8))
         #expect(oldSource.assetID == nil)

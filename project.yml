@@ -8,8 +8,8 @@ options:
   groupSortPosition: top
 settings:
   base:
-    MARKETING_VERSION: "0.1.5"
-    CURRENT_PROJECT_VERSION: "11"
+    MARKETING_VERSION: "0.1.6"
+    CURRENT_PROJECT_VERSION: "12"
     SWIFT_VERSION: "6.0"
     SWIFT_STRICT_CONCURRENCY: complete
     SWIFT_EMIT_LOC_STRINGS: YES

@@ -2,11 +2,11 @@
   "id": "wanxiang-lts-zh-hans",
   "repository": "https://github.com/amzxyz/RIME-LMDG",
   "releaseTag": "LTS",
-  "assetID": 607935157,
+  "assetID": 616996347,
   "assetName": "wanxiang-lts-zh-hans.gram",
-  "downloadURL": "https://api.github.com/repos/amzxyz/RIME-LMDG/releases/assets/607935157",
-  "sha256": "e3f958d2557a2c027543e874c802dcce9022b9b6fe1673d97c0bd1ef30592264",
-  "size": 404661292,
+  "downloadURL": "https://assets.zool.app/aime/models/wanxiang-lts-zh-hans/c330bca73a4102b097fd6b239e6d10097a41995864f13004dec06e8cec98f2cc/wanxiang-lts-zh-hans.gram",
+  "sha256": "c330bca73a4102b097fd6b239e6d10097a41995864f13004dec06e8cec98f2cc",
+  "size": 398309420,
   "license": "CC-BY-4.0",
   "licenseURL": "https://creativecommons.org/licenses/by/4.0/",
   "attribution": "amzxyz and RIME-LMDG contributors",
@@ -16,5 +16,8 @@
   "licenseSHA256": "9e5f1b3c610b9c2da5c313bf81d577a7d1acec686bdb0384edefa6df0f90cd94",
   "changes": "None; the downloaded model is installed byte-for-byte.",
   "bundledModel": false,
-  "verifiedOn": "2026-10-05"
+  "verifiedOn": "2026-10-07",
+  "releasePublished": "2026-10-06T23:56:46Z",
+  "upstreamDownloadURL": "https://github.com/amzxyz/RIME-LMDG/releases/download/LTS/wanxiang-lts-zh-hans.gram",
+  "mirror": "Unmodified copy on ZOOL's R2 bucket (assets.zool.app); upstream replaces LTS assets in place, so AIME pins this copy by SHA-256."
 }
