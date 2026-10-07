@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum Pane: String, CaseIterable, Identifiable, Hashable {
-    case overview, schemas, general, switching, spelling, keys, appearance, apps, dictionaries, phrases, snippets, sync, stats, ai, advanced
+    case overview, schemas, general, switching, spelling, keys, appearance, apps, dictionaries, phrases, snippets, sync, stats, ai, advanced, about
 
     var id: String { rawValue }
 
@@ -22,6 +22,7 @@ enum Pane: String, CaseIterable, Identifiable, Hashable {
         case .stats: "输入统计"
         case .ai: "AI 助手"
         case .advanced: "高级"
+        case .about: "关于"
         }
     }
 
@@ -42,6 +43,7 @@ enum Pane: String, CaseIterable, Identifiable, Hashable {
         case .stats: "chart.bar.xaxis"
         case .ai: "wand.and.sparkles"
         case .advanced: "wrench.and.screwdriver"
+        case .about: "info.circle"
         }
     }
 
@@ -62,13 +64,13 @@ enum Pane: String, CaseIterable, Identifiable, Hashable {
         ("输入", [.schemas, .general, .switching, .spelling, .keys]),
         ("个性化", [.appearance, .apps]),
         ("词库", [.dictionaries, .phrases, .snippets, .sync]),
-        ("系统", [.advanced]),
+        ("系统", [.advanced, .about]),
     ]
 }
 
 struct RootView: View {
     @Environment(SettingsModel.self) private var model
-    @State private var selection: Pane? = LaunchOptions.pane ?? .overview
+    @Binding var selection: Pane?
 
     var body: some View {
         NavigationSplitView {
@@ -108,15 +110,17 @@ struct RootView: View {
                 .background(Theme.canvas)
                 .overlay(alignment: .top) { DeployProgressBar() }
                 .toolbar {
-                    // Status sits outside the button's glass capsule: text on a tinted
-                    // (prominent) capsule is unreadable in both light and dark mode.
-                    ToolbarItem(placement: .primaryAction) { DeployStatus() }
-                        .sharedBackgroundVisibility(.hidden)
-                    ToolbarItem(placement: .primaryAction) { DeployButton() }
+                    if selection != .about {
+                        // Status sits outside the button's glass capsule: text on a tinted
+                        // (prominent) capsule is unreadable in both light and dark mode.
+                        ToolbarItem(placement: .primaryAction) { DeployStatus() }
+                            .sharedBackgroundVisibility(.hidden)
+                        ToolbarItem(placement: .primaryAction) { DeployButton() }
+                    }
                 }
         }
         .tint(Theme.accent)
-        .onboardingHost()
+        .onboardingHost(bypassed: selection == .about)
         .themeImportHost(model)
         .overlay(alignment: .bottom) { ErrorBanner() }
         // The input method's quick menu opens a specific pane in a running Settings app.
@@ -142,6 +146,7 @@ struct RootView: View {
         case .stats: UsageStatsView()
         case .ai: AIAssistantView()
         case .advanced: AdvancedView()
+        case .about: AboutView()
         default: CatalogPane(pane: pane)
         }
     }

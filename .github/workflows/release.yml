@@ -185,9 +185,11 @@ jobs:
             echo "::warning::Apple notarization still in progress; staple later with scripts/finish-notarization.sh"
             cat NOTARY_PENDING.txt
           fi
-          if [[ -f latest.json.sig ]]; then
-            swift "$GITHUB_WORKSPACE/scripts/sign-manifest.swift" verify latest.json "$(awk -F'"' '/manifestPublicKey =/ {print $2; exit}' "$GITHUB_WORKSPACE/Packages/AIMEKit/Sources/AIMECore/AppUpdate.swift")"
-          fi
+          for manifest in latest.json latest-beta.json; do
+            if [[ -f "$manifest.sig" ]]; then
+              swift "$GITHUB_WORKSPACE/scripts/sign-manifest.swift" verify "$manifest" "$(awk -F'"' '/manifestPublicKey =/ {print $2; exit}' "$GITHUB_WORKSPACE/Packages/AIMEKit/Sources/AIMECore/AppUpdate.swift")"
+            fi
+          done
           prerelease=false
           [[ "$status" != notarized || "$VERSION" == *-* ]] && prerelease=true
           echo "status=$status" >> "$GITHUB_OUTPUT"
@@ -209,8 +211,8 @@ jobs:
             dist/release/AIME-*-source.tar.gz
             dist/release/SHA256SUMS.txt
             dist/release/RELEASE_NOTES.md
-            dist/release/latest.json
-            dist/release/latest.json.sig
+            dist/release/latest*.json
+            dist/release/latest*.json.sig
             dist/release/NOTARY_PENDING.txt
             dist/release/SIGNING_STATUS
           if-no-files-found: error
@@ -279,9 +281,12 @@ jobs:
             aws s3 cp "$f" "s3://zool-assets/aime/releases/$VERSION/$f" --endpoint-url "$R2_ENDPOINT" --only-show-errors
           done
           if [[ "$STATUS" == notarized ]]; then
-            aws s3 cp latest.json.sig s3://zool-assets/aime/latest.json.sig --endpoint-url "$R2_ENDPOINT" --content-type text/plain --only-show-errors
-            aws s3 cp latest.json s3://zool-assets/aime/latest.json --endpoint-url "$R2_ENDPOINT" --content-type application/json --only-show-errors
-            echo "published latest.json for $VERSION"
+            for manifest in latest.json latest-beta.json; do
+              [[ -f "$manifest" ]] || continue
+              aws s3 cp "$manifest.sig" "s3://zool-assets/aime/$manifest.sig" --endpoint-url "$R2_ENDPOINT" --content-type text/plain --only-show-errors
+              aws s3 cp "$manifest" "s3://zool-assets/aime/$manifest" --endpoint-url "$R2_ENDPOINT" --content-type application/json --only-show-errors
+              echo "published $manifest for $VERSION"
+            done
           else
-            echo "::warning::$STATUS: versioned files uploaded; latest.json left unchanged until notarization finishes"
+            echo "::warning::$STATUS: versioned files uploaded; update channels left unchanged until notarization finishes"
           fi

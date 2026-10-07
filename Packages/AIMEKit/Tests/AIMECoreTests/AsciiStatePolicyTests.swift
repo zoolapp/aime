@@ -2,6 +2,20 @@ import Testing
 @testable import AIMECore
 
 struct AsciiStatePolicyTests {
+    @Test(arguments: [AsciiStateScope.global, .app])
+    func lateDeactivationCannotOverwriteTheActiveFieldsChoice(scope: AsciiStateScope) {
+        var policy = AsciiStatePolicy(scope: scope)
+        let app = "test.chat"
+        for appDefault in [nil, true, false] as [Bool?] {
+            policy.record(true, app: app, appDefault: appDefault)
+            policy.record(false, app: app, appDefault: appDefault)
+            // The old field still holds English when IMK sends its delayed deactivate.
+            policy.record(true, app: app, appDefault: appDefault, isActive: false)
+            #expect(policy.state(for: app, appDefault: appDefault, newSession: false) == false)
+            #expect(policy.state(for: app, appDefault: appDefault, newSession: true) == false)
+        }
+    }
+
     @Test func globalScopeSharesStateAcrossOrdinaryApps() {
         var policy = AsciiStatePolicy(scope: .global)
         #expect(policy.state(for: "com.tencent.xinWeChat", appDefault: nil, newSession: true) == false)

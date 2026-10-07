@@ -106,6 +106,7 @@ public enum SubscriptionError: Error, CustomStringConvertible {
     case empty
     case http(Int)
     case checksum
+    case limitReached(Int)
 
     public var description: String {
         switch self {
@@ -114,6 +115,7 @@ public enum SubscriptionError: Error, CustomStringConvertible {
         case .tooLarge: "词库文件超过 20 MB 上限"
         case .empty: "没有解析到词条（支持 RIME dict.yaml、词条<Tab>编码 或 每行一个词）"
         case let .http(code): "下载失败（HTTP \(code)）"
+        case let .limitReached(limit): "最多订阅 \(limit) 个词库，请先移除不再使用的订阅"
         }
     }
 }
@@ -123,7 +125,28 @@ public enum SubscriptionError: Error, CustomStringConvertible {
 public struct SubscriptionManager: Sendable {
     public static let automaticInterval: TimeInterval = 12 * 3600
     public static let maxBytes = 20 << 20
+    public static let maxSubscriptions = 32
+    public static let maxBatchSize = 32
+    /// One catalog, one download and at most one commit-date request per selected feed.
+    public static let maxRequestsPerRefresh = 1 + maxBatchSize * 2
     public static let tableName = "aime_online"
+
+    public enum RefreshMode: Sendable, Equatable {
+        case due, manual
+    }
+
+    public struct RefreshResult: Sendable {
+        /// IDs attempted in this batch, including downloads that failed.
+        public var checkedIDs: [String] = []
+        /// IDs whose cached bytes actually changed, independent of entry counts/badges.
+        public var changedIDs: [String] = []
+        public var deferredCount: Int = 0
+        public var catalog: VocabularyCatalog?
+        public var catalogError: String?
+        /// Download/validation or persistence errors for individual subscriptions.
+        public var errors: [String: String] = [:]
+        public var changed: Bool { !changedIDs.isEmpty }
+    }
 
     public struct Response: Sendable {
         public var data: Data?          // nil when not modified
@@ -147,10 +170,13 @@ public struct SubscriptionManager: Sendable {
     public let paths: AIMEPaths
     /// (url, etag) → response. Injected in tests.
     public var fetch: @Sendable (URL, String?) async throws -> Response
+    /// Optional GitHub metadata request, kept separate for bounded, offline tests.
+    public var fetchCommitDate: @Sendable (URL) async throws -> Date?
 
     public init(paths: AIMEPaths, fetch: (@Sendable (URL, String?) async throws -> Response)? = nil) {
         self.paths = paths
         self.fetch = fetch ?? Self.liveFetch
+        self.fetchCommitDate = { try await Self.githubCommitDate(for: $0) }
     }
 
     var listURL: URL { paths.aimeDir.appendingPathComponent("subscriptions.json") }
@@ -200,6 +226,7 @@ public struct SubscriptionManager: Sendable {
         let (subscription, inserted) = try withSubscriptionLock {
             var list = subscriptions()
             if let existing = list.first(where: { $0.url == url }) { return (existing, false) }
+            guard list.count < Self.maxSubscriptions else { throw SubscriptionError.limitReached(Self.maxSubscriptions) }
             let base = url.deletingPathExtension().lastPathComponent.lowercased().filter { $0.isLetter || $0.isNumber }
             var id = base.isEmpty ? "sub" : String(base.prefix(24))
             while list.contains(where: { $0.id == id }) { id += "x" }
@@ -235,15 +262,23 @@ public struct SubscriptionManager: Sendable {
     /// the ids whose file changed (a new version to download).
     @discardableResult
     public func follow(_ catalog: VocabularyCatalog) throws -> [String] {
-        return try withSubscriptionLock {
+        try withSubscriptionLock {
             var list = subscriptions()
             var changed: [String] = []
+            var dirty = false
             for index in list.indices {
-                // Subscriptions made before feeds carried ids (or by pasting a link to an
-                // official file) are adopted when the file name matches a catalog feed.
+                // Adopt older links only within the same source, never a private/local
+                // file merely sharing the official feed's name. GitHub tags may differ.
                 if list[index].feedID == nil,
-                   let match = catalog.feeds.first(where: { $0.url.lastPathComponent == list[index].url.lastPathComponent }) {
+                   let match = catalog.feeds.first(where: { feed in
+                       let old = list[index].url
+                       if feed.url == old { return true }
+                       return old.host != nil && old.host == feed.url.host
+                           && old.pathComponents.filter { $0 != "/" }.prefix(2) == feed.url.pathComponents.filter { $0 != "/" }.prefix(2)
+                           && old.lastPathComponent == feed.url.lastPathComponent
+                   }) {
                     list[index].feedID = match.id
+                    dirty = true
                 }
                 guard let feedID = list[index].feedID, let feed = catalog.feeds.first(where: { $0.id == feedID }) else { continue }
                 if list[index].url != feed.url || list[index].expectedSHA256 != feed.sha256 {
@@ -251,9 +286,10 @@ public struct SubscriptionManager: Sendable {
                     list[index].expectedSHA256 = feed.sha256
                     list[index].etag = nil
                     changed.append(list[index].id)
+                    dirty = true
                 }
             }
-            if !changed.isEmpty { try save(list) }
+            if dirty { try save(list) }
             return changed
         }
     }
@@ -264,51 +300,65 @@ public struct SubscriptionManager: Sendable {
     public func update(id: String, force: Bool = false, now: Date = Date()) async throws -> UpdateResult? {
         guard let requested = subscriptions().first(where: { $0.id == id }) else { return nil }
         if !force {
-            guard let interval = requested.updateInterval.seconds else { return UpdateResult(item: requested, contentChanged: false) } // 仅手动
+            guard let interval = requested.updateInterval.seconds else { return UpdateResult(item: requested, contentChanged: false) }
             if let last = requested.lastChecked, now.timeIntervalSince(last) < interval {
                 return UpdateResult(item: requested, contentChanged: false)
             }
         }
+        let cached = cacheURL(id)
+        // A deleted cache cannot satisfy a conditional request's 304 response.
+        let etag = FileManager.default.fileExists(atPath: cached.path) ? requested.etag : nil
         let fetched: Result<Response, any Error>
         var commitDate: Date?
         do {
-            let response = try await fetch(requested.url, requested.etag)
+            let response = try await fetch(requested.url, etag)
             guard (200..<300).contains(response.status) || response.status == 304 else { throw SubscriptionError.http(response.status) }
-            commitDate = try? await Self.githubCommitDate(for: requested.url)
+            if requested.url.host == "raw.githubusercontent.com" {
+                commitDate = try? await fetchCommitDate(requested.url)
+            }
             fetched = .success(response)
         } catch {
             fetched = .failure(error)
         }
         return try withSubscriptionLock {
-            // Re-read after every network await; never resurrect a removed or retargeted feed.
+            // No lock is held over either await. Re-read and commit under the shared
+            // lock so removal, source edits and newer completed checks stay intact.
             var list = subscriptions()
             guard let index = list.firstIndex(where: { $0.id == id }),
                   list[index].url == requested.url,
                   list[index].expectedSHA256 == requested.expectedSHA256 else { return nil }
-            // Start with the current item so edits to interval/name/catalog fields survive.
+            guard list[index].lastChecked == requested.lastChecked else {
+                return UpdateResult(item: list[index], contentChanged: false)
+            }
             var item = list[index]
             item.lastChecked = now
             var contentChanged = false
             do {
                 let response = try fetched.get()
-                if let data = response.data {
+                let previousDigest = try? PackageManager.sha256(of: cached)
+                if response.status == 304 {
+                    guard previousDigest != nil,
+                          let text = try? String(contentsOf: cached, encoding: .utf8),
+                          !VocabularyParser.parse(text).isEmpty else { throw SubscriptionError.empty }
+                    if let expected = item.expectedSHA256, previousDigest != expected.lowercased() { throw SubscriptionError.checksum }
+                    item.etag = response.etag ?? item.etag
+                } else {
+                    guard let data = response.data else { throw SubscriptionError.empty }
                     guard data.count <= Self.maxBytes else { throw SubscriptionError.tooLarge }
+                    let digest = PackageManager.sha256(of: data)
                     let entries = VocabularyParser.parse(String(decoding: data, as: UTF8.self))
                     guard !entries.isEmpty else { throw SubscriptionError.empty }
-                    if let expected = item.expectedSHA256, PackageManager.sha256(of: data) != expected.lowercased() {
-                        throw SubscriptionError.checksum
-                    }
-                    let previousData = try? Data(contentsOf: cacheURL(id))
-                    let previous = Set(VocabularyParser.parse(previousData.map { String(decoding: $0, as: UTF8.self) } ?? "").map(\.text))
-                    let added = entries.map(\.text).filter { !previous.contains($0) }
-                    if previousData != data {
-                        try FileManager.default.createDirectory(at: cacheURL(id).deletingLastPathComponent(), withIntermediateDirectories: true)
-                        try data.write(to: cacheURL(id), options: .atomic)
+                    if let expected = item.expectedSHA256, digest != expected.lowercased() { throw SubscriptionError.checksum }
+                    if digest != previousDigest {
+                        let previous = Set(VocabularyParser.parse((try? String(contentsOf: cached, encoding: .utf8)) ?? "").map(\.text))
+                        let added = entries.map(\.text).filter { !previous.contains($0) }
+                        try FileManager.default.createDirectory(at: cached.deletingLastPathComponent(), withIntermediateDirectories: true)
+                        try data.write(to: cached, options: .atomic)
                         contentChanged = true
+                        item.newEntries = previous.isEmpty ? 0 : added.count
+                        item.recentWords = previous.isEmpty ? [] : Array(added.prefix(20))
                     }
                     item.entryCount = entries.count
-                    item.newEntries = previous.isEmpty ? 0 : added.count
-                    if !previous.isEmpty, !added.isEmpty { item.recentWords = Array(added.prefix(20)) }
                     item.etag = response.etag
                 }
                 item.remoteUpdated = commitDate ?? response.lastModified ?? item.remoteUpdated
@@ -322,23 +372,51 @@ public struct SubscriptionManager: Sendable {
         }
     }
 
-    /// Updates every subscription that is due (automatic mode). Catalog subscriptions
-    /// first follow the catalog (one small request) so a new version is what gets fetched.
-    public func updateDue(now: Date = Date(), catalog: (() async -> VocabularyCatalog?)? = nil) async -> Bool {
-        var changed = false
-        let due = subscriptions().filter { item in
+    /// Checks at most 32 feeds, oldest first. Existing longer lists are preserved and
+    /// rotate through later batches. A failed catalog/download keeps the cached data.
+    public func refresh(mode: RefreshMode, now: Date = Date(), catalog: (() async -> VocabularyCatalog?)? = nil) async -> RefreshResult {
+        let eligible = subscriptions().enumerated().filter { _, item in
+            if mode == .manual { return true }
             guard let interval = item.updateInterval.seconds else { return false }
             return item.lastChecked.map { now.timeIntervalSince($0) >= interval } ?? true
+        }.sorted { lhs, rhs in
+            let left = lhs.element.lastChecked ?? .distantPast
+            let right = rhs.element.lastChecked ?? .distantPast
+            if left != right { return left < right }
+            if lhs.element.addedAt != rhs.element.addedAt { return lhs.element.addedAt < rhs.element.addedAt }
+            return lhs.offset < rhs.offset
         }
-        if due.contains(where: { $0.feedID != nil }), let fresh = await (catalog ?? { try? await VocabularyCatalog.refresh(paths) })() {
-            try? follow(fresh)
-        }
-        for item in subscriptions() {
-            if let result = try? await update(id: item.id, force: false, now: now), result.contentChanged {
-                changed = true
+        let selected = eligible.prefix(Self.maxBatchSize).map(\.element)
+        var result = RefreshResult()
+        result.deferredCount = eligible.count - selected.count
+        guard !selected.isEmpty else { return result }
+        if mode == .manual || selected.contains(where: { $0.feedID != nil }) {
+            if let fresh = await (catalog ?? { try? await VocabularyCatalog.refresh(paths) })() {
+                result.catalog = fresh
+                do { try follow(fresh) } catch { result.catalogError = String(describing: error) }
+            } else {
+                result.catalogError = "无法刷新词库目录，继续使用现有词库地址"
             }
         }
-        return changed
+        for item in selected {
+            let before = try? PackageManager.sha256(of: cacheURL(item.id))
+            do {
+                if let after = try await update(id: item.id, force: mode == .manual, now: now), let error = after.lastError {
+                    result.errors[item.id] = error
+                }
+            } catch {
+                result.errors[item.id] = String(describing: error)
+            }
+            result.checkedIDs.append(item.id)
+            let after = try? PackageManager.sha256(of: cacheURL(item.id))
+            if before != after { result.changedIDs.append(item.id) }
+        }
+        return result
+    }
+
+    /// Compatibility wrapper for automatic callers.
+    public func updateDue(now: Date = Date(), catalog: (() async -> VocabularyCatalog?)? = nil) async -> Bool {
+        await refresh(mode: .due, now: now, catalog: catalog).changed
     }
 
     // MARK: - Tables
@@ -484,10 +562,7 @@ public struct SubscriptionManager: Sendable {
     }
 
     func tableSignature(schemas: [String], items: [VocabularySubscription]) -> String {
-        func digest(_ url: URL) -> String {
-            guard let data = try? Data(contentsOf: url) else { return "missing" }
-            return SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
-        }
+        func digest(_ url: URL) -> String { (try? PackageManager.sha256(of: url)) ?? "missing" }
         var parts = ["v2", schemas.sorted().joined(separator: ",")]
         if let shipped = paths.sharedDataDir?.appendingPathComponent("aime/aime_tech.tsv") { parts.append(digest(shipped)) }
         for item in items.sorted(by: { $0.id < $1.id }) { parts.append("\(item.id)=\(digest(cacheURL(item.id)))") }
@@ -498,6 +573,8 @@ public struct SubscriptionManager: Sendable {
 
     static let liveFetch: @Sendable (URL, String?) async throws -> Response = { url, etag in
         if url.isFileURL {
+            let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+            guard size <= maxBytes else { throw SubscriptionError.tooLarge }
             return Response(data: try Data(contentsOf: url), etag: nil, lastModified: nil, status: 200)
         }
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 30)

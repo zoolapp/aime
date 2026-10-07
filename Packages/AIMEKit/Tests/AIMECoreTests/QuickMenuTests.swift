@@ -10,7 +10,7 @@ struct QuickMenuTests {
 
     @Test func rootIsAGridAndDigitsOpenModules() {
         var menu = QuickMenu(content: content)
-        #expect(menu.page.layout == .grid && menu.page.items.map(\.title) == ["常用语", "符号", "高频词", "设置"])
+        #expect(menu.page.layout == .grid && menu.page.items.map(\.title) == ["常用语", "符号", "高频词", "表情", "设置"])
         #expect(menu.page.primary?.title == "AI 处理")
         #expect(menu.handle(.digit(2)) == .show)
         #expect(menu.page.id == .symbols && menu.page.board?.items == ["＋", "－", "×"])
@@ -103,7 +103,8 @@ struct QuickMenuTests {
         #expect(menu.page.highlighted == 3)
         _ = menu.handle(.up); _ = menu.handle(.up)
         #expect(menu.page.highlighted == -1)                                   // back up to the main action
-        _ = menu.handle(.down); _ = menu.handle(.down); _ = menu.handle(.next)
+        _ = menu.handle(.down); _ = menu.handle(.down); _ = menu.handle(.down)
+        #expect(menu.page.highlighted == 4)
         #expect(menu.handle(.confirm) == .perform(.openSettings(pane: nil)))
         #expect(menu.handle(.space) == .show && menu.page.id == .ai)          // AI off: the page still offers 简繁转换
         #expect(menu.handle(.other) == .passThrough)
@@ -111,9 +112,9 @@ struct QuickMenuTests {
 
     @Test func aiActionsIncludeTheUsersOwn() {
         var menu = QuickMenu(content: .init(polishEnabled: true, customActions: ["更口语", "总结"]))
-        #expect(menu.page.items.map(\.title) == ["常用语", "符号", "高频词", "设置"])
+        #expect(menu.page.items.map(\.title) == ["常用语", "符号", "高频词", "表情", "设置"])
         #expect(menu.page.primary?.title == "AI 处理" && menu.page.primary?.detail == "")
-        #expect(menu.handle(.digit(4)) == .perform(.openSettings(pane: nil)))
+        #expect(menu.handle(.digit(0)) == .perform(.openSettings(pane: nil)))
         // Space is the main action: the AI page.
         #expect(menu.handle(.space) == .show && menu.page.id == .ai && menu.page.layout == .list)
         #expect(menu.page.items.map(\.title) == ["翻译", "润色", "简繁转换", "更口语", "总结", "添加自定义动作…"])
@@ -132,8 +133,27 @@ struct QuickMenuTests {
         content.hasActionTarget = false
         var menu = QuickMenu(content: content)
         #expect(menu.page.primary == nil && menu.page.highlighted == 0)
-        #expect(menu.page.items.map(\.title) == ["常用语", "符号", "高频词", "设置"])
+        #expect(menu.page.items.map(\.title) == ["常用语", "符号", "高频词", "表情", "设置"])
         #expect(menu.handle(.space) == .show && menu.page.id == .phrases)   // Space is plain confirm again
+    }
+
+    @Test func settingsUseZeroAndEmojisUseTheFourthDigit() {
+        var menu = QuickMenu(content: content)
+        #expect((0..<5).map { menu.page.selectionKey(visibleIndex: $0) } == [1, 2, 3, 4, 0])
+        #expect(menu.handle(.digit(5)) == .show && menu.page.id == .root)
+        #expect(menu.handle(.digit(4)) == .show)
+        #expect(menu.page.id == .emojis)
+        #expect(menu.handle(.back) == .show && menu.page.id == .root)
+        #expect(menu.handle(.digit(0)) == .perform(.openSettings(pane: nil)))
+        #expect(menu.select(visibleIndex: 4) == .perform(.openSettings(pane: nil)))
+        menu.open(.ai)
+        #expect(menu.handle(.digit(0)) == .show)
+        #expect(menu.page.id == .ai)
+        let tabs = (0..<10).map { QuickMenu.Symbols.Category(id: "tab\($0)", title: "分类\($0)", symbol: nil, items: ["符号\($0)"]) }
+        var boardMenu = QuickMenu(content: .init(symbols: .init(categories: tabs)))
+        boardMenu.open(.symbols)
+        #expect(boardMenu.handle(.digit(0)) == .show)
+        #expect(boardMenu.page.board?.category == 9)
     }
 
     @Test func frequentWordsExplainWhenStatisticsAreOff() {
@@ -149,6 +169,86 @@ struct QuickMenuTests {
         let data = try Data(contentsOf: repo.appendingPathComponent("SharedSupport/aime/symbols.json"))
         let symbols = try JSONDecoder().decode(QuickMenu.Symbols.self, from: data)
         #expect(symbols.categories.count == 10 && symbols.categories.allSatisfy { $0.items.count >= 30 })
+    }
+
+    @Test func emojiBoardFiltersEmptyCategoriesAndSupportsNineTabsScrollingAndRepeatedInsertion() {
+        let items = (0..<45).compactMap { UnicodeScalar(0x1F600 + $0).map(String.init) }
+        var categories = (0..<9).map { index in
+            QuickMenu.Symbols.Category(id: "category\(index)", title: "分类\(index + 1)", symbol: nil,
+                                       items: index == 0 ? items : ["🙂"])
+        }
+        categories.insert(.init(id: "empty", title: "空分类", symbol: nil, items: []), at: 1)
+        var menu = QuickMenu(content: .init(emojis: .init(categories: categories)))
+        #expect(menu.handle(.digit(4)) == .show && menu.page.id == .emojis)
+        #expect(menu.page.board?.style == .grid && menu.page.board?.categories.count == 9)
+        #expect(menu.page.board?.columns == 10 && menu.page.board?.visibleRows == 3)
+        #expect(menu.handle(.digit(9)) == .show && menu.page.board?.category == 8)
+        #expect(menu.handle(.digit(0)) == .show && menu.page.board?.category == 8)
+        #expect(menu.handle(.digit(1)) == .show && menu.page.board?.category == 0)
+        #expect(menu.handle(.pageDown) == .show && menu.page.board?.firstRow == 2)
+        #expect(menu.handle(.letter("q", shifted: true)) == .perform(.insertAndStay(items[20])))
+        #expect(menu.page.id == .emojis)
+        #expect(menu.handle(.letter("w", shifted: true)) == .perform(.insertAndStay(items[21])))
+        #expect(menu.handle(.confirm) == .perform(.insert(items[21])))
+        #expect(menu.scrollBoard(rows: -99) == .show && menu.page.board?.firstRow == 0)
+        #expect(menu.scrollBoard(rows: 99) == .show && menu.page.board?.firstRow == 2)
+        #expect(menu.selectBoardCell(visibleIndex: 3) == .perform(.insertAndStay(items[23])))
+        #expect(menu.handle(.tabNext) == .show && menu.page.board?.category == 1 && menu.page.board?.firstRow == 0)
+        #expect(menu.handle(.tabPrevious) == .show && menu.page.board?.category == 0)
+        #expect(menu.handle(.back) == .show && menu.page.id == .root)
+        #expect(menu.handle(.back) == .close)
+    }
+
+    @Test func emojiSelectionPreservesVariationSelectorsJoinedSequencesAndFlags() {
+        let items = ["❤️", "👨‍👩‍👧‍👦", "🇨🇳"]
+        #expect(items.allSatisfy { $0.count == 1 })
+        let emojis = QuickMenu.Symbols(categories: [.init(id: "sequences", title: "组合", symbol: nil, items: items)])
+        var menu = QuickMenu(content: .init(emojis: emojis))
+        _ = menu.handle(.digit(4))
+        #expect(menu.handle(.letter("q", shifted: true)) == .perform(.insertAndStay("❤️")))
+        #expect(menu.handle(.letter("w", shifted: true)) == .perform(.insertAndStay("👨‍👩‍👧‍👦")))
+        #expect(menu.handle(.letter("e", shifted: false)) == .perform(.insert("🇨🇳")))
+        #expect(menu.page.board?.items == items)
+        menu.open(.emojis)
+        #expect(menu.handle(.back) == .show && menu.page.id == .root)
+        #expect(menu.handle(.back) == .close)
+    }
+
+    @Test func emojiLoaderPrefersUserOverrideAndFallsBackAfterMalformedOrMissingFiles() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("aime-emoji-loader-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let paths = AIMEPaths(userDataDir: root.appendingPathComponent("user"), sharedDataDir: root.appendingPathComponent("shared"))
+        let sharedDir = paths.sharedDataDir!.appendingPathComponent("aime")
+        try FileManager.default.createDirectory(at: paths.aimeDir, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: sharedDir, withIntermediateDirectories: true)
+        let shared = QuickMenu.Symbols(categories: [.init(id: "shared", title: "共享", symbol: nil, items: ["🙂"])])
+        let user = QuickMenu.Symbols(categories: [.init(id: "user", title: "自定义", symbol: nil, items: ["❤️", "🇨🇳"])])
+        let sharedFile = sharedDir.appendingPathComponent("emoji.json")
+        let userFile = paths.aimeDir.appendingPathComponent("emoji.json")
+        try JSONEncoder().encode(shared).write(to: sharedFile)
+        #expect(QuickMenu.Symbols.loadEmojis(paths) == shared)
+        try JSONEncoder().encode(user).write(to: userFile)
+        #expect(QuickMenu.Symbols.loadEmojis(paths) == user)
+        #expect(QuickMenu.Symbols.load(paths).categories.isEmpty)
+        try Data("not valid JSON".utf8).write(to: userFile)
+        #expect(QuickMenu.Symbols.loadEmojis(paths) == shared)
+        try FileManager.default.removeItem(at: userFile)
+        #expect(QuickMenu.Symbols.loadEmojis(paths) == shared)
+        try FileManager.default.removeItem(at: sharedFile)
+        #expect(QuickMenu.Symbols.loadEmojis(paths).categories.isEmpty)
+    }
+
+    @Test func shippedEmojisDecodeAsUniqueCompleteGraphemes() throws {
+        let repo = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let data = try Data(contentsOf: repo.appendingPathComponent("SharedSupport/aime/emoji.json"))
+        let emojis = try JSONDecoder().decode(QuickMenu.Symbols.self, from: data)
+        let items = emojis.categories.flatMap(\.items)
+        #expect(emojis.categories.map(\.id) == ["smileys", "people", "nature", "food", "travel", "activities", "objects", "symbols", "flags"])
+        #expect(emojis.categories.allSatisfy { !$0.items.isEmpty })
+        #expect(items.count == 1906 && Set(items).count == 1906)
+        #expect(items.allSatisfy { $0.count == 1 })
+        #expect(items.contains("❤️") && items.contains("👨‍👩‍👧‍👦") && items.contains("🇨🇳"))
     }
 }
 

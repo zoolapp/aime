@@ -51,6 +51,60 @@ struct DraftBufferTests {
 }
 
 extension DraftBufferTests {
+    @Test func pastePreservesTextAndCanOpenWithNonWords() {
+        for text in ["123", "，", "😀", "\t第一行\r\n第二行\n 👨‍👩‍👧‍👦🇨🇳e\u{301}☀️"] {
+            var draft = DraftBuffer()
+            let inserted = draft.paste(text)
+            #expect(inserted)
+            #expect(draft.text == text)
+            let empty = draft.paste("")
+            #expect(empty)
+            #expect(draft.text == text)
+            let appended = draft.paste("后续")
+            #expect(appended)
+            #expect(draft.text == text + "后续")
+        }
+    }
+
+    @Test func pasteRejectsOverflowWithoutChangingTheDraft() {
+        var draft = DraftBuffer()
+        draft.replace(with: String(repeating: "字", count: DraftBuffer.maxLength - 2))
+        let before = draft
+        let overflow = draft.paste("🇨🇳") // four UTF-16 units, one grapheme
+        #expect(!overflow)
+        #expect(draft == before)
+        let exact = draft.paste("😀") // two UTF-16 units, reaches the exact limit
+        #expect(exact)
+        #expect(draft.text.utf16.count == DraftBuffer.maxLength)
+        let full = draft
+        let extra = draft.paste(" ")
+        #expect(!extra)
+        #expect(draft == full)
+        var empty = DraftBuffer()
+        let tooLong = empty.paste(String(repeating: "长", count: DraftBuffer.maxLength + 1))
+        #expect(!tooLong)
+        #expect(empty.isEmpty)
+    }
+
+    @Test func pastePreflightsCompositionAndRechecksFormatterOutput() {
+        var draft = DraftBuffer()
+        draft.replace(with: String(repeating: "字", count: DraftBuffer.maxLength - 4))
+        #expect(draft.canPaste("😀", afterComposition: "你好"))
+        #expect(!draft.canPaste("😀", afterComposition: "你好啊"))
+        // Actual formatter output can exceed the preview. Keep that commit local,
+        // then reject the addition as a whole, without overflow or truncation.
+        draft.replace(with: draft.text + "你好啊")
+        let committed = draft
+        let addition = draft.paste("😀")
+        #expect(!addition)
+        #expect(draft == committed)
+        draft.replace(with: String(repeating: "字", count: DraftBuffer.maxLength + 10))
+        let oversized = draft
+        let oversizedAddition = draft.paste("a")
+        #expect(!oversizedAddition)
+        #expect(draft == oversized)
+    }
+
     @Test func onlyWordsOpenADraft() {
         #expect(DraftBuffer.opensDraft("你好"))
         #expect(DraftBuffer.opensDraft("a"))

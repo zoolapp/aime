@@ -25,6 +25,22 @@ public struct DraftBuffer: Sendable, Equatable {
         return overflow
     }
 
+    /// Explicit paste stays local: reject the entire addition instead of committing
+    /// an older draft. Composition preview is only a preflight; check the real output
+    /// again after the engine commits, since formatters can change its length.
+    public func canPaste(_ addition: String, afterComposition composition: String = "") -> Bool {
+        let bound = Self.maxLength + 1
+        return text.utf16.prefix(bound).count + composition.utf16.prefix(bound).count
+            + addition.utf16.prefix(bound).count <= Self.maxLength
+    }
+
+    @discardableResult
+    public mutating func paste(_ addition: String) -> Bool {
+        guard canPaste(addition) else { return false }
+        text += addition
+        return true
+    }
+
     /// Removes the last character; false when there was nothing to remove.
     public mutating func deleteBackward() -> Bool {
         guard !text.isEmpty else { return false }

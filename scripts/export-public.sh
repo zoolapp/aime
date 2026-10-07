@@ -22,7 +22,7 @@ INCLUDE=(
   project.yml Apps Packages SharedSupport config dicts licenses scripts Vendor
   assets/icon.png assets/screenshots assets/brand/aime/base-v1 assets/social/2026-10-01
   docs/README.md docs/architecture.md docs/decisions docs/privacy.md docs/rime-config-reference.md
-  docs/releasing.md docs/release-checklist.md docs/themes.md
+  docs/releasing.md docs/release-checklist.md docs/themes.md docs/troubleshooting.md
   docs/license-packaging-verification.md docs/native-plugin-license-audit.md
 )
 # Removed again from the included directories: tooling output and design-process notes.

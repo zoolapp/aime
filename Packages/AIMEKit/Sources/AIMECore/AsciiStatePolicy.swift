@@ -48,8 +48,10 @@ public struct AsciiStatePolicy: Sendable {
         }
     }
 
-    /// Records a state the user now has in `app` (after a key, or when leaving it).
-    public mutating func record(_ ascii: Bool, app: String?, appDefault: Bool?) {
+    /// Only the active input context may publish state. IMK can deactivate an older
+    /// context after the next one has already become active.
+    public mutating func record(_ ascii: Bool, app: String?, appDefault: Bool?, isActive: Bool = true) {
+        guard isActive else { return }
         switch scope {
         case .window:
             return

@@ -9,11 +9,12 @@ import SwiftUI
 struct OnboardingView: View {
     @Environment(SettingsModel.self) private var model
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var step: Step = .welcome
+    @Binding var step: Step
     @State private var forward = true
-    @State private var choices = Choices()
-    @State private var loaded = false
-    @State private var applying = false
+    @Binding var choices: Choices
+    @Binding var initial: Choices
+    @Binding var loaded: Bool
+    @Binding var applying: Bool
     let finish: () -> Void
 
     enum Step: Int, CaseIterable {
@@ -221,8 +222,6 @@ struct OnboardingView: View {
         choices = current
         initial = current
     }
-
-    @State private var initial = Choices()
 
     /// Writes what changed, then lets auto-deploy apply it while the user practises.
     private func apply() async {
@@ -906,13 +905,20 @@ private struct AmbientGlow: View {
 /// On first launch (or with `--onboarding`) the window shows only the guide, the way
 /// Mac apps greet a new user; the settings appear once it is done. 「高级」 can run it again.
 private struct OnboardingHost: ViewModifier {
+    var bypassed = false
+    // Visiting About may remove the guide view; keep its progress and unsaved choices here.
+    @State private var step: OnboardingView.Step = .welcome
+    @State private var choices = OnboardingView.Choices()
+    @State private var initial = OnboardingView.Choices()
+    @State private var loaded = false
+    @State private var applying = false
     @AppStorage("onboarding.completed") private var completed = false
     @State private var presented = OnboardingHost.shouldShow(completed: UserDefaults.standard.bool(forKey: "onboarding.completed"))
 
     func body(content: Content) -> some View {
         ZStack {
-            if presented {
-                OnboardingView {
+            if presented && !bypassed {
+                OnboardingView(step: $step, choices: $choices, initial: $initial, loaded: $loaded, applying: $applying) {
                     completed = true
                     withAnimation(.easeInOut(duration: 0.35)) { presented = false }
                     OnboardingWindow.restore()
@@ -928,7 +934,14 @@ private struct OnboardingHost: ViewModifier {
             }
         }
         .onChange(of: completed) { _, done in
-            if !done { withAnimation(.easeInOut(duration: 0.35)) { presented = true } }
+            if !done {
+                step = .welcome
+                choices = OnboardingView.Choices()
+                initial = OnboardingView.Choices()
+                loaded = false
+                applying = false
+                withAnimation(.easeInOut(duration: 0.35)) { presented = true }
+            }
         }
     }
 
@@ -941,7 +954,7 @@ private struct OnboardingHost: ViewModifier {
 }
 
 extension View {
-    func onboardingHost() -> some View { modifier(OnboardingHost()) }
+    func onboardingHost(bypassed: Bool = false) -> some View { modifier(OnboardingHost(bypassed: bypassed)) }
 }
 
 /// 「重新运行新手引导」 in 高级.

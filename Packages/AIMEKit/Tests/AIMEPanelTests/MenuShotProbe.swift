@@ -11,7 +11,7 @@ struct MenuShotProbe {
         let page = menu.page
         if let board = page.board { return PanelState(board: board) }
         return PanelState(candidates: page.visibleItems.enumerated().map {
-            .init(label: "\($0.offset + 1)", text: $0.element.title, comment: $0.element.detail, symbol: $0.element.symbol)
+            .init(label: "\(page.selectionKey(visibleIndex: $0.offset))", text: $0.element.title, comment: $0.element.detail, symbol: $0.element.symbol)
         }, highlightedIndex: page.highlighted, title: page.title,
         presentation: page.layout == .grid ? .grid : page.layout == .row ? .row : .list)
     }
@@ -35,7 +35,7 @@ struct MenuShotProbe {
                 .init(id: "1", title: "证件", symbol: nil, items: ["110101199001011234", "护照 E12345678"]),
                 .init(id: "2", title: "手机号", symbol: nil, items: ["138 0000 0000", "+1 (415) 555-0100"]),
                 .init(id: "3", title: "地址", symbol: nil, items: ["北京市朝阳区建国路 88 号 SOHO 现代城 A 座 1201 室，邮编 100022，收件人 罗先生", "上海市徐汇区漕溪北路 1 号"]),
-            ]))
+            ], emojis: .loadEmojis(AIMEPaths(userDataDir: URL(fileURLWithPath: out), sharedDataDir: repo.appendingPathComponent("SharedSupport")))))
         var shots: [(String, PanelState)] = [("root", Self.state(menu))]
         _ = menu.handle(.digit(1)); _ = menu.handle(.digit(3))
         shots.append(("snippets", Self.state(menu)))
@@ -44,6 +44,11 @@ struct MenuShotProbe {
         shots.append(("board-zh", Self.state(menu)))
         _ = menu.handle(.tabNext); _ = menu.handle(.tabNext); _ = menu.handle(.pageDown)
         shots.append(("board-num", Self.state(menu)))
+        _ = menu.handle(.back)
+        _ = menu.handle(.digit(4))
+        shots.append(("board-emoji", Self.state(menu)))
+        _ = menu.handle(.digit(9))
+        shots.append(("board-emoji-flags", Self.state(menu)))
         for (name, state) in shots {
             panel.show(state, at: cursor)
             try await Task.sleep(for: .milliseconds(450))

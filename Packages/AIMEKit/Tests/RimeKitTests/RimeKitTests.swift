@@ -94,6 +94,29 @@ struct RimeKitTests {
         #expect(session.stateLabel(option: "ascii_mode", state: false, abbreviated: false) == "中")
     }
 
+    @Test func frontendConsumedShortcutDoesNotBecomeAShiftTap() throws {
+        let session = try RimeEngine.shared.createSession()
+        session.setOption("ascii_mode", false)
+        // Reproduce the old menu path: RIME sees only Shift press/release.
+        session.processKey(RimeKey.shiftL)
+        session.processKey(RimeKey.shiftL, modifiers: RimeKey.shiftMask | RimeKey.releaseMask)
+        #expect(session.option("ascii_mode"))
+        session.setOption("ascii_mode", false)
+        session.simulate(keySequence: "nihao")
+        let before = session.context()
+        session.processKey(RimeKey.shiftL)
+        session.cancelModifierTap() // menu consumes Shift+letter
+        session.processKey(RimeKey.shiftL, modifiers: RimeKey.shiftMask | RimeKey.releaseMask)
+        #expect(!session.option("ascii_mode"))
+        #expect(session.context() == before)
+        #expect(session.consumeCommit() == nil)
+        // A real lone Shift tap still works afterwards.
+        session.clearComposition()
+        session.processKey(RimeKey.shiftL)
+        session.processKey(RimeKey.shiftL, modifiers: RimeKey.shiftMask | RimeKey.releaseMask)
+        #expect(session.option("ascii_mode"))
+    }
+
     @Test func readsMergedConfig() throws {
         let config = try RimeEngine.shared.openConfig("default")
         #expect(config.int("menu/page_size") == 5)

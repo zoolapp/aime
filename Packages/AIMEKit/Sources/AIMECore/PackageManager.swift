@@ -1,27 +1,40 @@
 public import Foundation
 internal import CryptoKit
 
-/// Registry entry for a downloadable schema / dictionary package.
+/// Registry entry for a downloadable schema, dictionary or offline language model.
 public struct DictionaryPackage: Sendable, Codable, Identifiable, Hashable {
-    public enum Kind: String, Sendable, Codable { case schema, dictionary }
+    public enum Kind: String, Sendable, Codable { case schema, dictionary, model }
 
     public struct Source: Sendable, Codable, Hashable {
-        /// `github-release` (repo + tag + asset) or `raw` (url + filename).
+        /// `github-release`, immutable `github-release-asset` (repo + assetID), or `raw`.
         public var type: String
         public var repo: String?
         public var tag: String?
         public var asset: String?
         public var url: String?
         public var filename: String?
+        public var assetID: Int?
 
         public var downloadURL: URL? {
             switch type {
             case "github-release":
                 guard let repo, let tag, let asset else { return nil }
                 return URL(string: "https://github.com/\(repo)/releases/download/\(tag)/\(asset)")
+            case "github-release-asset":
+                guard let repo, let assetID, assetID > 0 else { return nil }
+                return URL(string: "https://api.github.com/repos/\(repo)/releases/assets/\(assetID)")
             default:
                 return url.flatMap(URL.init(string:))
             }
+        }
+
+        public var downloadRequest: URLRequest? {
+            guard let url = downloadURL else { return nil }
+            var request = URLRequest(url: url, timeoutInterval: 300)
+            if type == "github-release-asset" {
+                request.setValue("application/octet-stream", forHTTPHeaderField: "Accept")
+            }
+            return request
         }
     }
 
@@ -47,8 +60,15 @@ public struct DictionaryPackage: Sendable, Codable, Identifiable, Hashable {
     public var addonFor: String?
     /// Rarely needed; listed under 高级.
     public var advanced: Bool?
+    public var licenseURL: String?
+    public var attribution: String?
 
-    public var version: String { source.tag ?? String(sha256.prefix(7)) }
+    public var version: String {
+        if source.type == "github-release-asset", let assetID = source.assetID {
+            return "asset-\(assetID)"
+        }
+        return source.tag ?? String(sha256.prefix(7))
+    }
 }
 
 public struct DictionaryRegistry: Sendable, Codable {
@@ -76,6 +96,11 @@ public struct InstalledPackage: Sendable, Codable, Hashable {
     /// Paths relative to the user data dir → sha256 of the installed file.
     public var files: [String: String]
     public var backupDir: String?
+    /// Optional to keep manifests written by older AIME versions readable.
+    public var sourceURL: String?
+    public var license: String?
+    public var licenseURL: String?
+    public var attribution: String?
 }
 
 public enum PackageError: Error, Equatable, CustomStringConvertible {
@@ -109,8 +134,12 @@ public enum PackageError: Error, Equatable, CustomStringConvertible {
 public struct PackageManager: Sendable {
     public let paths: AIMEPaths
     public let registry: DictionaryRegistry
-    /// Injected for tests; defaults to URLSession.
-    public var fetch: @Sendable (URL) async throws -> Data
+    /// Legacy Data injection for small test fixtures. Production downloads use a file.
+    public var fetch: @Sendable (URL) async throws -> Data {
+        didSet { usesInjectedFetch = true }
+    }
+    private var usesInjectedFetch: Bool
+    private let downloadFile: @Sendable (URLRequest) async throws -> (URL, URLResponse)
 
     static let protectedNames: Set<String> = ["installation.yaml", "user.yaml", "build", "sync", ".git", ".github", "__MACOSX", ".DS_Store"]
 
@@ -119,9 +148,25 @@ public struct PackageManager: Sendable {
         registry: DictionaryRegistry = .bundled,
         fetch: (@Sendable (URL) async throws -> Data)? = nil
     ) {
+        self.init(paths: paths, registry: registry, download: { request in
+            try await URLSession.shared.download(for: request)
+        })
+        if let fetch { self.fetch = fetch }
+        self.usesInjectedFetch = fetch != nil
+    }
+
+    /// File download injection is a separate overload so legacy trailing Data closures
+    /// continue to bind to `fetch` rather than an optional earlier closure parameter.
+    public init(
+        paths: AIMEPaths,
+        registry: DictionaryRegistry = .bundled,
+        download: @escaping @Sendable (URLRequest) async throws -> (URL, URLResponse)
+    ) {
         self.paths = paths
         self.registry = registry
-        self.fetch = fetch ?? { url in
+        self.usesInjectedFetch = false
+        self.downloadFile = download
+        self.fetch = { url in
             let (data, response) = try await URLSession.shared.data(from: url)
             if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
                 throw PackageError.downloadFailed("HTTP \(http.statusCode) for \(url.absoluteString)")
@@ -156,38 +201,58 @@ public struct PackageManager: Sendable {
 
     /// Returns a verified local copy of the package payload.
     public func download(_ package: DictionaryPackage, progress: (@Sendable (String) -> Void)? = nil) async throws -> URL {
-        guard let url = package.source.downloadURL else { throw PackageError.noDownloadURL(package.id) }
+        guard let request = package.source.downloadRequest, let url = request.url else { throw PackageError.noDownloadURL(package.id) }
         let fm = FileManager.default
         try fm.createDirectory(at: paths.cacheDir, withIntermediateDirectories: true)
-        let cached = paths.cacheDir.appendingPathComponent("\(package.sha256.prefix(16))-\(url.lastPathComponent)")
-        if fm.fileExists(atPath: cached.path), (try? Self.sha256(of: cached)) == package.sha256 {
-            progress?("using cached \(url.lastPathComponent)")
+        let name = package.source.filename ?? url.lastPathComponent
+        guard !name.isEmpty, !name.contains("/"), !name.contains("..") else {
+            throw PackageError.downloadFailed("invalid file name \(name)")
+        }
+        let cached = paths.cacheDir.appendingPathComponent("\(package.sha256.prefix(16))-\(name)")
+        if fm.fileExists(atPath: cached.path), (try? Self.verify(package, payload: cached)) != nil {
+            progress?("using cached \(name)")
             return cached
         }
         progress?("downloading \(url.absoluteString)")
-        let data = try await fetch(url)
-        let digest = Self.sha256(of: data)
-        guard digest == package.sha256 else {
-            throw PackageError.checksumMismatch(expected: package.sha256, actual: digest)
+        if usesInjectedFetch {
+            let data = try await fetch(url)
+            let digest = Self.sha256(of: data)
+            guard digest == package.sha256 else {
+                throw PackageError.checksumMismatch(expected: package.sha256, actual: digest)
+            }
+            try Self.verifyModelSize(package, actual: data.count)
+            try data.write(to: cached, options: .atomic)
+        } else {
+            // One download call, with no retry loop. URLSession follows the asset redirect.
+            let (temporary, response) = try await downloadFile(request)
+            defer { try? fm.removeItem(at: temporary) }
+            if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
+                throw PackageError.downloadFailed("HTTP \(http.statusCode) for \(url.absoluteString)")
+            }
+            try Self.verify(package, payload: temporary)
+            if fm.fileExists(atPath: cached.path) { try fm.removeItem(at: cached) }
+            try fm.moveItem(at: temporary, to: cached)
         }
-        try data.write(to: cached, options: .atomic)
         return cached
     }
 
     /// Installs from an already-downloaded payload. The payload is re-verified.
     @discardableResult
     public func install(_ package: DictionaryPackage, archive: URL, progress: (@Sendable (String) -> Void)? = nil) throws -> InstalledPackage {
-        let digest = try Self.sha256(of: archive)
-        guard digest == package.sha256 else {
-            throw PackageError.checksumMismatch(expected: package.sha256, actual: digest)
-        }
+        try Self.verify(package, payload: archive)
 
         let fm = FileManager.default
         let staging = fm.temporaryDirectory.appendingPathComponent("aime-pkg-\(UUID().uuidString)", isDirectory: true)
         try fm.createDirectory(at: staging, withIntermediateDirectories: true)
         defer { try? fm.removeItem(at: staging) }
 
-        if archive.pathExtension.lowercased() == "zip" {
+        if package.kind == .model {
+            guard let name = package.source.filename, name.hasSuffix(".gram"),
+                  !name.contains("/"), !name.contains(".."), archive.pathExtension.lowercased() != "zip" else {
+                throw PackageError.extractionFailed("a model package must contain one named .gram file")
+            }
+            try fm.copyItem(at: archive, to: staging.appendingPathComponent(name))
+        } else if archive.pathExtension.lowercased() == "zip" {
             progress?("extracting")
             try Self.unzip(archive, to: staging)
         } else {
@@ -250,7 +315,9 @@ public struct PackageManager: Sendable {
 
         let record = InstalledPackage(
             id: package.id, version: package.version, sha256: package.sha256, installedAt: Date(),
-            files: manifestFiles, backupDir: backedUp ? backupRoot.path : nil
+            files: manifestFiles, backupDir: backedUp ? backupRoot.path : nil,
+            sourceURL: package.source.downloadURL?.absoluteString, license: package.license,
+            licenseURL: package.licenseURL, attribution: package.attribution
         )
         try fm.createDirectory(at: paths.packagesDir, withIntermediateDirectories: true)
         try Self.encoder.encode(record).write(to: manifestURL(package.id), options: .atomic)
@@ -281,6 +348,23 @@ public struct PackageManager: Sendable {
     }
 
     // MARK: - Helpers
+
+    static func verify(_ package: DictionaryPackage, payload: URL) throws {
+        let digest = try sha256(of: payload)
+        guard digest == package.sha256 else {
+            throw PackageError.checksumMismatch(expected: package.sha256, actual: digest)
+        }
+        if package.kind == .model {
+            let size = try payload.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+            try verifyModelSize(package, actual: size)
+        }
+    }
+
+    static func verifyModelSize(_ package: DictionaryPackage, actual: Int) throws {
+        if package.kind == .model, let expected = package.size, actual != expected {
+            throw PackageError.downloadFailed("model size mismatch: expected \(expected), got \(actual)")
+        }
+    }
 
     func filesOwnedByOtherPackages(than id: String) -> Set<String> {
         Set(installedPackages().filter { $0.id != id }.flatMap { $0.files.keys })

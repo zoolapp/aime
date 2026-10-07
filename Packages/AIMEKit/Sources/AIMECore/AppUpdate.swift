@@ -44,16 +44,22 @@ public struct AppVersion: Comparable, Sendable, CustomStringConvertible {
     public var parts: [Int]
     public var build: Int?
     public var string: String
+    public var prerelease: [String]
+    public var isPrerelease: Bool { !prerelease.isEmpty }
 
     public init(_ version: String, build: Int? = nil) {
         string = version
-        parts = version.split(separator: ".").map { Int($0.prefix { $0.isNumber }) ?? 0 }
+        let semantic = version.split(separator: "+", maxSplits: 1).first ?? "0"
+        let components = semantic.split(separator: "-", maxSplits: 1)
+        parts = (components.first ?? "0").split(separator: ".").map { Int($0) ?? 0 }
+        prerelease = components.count > 1 ? components[1].split(separator: ".").map(String.init) : []
         self.build = build
     }
 
     /// The running app's version from its Info.plist.
     public static func current(_ bundle: Bundle = .main) -> AppVersion {
-        let version = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"
+        let version = bundle.object(forInfoDictionaryKey: "AIMEReleaseVersion") as? String
+            ?? bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"
         let build = (bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String).flatMap(Int.init)
         return AppVersion(version, build: build)
     }
@@ -78,7 +84,16 @@ public struct AppVersion: Comparable, Sendable, CustomStringConvertible {
             let right = index < rhs.parts.count ? rhs.parts[index] : 0
             if left != right { return left < right }
         }
-        // Same version: a build number only decides when both sides have one.
+        if lhs.isPrerelease != rhs.isPrerelease { return lhs.isPrerelease }
+        for (left, right) in zip(lhs.prerelease, rhs.prerelease) where left != right {
+            let leftNumeric = left.allSatisfy { $0.isASCII && $0.isNumber }
+            let rightNumeric = right.allSatisfy { $0.isASCII && $0.isNumber }
+            if leftNumeric != rightNumeric { return leftNumeric }
+            if leftNumeric, left.count != right.count { return left.count < right.count }
+            return left < right
+        }
+        if lhs.prerelease.count != rhs.prerelease.count { return lhs.prerelease.count < rhs.prerelease.count }
+        // Same semantic version: ignore +metadata, then compare AIME build numbers.
         guard let left = lhs.build, let right = rhs.build else { return false }
         return left < right
     }
@@ -90,12 +105,37 @@ public struct AppVersion: Comparable, Sendable, CustomStringConvertible {
 /// (daily background check) and the settings app. Stored in `aime/update.json`.
 public struct AppUpdateState: Codable, Sendable, Equatable {
     public var autoCheck = true
+    public var receiveBeta = false
     public var lastCheck: Date?
     public var available: AppRelease?
     /// A version the user chose to skip ("version (build)").
     public var skipped: String?
 
     public init() {}
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        autoCheck = try container.decodeIfPresent(Bool.self, forKey: .autoCheck) ?? true
+        receiveBeta = try container.decodeIfPresent(Bool.self, forKey: .receiveBeta) ?? false
+        lastCheck = try container.decodeIfPresent(Date.self, forKey: .lastCheck)
+        available = try container.decodeIfPresent(AppRelease.self, forKey: .available)
+        skipped = try container.decodeIfPresent(String.self, forKey: .skipped)
+    }
+
+    public var manifestURL: URL { AppUpdateChecker.manifestURL(receiveBeta: receiveBeta) }
+
+    public func accepts(_ release: AppRelease) -> Bool {
+        receiveBeta || (release.prerelease != true && !release.appVersion.isPrerelease)
+    }
+
+    /// Invalidate a cached result and skipped version whenever the channel changes.
+    public mutating func setReceiveBeta(_ enabled: Bool) {
+        guard receiveBeta != enabled else { return }
+        receiveBeta = enabled
+        available = nil
+        skipped = nil
+        lastCheck = nil
+    }
 
     public static func load(_ paths: AIMEPaths) -> AppUpdateState {
         guard let data = try? Data(contentsOf: file(paths)),
@@ -110,7 +150,7 @@ public struct AppUpdateState: Codable, Sendable, Equatable {
 
     /// The available release if it is newer than `current` and not skipped.
     public func pending(current: AppVersion) -> AppRelease? {
-        guard let available, current < available.appVersion, skipped != available.appVersion.description else { return nil }
+        guard let available, accepts(available), current < available.appVersion, skipped != available.appVersion.description else { return nil }
         return available
     }
 
@@ -163,17 +203,23 @@ public struct AppUpdateChecker: Sendable {
 
     public var manifestURL: URL
     public var session: URLSession
+    var verificationKey = manifestPublicKey
+    private var usesStoredChannel: Bool
 
-    public init(manifestURL: URL = downloadBase.appendingPathComponent(product).appendingPathComponent("latest.json"),
-                session: URLSession = .shared) {
-        self.manifestURL = manifestURL
+    public static func manifestURL(receiveBeta: Bool) -> URL {
+        downloadBase.appendingPathComponent(product).appendingPathComponent(receiveBeta ? "latest-beta.json" : "latest.json")
+    }
+
+    public init(manifestURL: URL? = nil, session: URLSession = .shared) {
+        self.manifestURL = manifestURL ?? Self.manifestURL(receiveBeta: false)
+        self.usesStoredChannel = manifestURL == nil
         self.session = session
     }
 
     public func fetchLatest() async throws -> AppRelease {
         let data = try await get(manifestURL)
         let signature = try await get(manifestURL.appendingPathExtension("sig"))
-        guard Self.verify(manifest: data, signature: signature) else { throw AppUpdateError.untrustedManifest }
+        guard Self.verify(manifest: data, signature: signature, publicKey: verificationKey) else { throw AppUpdateError.untrustedManifest }
         return try JSONDecoder().decode(AppRelease.self, from: data)
     }
 
@@ -197,10 +243,15 @@ public struct AppUpdateChecker: Sendable {
     /// Checks once, records the result in `state` and returns the release when newer.
     @discardableResult
     public func check(paths: AIMEPaths, current: AppVersion, now: Date = Date()) async throws -> AppRelease? {
-        let latest = try await fetchLatest()
+        let initial = AppUpdateState.load(paths)
+        var checker = self
+        if usesStoredChannel { checker.manifestURL = initial.manifestURL }
+        let latest = try await checker.fetchLatest()
         var state = AppUpdateState.load(paths)
+        // A response from the old channel must not overwrite the user's new preference.
+        guard state.receiveBeta == initial.receiveBeta else { return nil }
         state.lastCheck = now
-        state.available = current < latest.appVersion && latest.supportsThisSystem() ? latest : nil
+        state.available = state.accepts(latest) && current < latest.appVersion && latest.supportsThisSystem() ? latest : nil
         try state.save(paths)
         return state.pending(current: current)
     }

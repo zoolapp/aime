@@ -66,7 +66,7 @@
     },
     {
       "id": "switcher.hotkeys",
-      "group": "general",
+      "group": "keys",
       "title": "方案选单快捷键",
       "description": "唤出「方案选单」的热键列表。出厂默认 Control+grave / Control+Shift+grave / F4。",
       "file": "default",
@@ -109,8 +109,8 @@
     {
       "id": "switcher.caption",
       "group": "general",
-      "title": "方案选单标题",
-      "description": "方案选单窗口顶部显示的标题文字。",
+      "title": "方案选单提示文字",
+      "description": "打开方案选单时的提示文字。跟随「内联预编辑」显示在输入框的组字区或候选窗；开启候选内联预上屏时可能显示候选预览。",
       "file": "default",
       "keypath": "switcher/caption",
       "type": "enum",
@@ -204,8 +204,8 @@
     {
       "id": "translator.contextual_suggestions",
       "group": "general",
-      "title": "语言模型上下文建议",
-      "description": "启用 octagram 语法模型的上下文选词（需 .gram 模型文件与 __include: octagram）。",
+      "title": "跨句上下文建议",
+      "description": "整句模型的额外选词选项；万象模型默认关闭，不影响当前整句评分。",
       "file": "schema",
       "keypath": "translator/contextual_suggestions",
       "type": "bool",
@@ -215,8 +215,8 @@
     {
       "id": "grammar.language",
       "group": "general",
-      "title": "语言模型名称",
-      "description": "octagram 语法模型名，对应用户目录下的 <名称>.gram 文件（如 wanxiang-lts-zh-hans）。",
+      "title": "整句语言模型",
+      "description": "本机模型改善长句选词，可在「词库」下载万象模型；不发送输入内容。",
       "file": "schema",
       "keypath": "grammar/language",
       "type": "gramModel",
@@ -1433,6 +1433,17 @@
         "com.microsoft.VSCode:ascii_mode=true,vim_mode=true"
       ],
       "doc": "#app_options"
+    }
+  ],
+  "appSettings": [
+    {
+      "id": "update.receiveBeta",
+      "title": "接收测试版",
+      "type": "bool",
+      "default": false,
+      "storage": "aime/update.json",
+      "key": "receiveBeta",
+      "doc": "docs/rime-config-reference.md#更新通道aime-应用设置"
     }
   ]
 }

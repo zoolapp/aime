@@ -1,0 +1,20 @@
+{
+  "id": "wanxiang-lts-zh-hans",
+  "repository": "https://github.com/amzxyz/RIME-LMDG",
+  "releaseTag": "LTS",
+  "assetID": 607935157,
+  "assetName": "wanxiang-lts-zh-hans.gram",
+  "downloadURL": "https://api.github.com/repos/amzxyz/RIME-LMDG/releases/assets/607935157",
+  "sha256": "e3f958d2557a2c027543e874c802dcce9022b9b6fe1673d97c0bd1ef30592264",
+  "size": 404661292,
+  "license": "CC-BY-4.0",
+  "licenseURL": "https://creativecommons.org/licenses/by/4.0/",
+  "attribution": "amzxyz and RIME-LMDG contributors",
+  "licenseSourceRevision": "88a0b373350d91d55acaf9e9ae72d53f974fc771",
+  "licenseSourceURL": "https://raw.githubusercontent.com/amzxyz/RIME-LMDG/88a0b373350d91d55acaf9e9ae72d53f974fc771/LICENSE",
+  "licenseFile": "wanxiang-lts-zh-hans.LICENSE.txt",
+  "licenseSHA256": "9e5f1b3c610b9c2da5c313bf81d577a7d1acec686bdb0384edefa6df0f90cd94",
+  "changes": "None; the downloaded model is installed byte-for-byte.",
+  "bundledModel": false,
+  "verifiedOn": "2026-10-05"
+}

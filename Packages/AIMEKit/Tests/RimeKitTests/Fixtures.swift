@@ -10,6 +10,10 @@ enum Fixtures {
       - schema: test_pinyin
     menu:
       page_size: 5
+    ascii_composer:
+      switch_key:
+        Shift_L: commit_code
+        Shift_R: commit_code
     """
 
     static let schemaYAML = """

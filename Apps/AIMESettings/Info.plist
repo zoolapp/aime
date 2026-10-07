@@ -35,6 +35,8 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.productivity</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>© 2026 ZOOL LLC. 原创源码 MIT；发行包 GPL-3.0。</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 </dict>

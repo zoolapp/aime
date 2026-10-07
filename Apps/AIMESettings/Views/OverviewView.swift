@@ -1,6 +1,7 @@
 import AIMECore
 import AIMEPanel
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct OverviewView: View {
     @Environment(SettingsModel.self) private var model
@@ -16,10 +17,11 @@ struct OverviewView: View {
                 statusGrid
                 importCard
                 quickLinks
-                VersionFooter()
+                VersionFooter().id("version")
             }
         }
         .task { await model.refreshUpdates() }
+        .scrollTargetForScreenshots()
     }
 
     private var hero: some View {
@@ -221,25 +223,78 @@ struct UpdateCard: View {
 struct VersionFooter: View {
     @Environment(SettingsModel.self) private var model
 
+    @State private var exporting = false
+    @State private var exportNotice: String?
+
     var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            // One row when it fits; the update controls wrap under the version otherwise.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 12) {
+                    version
+                    Spacer(minLength: 12)
+                    updateControls
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    version
+                    HStack(spacing: 12) { updateControls }
+                }
+            }
+            HStack(spacing: 12) {
+                Button("导出诊断信息…") { exportDiagnostics() }
+                    .disabled(exporting)
+                    .controlSize(.small)
+                    .help(Diagnostics.disclosure)
+                if let exportNotice { Text(exportNotice).font(.caption).foregroundStyle(Theme.secondaryText) }
+            }
+        }
+        .padding(.top, 4)
+    }
+
+    private var version: some View {
         HStack(spacing: 12) {
             Text("艾么输入法 \(model.currentVersion.description)\(model.isDistributionBuild ? "" : " · 开发版")")
                 .font(.caption).foregroundStyle(Theme.secondaryText)
-            Spacer()
             if let notice = model.updateNotice, model.pendingUpdate == nil {
                 Text(notice).font(.caption).foregroundStyle(Theme.secondaryText)
             }
-            Toggle("自动检查更新", isOn: Binding(get: { model.updateState.autoCheck }, set: { model.setAutoUpdate($0) }))
-                .toggleStyle(.checkbox).font(.caption)
-                .help("每天请求一次 get.zool.app 上公开的版本清单，不发送任何输入内容")
-            Button {
-                Task { await model.checkForUpdates(userInitiated: true) }
-            } label: {
-                if model.updateChecking { ProgressView().controlSize(.small) } else { Text("检查更新") }
-            }
-            .controlSize(.small)
-            .disabled(model.updateChecking)
         }
-        .padding(.top, 4)
+        .fixedSize()
+    }
+
+    @ViewBuilder private var updateControls: some View {
+        Toggle("自动检查更新", isOn: Binding(get: { model.updateState.autoCheck }, set: { model.setAutoUpdate($0) }))
+            .toggleStyle(.checkbox).font(.caption)
+            .help("每天请求一次 get.zool.app 上公开的版本清单，不发送任何输入内容")
+        Toggle("接收测试版", isOn: Binding(get: { model.updateState.receiveBeta }, set: { model.setReceiveBeta($0) }))
+            .toggleStyle(.checkbox).font(.caption)
+            .help("开启后检查测试版与正式版；关闭后只检查正式版")
+        Button {
+            Task { await model.checkForUpdates(userInitiated: true) }
+        } label: {
+            if model.updateChecking { ProgressView().controlSize(.small) } else { Text("检查更新") }
+        }
+        .controlSize(.small)
+        .disabled(model.updateChecking)
+    }
+
+    private func exportDiagnostics() {
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.zip]
+        panel.nameFieldStringValue = Diagnostics.filename()
+        panel.message = Diagnostics.disclosure
+        panel.begin { response in
+            guard response == .OK, let destination = panel.url else { return }
+            exporting = true
+            exportNotice = nil
+            let report = Diagnostics(paths: model.paths)
+            Task {
+                do {
+                    try await Task.detached(priority: .utility) { try report.export(to: destination) }.value
+                    exportNotice = "诊断信息已导出"
+                } catch { exportNotice = "导出失败，请检查保存位置的写入权限" }
+                exporting = false
+            }
+        }
     }
 }

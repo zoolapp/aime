@@ -6,6 +6,7 @@ import SwiftUI
 struct AIMESettingsApp: App {
     @NSApplicationDelegateAdaptor(SettingsAppDelegate.self) private var appDelegate
     @State private var model = SettingsModel()
+    @State private var selection: Pane? = LaunchOptions.pane ?? .overview
 
     init() {
         Self.migrateLegacyDefaults()
@@ -22,7 +23,7 @@ struct AIMESettingsApp: App {
     var body: some Scene {
         Window("艾么输入法设置", id: "main") {
             // The settings layout needs 900 × 620; onboarding sizes the window per step.
-            RootView()
+            RootView(selection: $selection)
                 .environment(model)
         }
         .defaultSize(width: 1080, height: 720)
@@ -31,10 +32,27 @@ struct AIMESettingsApp: App {
         .restorationBehavior(.disabled)
         .windowToolbarStyle(.unified)
         .commands {
+            AboutCommands(selection: $selection)
             CommandGroup(replacing: .newItem) {}
             CommandMenu("部署") {
                 Button("重新部署") { Task { await model.deploy() } }
                     .keyboardShortcut("r", modifiers: [.command, .shift])
+            }
+        }
+    }
+}
+
+/// The standard app menu and sidebar share navigation state, including a newly opened window.
+private struct AboutCommands: Commands {
+    @Environment(\.openWindow) private var openWindow
+    @Binding var selection: Pane?
+
+    var body: some Commands {
+        CommandGroup(replacing: .appInfo) {
+            Button("关于艾么输入法") {
+                selection = .about
+                openWindow(id: "main")
+                NSApp.activate()
             }
         }
     }

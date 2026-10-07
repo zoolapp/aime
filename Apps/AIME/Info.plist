@@ -70,6 +70,8 @@
 	<false/>
 	<key>LSUIElement</key>
 	<true/>
+	<key>NSHumanReadableCopyright</key>
+	<string>© 2026 ZOOL LLC. 原创源码 MIT；发行包 GPL-3.0。</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>TICapsLockLanguageSwitchCapable</key>

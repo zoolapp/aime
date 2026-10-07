@@ -12,6 +12,9 @@ public enum RimeKey {
     public static let superMask: Int32 = 1 << 26
     public static let releaseMask: Int32 = 1 << 30
 
+    /// X11 VoidSymbol has no printable text or macOS key equivalent.
+    public static let voidSymbol: Int32 = 0x00ff_ffff
+
     // Keysyms.
     public static let space: Int32 = 0x20
     public static let backSpace: Int32 = 0xff08

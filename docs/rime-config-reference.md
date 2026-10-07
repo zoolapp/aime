@@ -254,23 +254,27 @@ catalog: translator.enable_word_completion, translator.spelling_hints, translato
 | `always_show_comments` | 无注释时也显示编码注释 | true |
 | `preedit_format` | 输入码显示形态换算（v→u 等） | `xform/([jqxy])v/$1u/` 等 4 条 |
 | `comment_format` | 注释显示形态换算 | 加全角方括号 `xform/^/［/`、`xform/$/］/`；melt_eng 用 `xform/.*//` 清空 |
-| `contextual_suggestions` | 结合上下文的语言模型建议（octagram） | 双拼方案经 `__include: octagram` 开启 true |
+| `contextual_suggestions` | 跨句上下文选词（octagram），独立于当前整句评分 | 万象 v18.0.15 预设 false |
 | `max_homophones` / `max_homographs` | 语言模型同音/同形候选上限 | 7 / 7 |
 
-语言模型（octagram grammar）配置（double_pinyin_flypy.schema.yaml 末尾）：
+语言模型（octagram grammar）可用于全拼或双拼。AIME 在设置中选择模型时写入当前主方案的 generated 层，补齐缺失参数，并保留已有参数。对应的有效配置如下（万象 v18.0.15 预设）：
 
 ```yaml
-__include: octagram            # 引入语言模型预设
-octagram/__patch:
-  grammar:
-    language: wanxiang-lts-zh-hans     # 对应 wanxiang-lts-zh-hans.gram
-    collocation_max_length: 5
-    collocation_min_length: 2
-  translator:
-    contextual_suggestions: true
+grammar:
+  language: wanxiang-lts-zh-hans  # 对应 wanxiang-lts-zh-hans.gram
+  collocation_max_length: 6
+  collocation_min_length: 2
+  collocation_penalty: -14
+  non_collocation_penalty: -6
+  weak_collocation_penalty: -100
+  rear_penalty: -18
+translator:
+  contextual_suggestions: false
 ```
 
-`.gram` 模型文件放用户目录（本机 206MB 的 `wanxiang-lts-zh-hans.gram`），可显著改善长句首选准确率。
+「词库 → 整句语言模型」提供可选万象 LTS 简体模型，约 405 MB；默认不下载、不启用。注册表固定 GitHub asset ID `607935157` 与 SHA-256，安装时使用文件下载与分块校验，模型由 [RIME-LMDG](https://github.com/amzxyz/RIME-LMDG) 提供，CC BY 4.0。输入、候选和用户词频不参与下载请求；评分在本机完成。
+
+12 条固定合成句的真实 librime 比较中，首选匹配从 9/12 到 11/12，2 条改善、0 条退化；这只是小样本回归，不代表普遍准确率。见 [验收记录](input-improvements-2026-10-05.md)。此功能改善当前整句评分；后续词预测还需要经过来源与许可验证的独立预测词表。
 
 AIME 可视化：已收录（主翻译器 4 项 + 语法模型开关）。
 catalog: translator.enable_word_completion, translator.spelling_hints, translator.always_show_comments, translator.initial_quality, translator.contextual_suggestions, grammar.language
@@ -366,6 +370,8 @@ key_binder:
 AIME 可视化：已收录（翻页方式、以词定字、开关切换热键）。
 catalog: key_binder.select_first_character, key_binder.select_last_character, keys.paging_minus_equal, keys.paging_comma_period, keys.paging_brackets, keys.toggle_ascii_punct, keys.toggle_traditionalization, keys.tab_move_by_word
 
+设置 › 快捷键 › 快捷菜单：长按触发键（Option / Control / Command / 关闭，约 0.35 秒）保存到 `aime/features.json` 的 `menuHoldKey`，即时通知输入法读取，不写 RIME 按键绑定。固定组合键为 ⌃⌥M；候选窗菜单按钮是否显示仍在外观设置。设置 › 快捷键 › 方案选单：`switcher.hotkeys`（原来位于输入习惯），ID、默认值与 `switcher/hotkeys` 写入方式保持不变。
+
 ## ascii_composer 中西文切换
 
 ```yaml
@@ -415,6 +421,7 @@ switcher:
 ```
 
 - `hotkeys`：唤出方案选单的热键列表。
+- `caption`：打开方案选单时的提示文字，RIME 将它放在组字区。AIME 跟随「内联预编辑」及应用覆盖设置，在输入框或候选窗显示；开启候选内联预上屏时，候选预览可能替代这段提示。可视化名称为「方案选单提示文字」，默认内容仍是 `「方案选单」`。
 - `save_options`：列出的开关状态会被记忆到用户词典，重启/切方案后保持；不在列表中的开关每次回到 `reset` 值。
 - `fold_options` / `abbreviate_options`：控制选单中开关的折叠与缩写显示。
 
@@ -583,6 +590,8 @@ solarized_light:
 
 **颜色格式（重要）**：`0x` 前缀十六进制，**顺序为 BGR**——24 位 `0xBBGGRR`，32 位 `0xAABBGGRR`（A=alpha）。即文件注释所称「BGR顺序」，与常见 RGB 相反；写可视化取色器时必须做通道转换。（部分第三方主题沿用 weasel 键名 horizontal/margin_x 等，Squirrel 不识别。）
 
+AIME 兼容旧配色的 `hilited_back_color`：没有独立的 `hilited_candidate_back_color` 时，候选高亮使用前者；独立候选颜色（包括显式透明色）始终优先。数值型颜色按 24 位不透明 RGB/BGR 或更大的 32 位带 alpha 值解析；需要保留前导零透明通道时使用明确的八位十六进制字符串。YAML 中的 `0x` 字符串不会因为未加引号而自动转成十进制。
+
 AIME 可视化：已收录（自定义方案 aime_custom 的核心颜色键）。
 catalog: appearance.custom.back_color, appearance.custom.border_color, appearance.custom.text_color, appearance.custom.candidate_text_color, appearance.custom.label_color, appearance.custom.comment_text_color, appearance.custom.hilited_candidate_back_color, appearance.custom.hilited_candidate_text_color, appearance.custom.hilited_candidate_label_color, appearance.custom.hilited_comment_text_color
 
@@ -674,3 +683,12 @@ catalog: menu.page_size
 
 catalog: ascii_state.scope
 
+
+## 更新通道（AIME 应用设置）
+
+概览页“接收测试版”默认关闭，使用 `AppUpdateState` 存于 `aime/update.json` 的 `receiveBeta` 字段。
+开启读取 `latest-beta.json`，关闭读取 `latest.json`；两者都要求同名 `.sig` 的 Ed25519 验签。
+稳定通道也会过滤错误发布到稳定清单中的预发布版本。切换通道清空上次检查、缓存版本及跳过状态。
+这是应用偏好，不写 RIME YAML；catalog 的 `appSettings` 登记此类非 RIME 设置，`settings` 仍仅用于 RIME 补丁。
+
+catalog: update.receiveBeta

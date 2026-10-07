@@ -14,7 +14,7 @@ import Testing
         let page = menu.page
         if let board = page.board { return PanelState(board: board) }
         var state = PanelState(candidates: page.visibleItems.enumerated().map {
-            .init(label: "\($0.offset + 1)", text: $0.element.title, comment: $0.element.detail, symbol: $0.element.symbol)
+                .init(label: "\(page.selectionKey(visibleIndex: $0.offset))", text: $0.element.title, comment: $0.element.detail, symbol: $0.element.symbol)
         }, highlightedIndex: page.highlighted, title: page.title,
         presentation: page.layout == .grid ? .grid : page.layout == .row ? .row : .list)
         if let primary = page.primary {
@@ -37,7 +37,7 @@ import Testing
                 .init(id: "phone", title: "手机号", symbol: nil, items: ["+852 6100 6100", "+86 139 1234 5678", "+1 (415) 555-0100"]),
                 .init(id: "mail", title: "邮箱", symbol: nil, items: ["hello@zool.app", "luolei@work.example", "me@personal.example"]),
                 .init(id: "addr", title: "地址", symbol: nil, items: ["香港中环皇后大道中 99 号", "成都市锦江区春熙路 1 号"]),
-            ])
+            ], emojis: .loadEmojis(AIMEPaths(userDataDir: URL(fileURLWithPath: out), sharedDataDir: repo.appendingPathComponent("SharedSupport"))))
         content.hasActionTarget = true
         var menu = QuickMenu(content: content)
         var shots: [(String, PanelState)] = [("menu-root", Self.state(menu))]
@@ -53,6 +53,9 @@ import Testing
         menu = QuickMenu(content: content)
         _ = menu.handle(.digit(2))
         shots.append(("menu-symbols", Self.state(menu)))
+        menu = QuickMenu(content: content)
+        _ = menu.handle(.digit(4))
+        shots.append(("menu-emojis", Self.state(menu)))
         shots.append(("typing", PanelState(
             preedit: "wo zhi dao", preeditSelection: NSRange(location: 0, length: 10),
             candidates: [.init(label: "1", text: "我知道"), .init(label: "2", text: "我只到"), .init(label: "3", text: "我"),

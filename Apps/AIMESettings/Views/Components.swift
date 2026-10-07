@@ -37,7 +37,7 @@ struct CatalogPane: View {
         case .general: "候选词数量、方案选单与翻译器行为。"
         case .switching: "Caps Lock 与 Shift 在输入中的行为，以及中英文切换方式。"
         case .spelling: "模糊音、简拼与自动纠错。开关会写入当前主方案的拼写运算规则。"
-        case .keys: "翻页、以词定字与常用开关的快捷键。"
+        case .keys: "快捷菜单与方案选单的触发方式，以及选词、翻页和输入开关。"
         default: ""
         }
     }
@@ -54,8 +54,18 @@ struct CatalogPane: View {
                 }
             }
             if pane == .general { ScriptSection() }
-            Section {
-                ForEach(settings) { setting in SettingRow(setting: setting) }
+            if pane == .keys {
+                QuickMenuShortcutsSection()
+                Section("方案选单") {
+                    ForEach(settings.filter { $0.id == "switcher.hotkeys" }) { SettingRow(setting: $0) }
+                }
+                Section("选词、翻页与输入开关") {
+                    ForEach(settings.filter { $0.id != "switcher.hotkeys" }) { SettingRow(setting: $0) }
+                }
+            } else {
+                Section {
+                    ForEach(settings) { setting in SettingRow(setting: setting) }
+                }
             }
         }
         .formStyle(.cards)
@@ -63,6 +73,42 @@ struct CatalogPane: View {
 
     /// Catalog settings drawn in a section of their own.
     static let shownElsewhere: Set<String> = ["traditionalize.opencc_config"]
+}
+
+/// Trigger behavior belongs with shortcuts; the candidate button's visibility stays
+/// in Appearance. Uses the existing features save/notification channel.
+private struct QuickMenuShortcutsSection: View {
+    @Environment(SettingsModel.self) private var model
+
+    var body: some View {
+        Section {
+            LabeledContent {
+                Picker("快捷菜单长按键", selection: Binding(
+                    get: { model.features.menuHoldKey },
+                    set: { key in model.updateFeatures { $0.menuHoldKey = key } }
+                )) {
+                    Text("⌥ Option").tag(ModifierHold.Key.option)
+                    Text("⌃ Control").tag(ModifierHold.Key.control)
+                    Text("⌘ Command").tag(ModifierHold.Key.command)
+                    Text("关闭").tag(ModifierHold.Key.off)
+                }
+                .labelsHidden()
+                .fixedSize()
+                .accessibilityLabel("快捷菜单长按键")
+            } label: {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("长按触发键")
+                    Text("打字时单独按住约 0.35 秒，打开常用语、符号和表情菜单；与其他键组合时不触发。")
+                        .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            LabeledContent("组合键打开", value: "⌃⌥M（固定）")
+        } header: {
+            Text("快捷菜单")
+        } footer: {
+            Text("关闭长按后仍可用 ⌃⌥M 打开。方案选单是切换输入方案和开关的菜单，触发键在下方单独设置。")
+        }
+    }
 }
 
 /// 简体 / 繁体: the default output, the Traditional standard, and how to switch or convert.
@@ -168,12 +214,16 @@ struct SettingRow: View {
                 available: model.availableSwitches
             ) { model.set(.list($0.map(ConfigValue.string)), for: setting) }
         case .gramModel:
+            let selected = current?.stringValue ?? ""
             Picker("", selection: Binding(
                 get: { current?.stringValue ?? "" },
                 set: { model.set(.string($0), for: setting) }
             )) {
-                Text("不使用语言模型").tag("")
+                Text("关闭").tag("")
                 ForEach(model.gramModels, id: \.self) { Text($0).tag($0) }
+                if !selected.isEmpty && !model.gramModels.contains(selected) {
+                    Text("\(selected)（文件缺失）").tag(selected)
+                }
             }
             .labelsHidden()
             .fixedSize()

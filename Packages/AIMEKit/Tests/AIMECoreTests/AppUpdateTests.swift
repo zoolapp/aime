@@ -15,6 +15,46 @@ import Testing
         #expect(AppVersion("0.1.0", build: 2).description == "0.1.0 (2)")
     }
 
+    @Test func ordersPrereleasesUsingSemver() {
+        let versions = ["0.2.0-alpha", "0.2.0-alpha.1", "0.2.0-alpha.beta", "0.2.0-beta", "0.2.0-beta.1",
+                        "0.2.0-beta.2", "0.2.0-beta.11", "0.2.0-rc.1", "0.2.0"]
+        for (left, right) in zip(versions, versions.dropFirst()) {
+            #expect(AppVersion(left, build: 999) < AppVersion(right, build: 1))
+        }
+        #expect(AppVersion("0.2.0-beta.2", build: 1) < AppVersion("0.2.0-beta.2", build: 2))
+        #expect(AppVersion("0.2.0+metadata") == AppVersion("0.2.0+other"))
+        #expect(AppVersion("0.2.0-beta.999999999999999999999") < AppVersion("0.2.0-beta.1000000000000000000000"))
+    }
+
+    @Test func oldStateDefaultsToStableAndFiltersCachedPrereleases() throws {
+        var state = try JSONDecoder().decode(AppUpdateState.self, from: Data(#"{"autoCheck":false,"skipped":"0.1.0 (3)"}"#.utf8))
+        #expect(!state.receiveBeta && !state.autoCheck && state.skipped == "0.1.0 (3)")
+        #expect(state.manifestURL.lastPathComponent == "latest.json")
+        state.available = AppRelease(product: "aime", version: "0.2.0-beta.1", prerelease: false, files: [:])
+        #expect(state.pending(current: AppVersion("0.1.0")) == nil)
+        state.available = AppRelease(product: "aime", version: "0.2.0", prerelease: true, files: [:])
+        #expect(state.pending(current: AppVersion("0.1.0")) == nil)
+        state.setReceiveBeta(true)
+        #expect(state.available == nil && state.skipped == nil && state.lastCheck == nil)
+        #expect(state.manifestURL.lastPathComponent == "latest-beta.json")
+        state.available = AppRelease(product: "aime", version: "0.2.0", files: [:])
+        #expect(state.pending(current: AppVersion("0.2.0-beta.2", build: 999)) != nil)
+        state.setReceiveBeta(false)
+        #expect(state.available == nil && !state.receiveBeta)
+    }
+
+    @Test func fullReleaseVersionIsReadFromBundleMetadata() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString).app")
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root.appendingPathComponent("Contents"), withIntermediateDirectories: true)
+        let plist = ["CFBundleIdentifier": "test.aime.beta", "CFBundleShortVersionString": "0.2.0",
+                     "CFBundleVersion": "3", "AIMEReleaseVersion": "0.2.0-beta.2"]
+        try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
+            .write(to: root.appendingPathComponent("Contents/Info.plist"))
+        let bundle = try #require(Bundle(url: root))
+        #expect(AppVersion.current(bundle).description == "0.2.0-beta.2 (3)")
+    }
+
     @Test func decodesTheManifest() throws {
         let json = """
         {"product":"aime","version":"0.1.0","build":2,"date":"2026-10-01","prerelease":true,"default":"pkg",
@@ -91,7 +131,9 @@ final class StubProtocol: URLProtocol, @unchecked Sendable {
     nonisolated(unsafe) static var responses: [String: (Int, Data)] = [:]
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    nonisolated(unsafe) static var onRequest: (@Sendable (URLRequest) -> Void)?
     override func startLoading() {
+        Self.onRequest?(request)
         let (status, body) = Self.responses[request.url!.absoluteString] ?? (404, Data())
         let response = HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
@@ -119,6 +161,57 @@ final class StubProtocol: URLProtocol, @unchecked Sendable {
         await #expect(throws: AppUpdateError.badResponse(404)) { try await checker.fetchLatest() }
         StubProtocol.responses[manifestURL.absoluteString + ".sig"] = (200, Data("AAAA\n".utf8))
         await #expect(throws: AppUpdateError.untrustedManifest) { try await checker.fetchLatest() }
+    }
+
+    @Test func channelRoutingSignatureAndStableFiltering() async throws {
+        let paths = temporaryPaths()
+        defer { try? FileManager.default.removeItem(at: paths.userDataDir) }
+        let key = Curve25519.Signing.PrivateKey()
+        var checker = AppUpdateChecker(session: session)
+        checker.verificationKey = key.publicKey.rawRepresentation.base64EncodedString()
+        let beta = Data(#"{"product":"aime","version":"0.2.0-beta.2","prerelease":false,"files":{}}"#.utf8)
+        let signature = try key.signature(for: beta).base64EncodedString()
+        var state = AppUpdateState()
+        // Only the selected URL and its signature are available; a wrong route fails.
+        state.receiveBeta = true
+        try state.save(paths)
+        let url = state.manifestURL.absoluteString
+        StubProtocol.responses = [url: (200, beta), url + ".sig": (200, Data(signature.utf8))]
+        #expect(try await checker.check(paths: paths, current: AppVersion("0.1.0"))?.version == "0.2.0-beta.2")
+        state.setReceiveBeta(false)
+        try state.save(paths)
+        let stableURL = state.manifestURL.absoluteString
+        StubProtocol.responses = [stableURL: (200, beta), stableURL + ".sig": (200, Data(signature.utf8))]
+        #expect(try await checker.check(paths: paths, current: AppVersion("0.1.0")) == nil)
+        #expect(AppUpdateState.load(paths).available == nil)
+        state.setReceiveBeta(true)
+        try state.save(paths)
+        StubProtocol.responses = [url: (200, beta), url + ".sig": (200, Data("invalid".utf8))]
+        await #expect(throws: AppUpdateError.untrustedManifest) { try await checker.check(paths: paths, current: AppVersion("0.1.0")) }
+    }
+
+    @Test func changingChannelDiscardsAnInflightResponse() async throws {
+        let paths = temporaryPaths()
+        defer { StubProtocol.onRequest = nil; try? FileManager.default.removeItem(at: paths.userDataDir) }
+        var state = AppUpdateState()
+        state.receiveBeta = true
+        try state.save(paths)
+        let key = Curve25519.Signing.PrivateKey()
+        var checker = AppUpdateChecker(session: session)
+        checker.verificationKey = key.publicKey.rawRepresentation.base64EncodedString()
+        let data = Data(#"{"product":"aime","version":"0.2.0-beta.1","files":{}}"#.utf8)
+        let url = state.manifestURL.absoluteString
+        StubProtocol.responses = [url: (200, data), url + ".sig": (200, Data(try key.signature(for: data).base64EncodedString().utf8))]
+        StubProtocol.onRequest = { request in
+            if request.url?.pathExtension == "sig" {
+                var changed = AppUpdateState.load(paths)
+                changed.setReceiveBeta(false)
+                try? changed.save(paths)
+            }
+        }
+        #expect(try await checker.check(paths: paths, current: AppVersion("0.1.0")) == nil)
+        #expect(!AppUpdateState.load(paths).receiveBeta)
+        #expect(AppUpdateState.load(paths).lastCheck == nil)
     }
 
     @Test func downloadVerifiesTheChecksumAndCleansUp() async throws {

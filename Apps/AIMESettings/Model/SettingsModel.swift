@@ -49,6 +49,7 @@ final class SettingsModel {
     private(set) var packageActivity: [String: String] = [:]
     /// Progress text while a vocabulary subscription is being fetched.
     private(set) var subscriptionActivity: String?
+    private(set) var subscriptionNotice: String?
 
     init() {
         var paths = AIMEPaths.standard
@@ -128,9 +129,14 @@ final class SettingsModel {
 
     /// `.gram` language models available in the user and shared data directories.
     var gramModels: [String] {
+        _ = revision
         let dirs = [paths.userDataDir, paths.sharedDataDir].compactMap { $0 }
-        let names = dirs.flatMap { (try? FileManager.default.contentsOfDirectory(atPath: $0.path)) ?? [] }
-        return Array(Set(names.filter { $0.hasSuffix(".gram") }.map { String($0.dropLast(5)) })).sorted()
+        let files = dirs.flatMap { (try? FileManager.default.contentsOfDirectory(at: $0, includingPropertiesForKeys: [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey])) ?? [] }
+        let names = files.filter {
+            let values = try? $0.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey])
+            return $0.pathExtension == "gram" && values?.isRegularFile == true && values?.isSymbolicLink != true && (values?.fileSize ?? 0) > 0
+        }.map { $0.deletingPathExtension().lastPathComponent }
+        return Array(Set(names)).sorted()
     }
 
     var appOptions: [SettingsStore.AppOption] { _ = revision; return store.appOptions() }
@@ -481,7 +487,14 @@ final class SettingsModel {
     }
 
     func uninstall(_ package: DictionaryPackage) {
-        perform { _ = try PackageManager(paths: paths).uninstall(package.id) }
+        perform {
+            if package.kind == .model,
+               let filename = package.source.filename, filename.hasSuffix(".gram") {
+                let name = String(filename.dropLast(5))
+                try store.disableLanguageModelReferences(named: name)
+            }
+            _ = try PackageManager(paths: paths).uninstall(package.id)
+        }
     }
 
     // MARK: - Subscribed vocabularies
@@ -496,7 +509,8 @@ final class SettingsModel {
 
     func loadVocabularyCatalog(force: Bool = false) async {
         if vocabularyCatalog == nil { vocabularyCatalog = VocabularyCatalog.load(paths) }
-        guard force || !catalogRefreshed else { return }
+        guard !catalogRefreshing, subscriptionActivity == nil,
+              force || !catalogRefreshed else { return }
         catalogRefreshed = true
         catalogRefreshing = true
         defer { catalogRefreshing = false }
@@ -525,17 +539,27 @@ final class SettingsModel {
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    var baseDictionaryMetadata: DictionaryMetadata? { DictionaryMetadata.load(paths) }
+
+    var canAddSubscription: Bool {
+        subscriptions.count < SubscriptionManager.maxSubscriptions &&
+            subscriptionActivity == nil && !catalogRefreshing
+    }
+
     /// Adds a feed, downloads it and redeploys so the words are typable right away.
     /// Returns false (and removes the entry) when nothing usable was downloaded.
     @discardableResult
     func addSubscription(url: String, name: String?, feed: VocabularyCatalog.Feed? = nil) async -> Bool {
+        guard subscriptionActivity == nil, !catalogRefreshing else { return false }
         subscriptionActivity = "正在下载…"
+        subscriptionNotice = nil
         defer { subscriptionActivity = nil; revision += 1 }
         let manager = SubscriptionManager(paths: paths)
+        let existingIDs = Set(manager.subscriptions().map(\.id))
         do {
             let item = try await manager.add(url: url, name: name, feed: feed)
             if let error = item.lastError {
-                try? manager.remove(id: item.id)
+                if !existingIDs.contains(item.id) { try? manager.remove(id: item.id) }
                 lastError = "订阅失败：\(error)"
                 return false
             }
@@ -549,12 +573,19 @@ final class SettingsModel {
     }
 
     func refreshSubscriptions() async {
+        guard subscriptionActivity == nil, !catalogRefreshing else { return }
         subscriptionActivity = "正在检查更新…"
+        defer { subscriptionActivity = nil; revision += 1 }
         let manager = SubscriptionManager(paths: paths)
-        for item in manager.subscriptions() { _ = try? await manager.update(id: item.id, force: true) }
-        subscriptionActivity = nil
+        let result = await manager.refresh(mode: .manual)
+        if let fresh = result.catalog { vocabularyCatalog = fresh; catalogRefreshed = true }
+        catalogError = result.catalogError == nil ? nil : "无法获取在线目录，显示的是缓存或内置版本"
+        lastError = result.errors.isEmpty ? nil : "词库检查失败：" +
+            result.errors.sorted { $0.key < $1.key }.prefix(3).map { "\($0.key)：\($0.value)" }.joined(separator: "；")
+        subscriptionNotice = "已检查 \(result.checkedIDs.count) 个词库，\(result.changedIDs.count) 个内容更新" +
+            (result.deferredCount > 0 ? "；另有 \(result.deferredCount) 个将在下次检查。" : "。")
         revision += 1
-        await deploy()
+        if result.changed { await deploy() }
     }
 
     func removeSubscription(_ id: String) async {
@@ -772,13 +803,24 @@ final class SettingsModel {
         }
     }
 
+    func setReceiveBeta(_ on: Bool) {
+        updateState = AppUpdateState.load(paths)
+        updateState.setReceiveBeta(on)
+        updateNotice = nil
+        do { try updateState.save(paths) }
+        catch { updateNotice = "无法保存更新通道"; updateState = AppUpdateState.load(paths) }
+    }
+
     func setAutoUpdate(_ on: Bool) {
+        updateState = AppUpdateState.load(paths)
         updateState.autoCheck = on
         try? updateState.save(paths)
     }
 
     func skipUpdate() {
         guard let release = updateState.available else { return }
+        // Reload first so a newer check written by the input method is not overwritten.
+        updateState = AppUpdateState.load(paths)
         updateState.skipped = release.appVersion.description
         try? updateState.save(paths)
     }

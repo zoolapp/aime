@@ -15,7 +15,19 @@ public struct ThemeColor: Sendable, Hashable {
     /// (`rgba`). Six-digit values are opaque.
     public init?(rime value: ConfigValue?, format: String) {
         guard var text = value?.stringValue?.lowercased() else { return nil }
-        if value?.intValue != nil, !text.hasPrefix("0x"), let int = value?.intValue { text = String(int, radix: 16) }
+        // Numeric configuration values do not retain hexadecimal width. Keep
+        // numeric RGB colors six digits; explicit eight-digit strings retain alpha.
+        switch value {
+        case let .int(int):
+            guard let raw = UInt32(exactly: int) else { return nil }
+            text = String(format: raw > 0xFFFFFF ? "%08x" : "%06x", raw)
+        case let .double(number):
+            guard number.isFinite, number.rounded() == number,
+                  number >= 0, number <= Double(UInt32.max) else { return nil }
+            let raw = UInt32(number)
+            text = String(format: raw > 0xFFFFFF ? "%08x" : "%06x", raw)
+        default: break
+        }
         if text.hasPrefix("0x") { text.removeFirst(2) } else if text.hasPrefix("#") { text.removeFirst() }
         guard let raw = UInt32(text, radix: 16), text.count == 6 || text.count == 8 else { return nil }
         let hasAlpha = text.count == 8
@@ -175,7 +187,10 @@ public struct PanelTheme: Sendable, Hashable {
         candidateTextColor = color("candidate_text_color", textColor)
         commentTextColor = color("comment_text_color", dark ? ThemeColor(red: 163/255, green: 163/255, blue: 160/255) : ThemeColor(red: 107/255, green: 106/255, blue: 103/255))
         labelColor = color("label_color", commentTextColor)
-        hilitedCandidateBackColor = color("hilited_candidate_back_color", accent)
+        // Older imported palettes use the shared highlight background for the
+        // selected candidate. An explicit candidate color always takes precedence.
+        hilitedCandidateBackColor = scheme["hilited_candidate_back_color"] == nil
+            ? color("hilited_back_color", accent) : color("hilited_candidate_back_color", accent)
         hilitedCandidateTextColor = color("hilited_candidate_text_color", ThemeColor(red: 1, green: 1, blue: 1))
         hilitedCommentTextColor = color("hilited_comment_text_color", hilitedCandidateTextColor)
         hilitedCandidateLabelColor = color("hilited_candidate_label_color", hilitedCommentTextColor)

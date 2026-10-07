@@ -7,8 +7,18 @@
 
 1. 同步版本号：`project.yml` 的 `MARKETING_VERSION` 和 `Packages/AIMEKit/Sources/aime/AIME.swift` 的 CLI `version`。
    tag 去掉 `v` 和 `-` 后缀后必须与这两处一致（`v0.2.0-beta.1` 对应 `0.2.0`），不一致时工作流直接失败。
-2. 更新 `CHANGELOG.md` 与 `CHANGELOG.en.md`：把 Unreleased 下的内容移到 `## [0.2.0] - YYYY-MM-DD`，
-   下一行写发布状态（`> 开发预览 · Developer ID 签名 · 公证处理中`），条目只用新增 / 变更 / 修复 / 移除 / 安全 / 已知问题六类。
+2. 先在 `CHANGELOG.md` 与 `CHANGELOG.en.md` 的 Unreleased 下记好本次变更：条目只用新增 / 变更 / 修复 / 移除 / 安全 / 已知问题六类，
+   中英文条数与分类一致。然后两份一起提版：
+
+   ```bash
+   bash scripts/promote-changelog.sh 0.2.0                    # 日期默认为今天
+   bash scripts/promote-changelog.sh 0.2.0-beta.1 2026-10-02  # beta / 指定日期示例，二选一
+   ```
+
+   脚本把两份文件的 Unreleased 移到新版本段、保留空的 Unreleased、补上发布状态行（默认
+   `> 开发预览 · Developer ID 签名 · 公证处理中`，公证完成后用 `AIME_CHANGELOG_STATUS` / `AIME_CHANGELOG_STATUS_EN` 改写），
+   并更新底部比较链接；任一文件为空或版本已存在都会报错，两份都不改。它只改 CHANGELOG，不改 App/CLI 版本、不提交、不打 tag、不发布；
+   `bash scripts/test-promote-changelog.sh` 用临时文件测试它。
    中文这一节会原样写进 Release 说明，官网「更新日志」页也由这两个文件生成（aime-web 的 `npm run sync:changelog`）。
    `python3 -m unittest discover -s scripts/tests -p 'test_changelog.py'` 检查格式、中英一致，以及最新版本与 `MARKETING_VERSION` 一致；CI 也会跑。
 3. 提交并等 CI 通过，然后打 tag 并推送：
@@ -125,5 +135,17 @@ bash scripts/finish-notarization.sh /tmp/aime-release/AIME-<版本> --publish  #
 
 ## 更新清单
 
-每次发布产出 `latest.json` 与 `latest.json.sig`（Ed25519）。App 只信任签名有效的清单，不依赖托管方；
+稳定版发布同时产出 `latest.json`、`latest-beta.json` 及各自的 `.sig`（Ed25519）；
+`X.Y.Z-beta.N` 发布只产出 `latest-beta.json` 和 `.sig`，不会覆盖稳定通道。
+App 只信任签名有效的清单，不依赖托管方；
 `minimumSystemVersion` 高于用户系统时不提示更新。开发构建（ad-hoc 签名）不自动检查。
+
+设置“概览”中的“接收测试版”默认关闭，保存在现有 `aime/update.json`。开启检查 beta 清单，关闭只检查稳定清单，
+稳定通道永远不提示预发布版本（即便清单错误标注）；切换时清空缓存与跳过记录，下次检查使用新通道。
+版本按 SemVer 比较：`0.2.0-beta.1 < 0.2.0-beta.2 < 0.2.0`，相同语义版本再比较 build。
+稳定版同步到 beta 清单后，beta 用户也能升级到同一正式版。
+
+发布仍保持 `project.yml` / CLI 的基础版本为数字形式；构建脚本在签名前向两个暂存 App 的 Info.plist 写入
+`AIMEReleaseVersion` 保存完整预发布版本，避免 beta App 把自己识别为正式版。源码中的版本号不由脚本改写。
+CI 上传对应通道产物，仅在公证完成后发布清单；补公证脚本也按同样通道重算并签名。
+离线测试：`bash scripts/test-release-manifests.sh`（临时假安装包与临时签名密钥，不访问公证/R2/GitHub）。

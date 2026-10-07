@@ -8,10 +8,10 @@ struct AIMECommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "aime",
         abstract: "AIME command line — deploy, benchmark and manage your Rime workspace.",
-        version: "0.1.2",
+        version: "0.1.4",
         subcommands: [
             Deploy.self, Bench.self, Doctor.self, ImportSquirrel.self, Package.self,
-            Get.self, Set.self, Sync.self, Register.self, Subscribe.self,
+            Get.self, Set.self, Sync.self, Register.self, Subscribe.self, DiagnosticsCommand.self,
         ]
     )
 }

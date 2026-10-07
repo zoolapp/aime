@@ -56,27 +56,11 @@ struct AppearanceView: View {
                 rows(["appearance.candidate_list_layout", "appearance.inline_preedit", "appearance.inline_candidate",
                       "appearance.translucency", "appearance.alpha"])
             }
-            Section("快捷菜单") {
-                LabeledContent {
-                    Picker("", selection: Binding(get: { model.features.menuHoldKey }, set: { key in model.updateFeatures { $0.menuHoldKey = key } })) {
-                        Text("⌥ Option").tag(ModifierHold.Key.option)
-                        Text("⌃ Control").tag(ModifierHold.Key.control)
-                        Text("⌘ Command").tag(ModifierHold.Key.command)
-                        Text("关闭").tag(ModifierHold.Key.off)
-                    }
-                    .labelsHidden()
-                    .fixedSize()
-                } label: {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("长按呼出")
-                        Text("打字时单独按住这个键约 0.35 秒，打开快捷菜单；按空格进入 AI 处理，按 1、2、3 进入常用语、符号、高频词，全程不用鼠标。和其他键组合使用（如 ⌥←）不会触发。")
-                            .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-                    }
-                }
+            Section("候选窗菜单按钮") {
                 Toggle(isOn: Binding(get: { model.features.panelMenuButton }, set: { on in model.updateFeatures { $0.panelMenuButton = on } })) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("在候选窗末尾显示 AIME 菜单按钮")
-                        Text("也可以点这个按钮或按 ⌃⌥M 打开。菜单里用数字、方向键和回车选择，Esc 返回。")
+                        Text("点按钮或按 ⌃⌥M 打开。长按触发键在「快捷键 → 快捷菜单」中设置。")
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 }

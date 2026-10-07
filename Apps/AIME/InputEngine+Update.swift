@@ -27,6 +27,7 @@ extension InputEngine {
     }
 
     private func announceUpdate(_ release: AppRelease) {
+        guard AppUpdateState.load(paths).pending(current: .current()) == release else { return }
         logger.info("update available: \(release.appVersion.description, privacy: .public)")
         let center = UNUserNotificationCenter.current()
         center.delegate = UpdateNotificationDelegate.shared

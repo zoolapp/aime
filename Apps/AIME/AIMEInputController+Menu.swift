@@ -3,7 +3,7 @@ import AIMEPanel
 import AppKit
 import InputMethodKit
 
-/// Quick menu in the candidate window: 常用语 / 符号 / 高频词 / AI 处理 / 设置.
+/// Quick menu in the candidate window: 常用语 / 符号 / 高频词 / 表情 / AI 处理 / 设置.
 /// Opened by holding a modifier (⌥ by default), with the panel's AIME button or ⌃⌥M;
 /// digits, arrows, Return and Esc walk it — no mouse needed.
 extension AIMEInputController {
@@ -19,7 +19,7 @@ extension AIMEInputController {
         if quickMenu == nil { InputEngine.shared.panel.showHoldCue(duration: ModifierHold.duration) }
         Task { @MainActor [weak self] in
             try? await Task.sleep(for: .seconds(ModifierHold.duration))
-            guard let self else { return }
+            guard let self, InputEngine.shared.activeController === self else { return }
             guard self.menuHold.fire(token: token) else {
                 if !self.menuHold.isArmed { InputEngine.shared.panel.hideHoldCue(animated: true) }
                 return
@@ -42,7 +42,8 @@ extension AIMEInputController {
         var content = QuickMenu.Content(
             phrases: phrases, symbols: .load(paths), frequentWords: Array(words),
             usageStatsEnabled: engine.features.usageStats, polishEnabled: engine.features.aiPolish,
-            customActions: engine.features.aiActions.map(\.name), snippets: Snippets.load(paths).menuCategories)
+            customActions: engine.features.aiActions.map(\.name), snippets: Snippets.load(paths).menuCategories,
+            emojis: .loadEmojis(paths))
         // Nothing typed or selected: no AI entry (there is nothing for it to work on).
         content.hasActionTarget = hasActionTarget(client: client)
         quickMenu = QuickMenu(content: content)
@@ -59,6 +60,7 @@ extension AIMEInputController {
     func closeMenu() {
         guard quickMenu != nil else { return }
         quickMenu = nil
+        guard ownsPanel else { return }
         // Back to whatever was there: candidates while composing, the draft hint, or nothing.
         if isComposing || !draft.isEmpty {
             InputEngine.shared.panel.pendingTransition = .pop
@@ -99,7 +101,7 @@ extension AIMEInputController {
             ? PanelState(status: page.emptyMessage)
             : PanelState(
                 candidates: visible.enumerated().map {
-                    PanelState.Candidate(label: "\($0.offset + 1)", text: $0.element.title, comment: $0.element.detail, symbol: $0.element.symbol)
+                    PanelState.Candidate(label: "\(page.selectionKey(visibleIndex: $0.offset))", text: $0.element.title, comment: $0.element.detail, symbol: $0.element.symbol)
                 },
                 highlightedIndex: page.highlighted, title: title,
                 presentation: page.layout == .grid ? .grid : page.layout == .row ? .row : .list)
@@ -133,7 +135,7 @@ extension AIMEInputController {
         default:
             let character = event.charactersIgnoringModifiers ?? ""
             let onBoard = quickMenu?.page.board != nil
-            if plain, let digit = Int(character) { key = .digit(digit == 0 ? 10 : digit) } // 0 is the tenth tab
+            if plain, let digit = Int(character) { key = .digit(digit) }
             // Boards: the letter rows pick the cell under that key (⇧ keeps the board open).
             // `charactersIgnoringModifiers` keeps Shift, so map by key position instead.
             else if plain, onBoard, let letter = Self.boardKey(forKeyCode: event.keyCode) {
@@ -178,14 +180,12 @@ extension AIMEInputController {
                 showMenu(client: client)
             case let .insertAndStay(text):
                 // The board stays open for the next symbol.
-                client?.insertText(text, replacementRange: NSRange(location: NSNotFound, length: 0))
+                insertMenuText(text, client: client)
                 showMenu(client: client)
             case let .insert(text):
                 quickMenu = nil
                 InputEngine.shared.panel.hide()
-                // A pending composition is dropped: the inserted text replaces it.
-                if isComposing { self.session?.clearComposition() }
-                client?.insertText(text, replacementRange: NSRange(location: NSNotFound, length: 0))
+                insertMenuText(text, client: client)
                 sync(client: client)
             case let .openSettings(pane):
                 closeMenu()

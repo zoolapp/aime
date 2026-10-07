@@ -26,7 +26,7 @@ public struct QuickMenu: Sendable, Equatable {
     }
 
     public enum PageID: Sendable, Equatable {
-        case root, phrases, symbols, symbolCategory(String), frequentWords, ai
+        case root, phrases, symbols, symbolCategory(String), frequentWords, emojis, ai
     }
 
     public struct Item: Sendable, Equatable {
@@ -34,12 +34,15 @@ public struct QuickMenu: Sendable, Equatable {
         public var detail: String
         /// SF Symbol name (grid pages).
         public var symbol: String?
+        /// Explicit digit for reserved root entries; other items use their position.
+        public var selectionKey: Int?
         public var action: Action
 
-        public init(_ title: String, detail: String = "", symbol: String? = nil, action: Action) {
+        public init(_ title: String, detail: String = "", symbol: String? = nil, selectionKey: Int? = nil, action: Action) {
             self.title = title
             self.detail = detail
             self.symbol = symbol
+            self.selectionKey = selectionKey
             self.action = action
         }
     }
@@ -64,6 +67,12 @@ public struct QuickMenu: Sendable, Equatable {
         public var visibleItems: ArraySlice<Item> {
             let start = min(pageIndex * pageSize, items.count)
             return items[start..<min(start + pageSize, items.count)]
+        }
+
+        public func selectionKey(visibleIndex index: Int) -> Int {
+            let visible = Array(visibleItems)
+            guard visible.indices.contains(index) else { return index + 1 }
+            return visible[index].selectionKey ?? index + 1
         }
     }
 
@@ -183,8 +192,17 @@ public struct QuickMenu: Sendable, Equatable {
 
         /// `aime/symbols.json` from the user directory (override) or the shared data.
         public static func load(_ paths: AIMEPaths) -> Symbols {
-            let candidates = [paths.aimeDir.appendingPathComponent("symbols.json"),
-                              paths.sharedDataDir?.appendingPathComponent("aime/symbols.json")].compactMap(\.self)
+            load(paths, filename: "symbols.json")
+        }
+
+        /// `aime/emoji.json` uses the same category board and user override rules.
+        public static func loadEmojis(_ paths: AIMEPaths) -> Symbols {
+            load(paths, filename: "emoji.json")
+        }
+
+        private static func load(_ paths: AIMEPaths, filename: String) -> Symbols {
+            let candidates = [paths.aimeDir.appendingPathComponent(filename),
+                              paths.sharedDataDir?.appendingPathComponent("aime/\(filename)")].compactMap(\.self)
             for url in candidates {
                 if let data = try? Data(contentsOf: url), let symbols = try? JSONDecoder().decode(Symbols.self, from: data) { return symbols }
             }
@@ -198,6 +216,7 @@ public struct QuickMenu: Sendable, Equatable {
         var phraseTexts: [String]
         var phraseCodes: [String]
         public var symbols: Symbols
+        public var emojis: Symbols
         public var frequentWords: [(text: String, count: Int)] { wordTexts.indices.map { (wordTexts[$0], wordCounts[$0]) } }
         var wordTexts: [String]
         var wordCounts: [Int]
@@ -213,10 +232,11 @@ public struct QuickMenu: Sendable, Equatable {
 
         public init(phrases: [(text: String, code: String)] = [], symbols: Symbols = Symbols(),
                     frequentWords: [(text: String, count: Int)] = [], usageStatsEnabled: Bool = false, polishEnabled: Bool = false,
-                    customActions: [String] = [], snippets: [Symbols.Category] = []) {
+                    customActions: [String] = [], snippets: [Symbols.Category] = [], emojis: Symbols = Symbols()) {
             phraseTexts = phrases.map(\.text)
             phraseCodes = phrases.map(\.code)
             self.symbols = symbols
+            self.emojis = emojis
             wordTexts = frequentWords.map(\.text)
             wordCounts = frequentWords.map(\.count)
             self.usageStatsEnabled = usageStatsEnabled
@@ -245,7 +265,8 @@ public struct QuickMenu: Sendable, Equatable {
                 Item("常用语", symbol: "text.quote", action: .open(.phrases)),
                 Item("符号", symbol: "number", action: .open(.symbols)),
                 Item("高频词", symbol: "chart.bar.xaxis", action: .open(.frequentWords)),
-                Item("设置", symbol: "gearshape", action: .openSettings(pane: nil)),
+                Item("表情", symbol: "face.smiling", action: .open(.emojis)),
+                Item("设置", symbol: "gearshape", selectionKey: 0, action: .openSettings(pane: nil)),
             ]
             var page = Page(id: id, title: "AIME", layout: .grid, items: items, emptyMessage: "")
             // AI is the main action: Space opens it, digits pick the rest. When AI is off
@@ -282,6 +303,11 @@ public struct QuickMenu: Sendable, Equatable {
         case .symbols:
             var page = Page(id: id, title: "符号", layout: .grid, items: [], emptyMessage: "没有可用的符号表")
             let categories = content.symbols.categories.filter { !$0.items.isEmpty }
+            if !categories.isEmpty { page.board = Board(style: .grid, categories: categories) }
+            return page
+        case .emojis:
+            var page = Page(id: id, title: "表情", layout: .grid, items: [], emptyMessage: "没有可用的表情表")
+            let categories = content.emojis.categories.filter { !$0.items.isEmpty }
             if !categories.isEmpty { page.board = Board(style: .grid, categories: categories) }
             return page
         case let .symbolCategory(category):
@@ -341,7 +367,8 @@ public struct QuickMenu: Sendable, Equatable {
         case .tabPrevious: board.selectCategory(board.category - 1)
         case let .digit(number):
             // Digits jump to a category (1 = first tab, 0 would be the tenth).
-            if (1...board.categories.count).contains(number) { board.selectCategory(number - 1) }
+            let tabNumber = number == 0 ? 10 : number
+            if (1...board.categories.count).contains(tabNumber) { board.selectCategory(tabNumber - 1) }
         case .confirm:
             guard board.items.indices.contains(board.highlighted) else { return .show }
             return .perform(.insert(board.items[board.highlighted]))
@@ -419,9 +446,9 @@ public struct QuickMenu: Sendable, Equatable {
             current = page
             return outcome
         case let .digit(number):
-            guard (1...max(1, visibleCount)).contains(number), visibleCount > 0 else { return .show }
+            guard let index = (0..<visibleCount).first(where: { current.selectionKey(visibleIndex: $0) == number }) else { return .show }
             stack[stack.count - 1] = current
-            let outcome = select(visibleIndex: number - 1)
+            let outcome = select(visibleIndex: index)
             current = page
             return outcome
         case .next, .previous, .up, .down:

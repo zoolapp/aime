@@ -52,6 +52,21 @@ struct ModifierHoldTests {
         #expect(!hold.isArmed)
     }
 
+    @Test func leavingAFieldInvalidatesItsTimerWithoutReusingTokens() {
+        var hold = ModifierHold()
+        let old = hold.modifiersChanged(option) ?? -1
+        hold.cancel()
+        let next = hold.modifiersChanged(option) ?? -1
+        #expect(next > old)
+        let staleFired = hold.fire(token: old)
+        #expect(!staleFired)
+        let fired = hold.fire(token: next)
+        #expect(fired)
+        hold.cancel()
+        #expect(!hold.isFired)
+        #expect(hold.withoutHoldKey(option) == option)
+    }
+
     @Test func resetInvalidatesPendingTimerEvenAfterRearming() throws {
         var hold = ModifierHold(key: .option)
         let armedToken = hold.modifiersChanged(option)

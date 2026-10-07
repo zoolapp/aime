@@ -17,6 +17,13 @@ public struct VocabularyCatalog: Sendable, Codable, Equatable {
         public var updated: String?
         public var sha256: String?
         public var size: Int?
+
+        /// Identity survives versioned URL changes. Older custom subscriptions have
+        /// no feed ID, so only their exact source URL can establish a match.
+        public func matches(_ subscription: VocabularySubscription) -> Bool {
+            if let feedID = subscription.feedID { return id == feedID }
+            return url == subscription.url
+        }
     }
 
     public var version: Int
@@ -25,6 +32,14 @@ public struct VocabularyCatalog: Sendable, Codable, Equatable {
     /// ISO date the catalog was last published.
     public var updated: String?
     public var feeds: [Feed]
+
+    public func availableFeeds(subscriptions: [VocabularySubscription]) -> [Feed] {
+        // add() also identifies existing subscriptions by URL; offering that source
+        // again would just return the old subscription without changing its feed ID.
+        feeds.filter { feed in
+            !subscriptions.contains { feed.matches($0) || feed.url == $0.url }
+        }
+    }
 
     public static let remoteURL = URL(string: "https://aime.zool.app/api/vocabulary.json")!
 

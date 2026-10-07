@@ -221,7 +221,13 @@ struct Package: AsyncParsableCommand {
         func run() async throws {
             let lock = try Workspace.lock(workspace.paths)
             defer { _ = lock }
-            let result = try PackageManager(paths: workspace.paths).uninstall(id)
+            let manager = PackageManager(paths: workspace.paths)
+            if manager.installed(id) != nil, let package = manager.registry.package(id),
+               package.kind == .model, let filename = package.source.filename, filename.hasSuffix(".gram") {
+                try SettingsStore(paths: workspace.paths).disableLanguageModelReferences(named: String(filename.dropLast(5)))
+                print("disabled model references; run `aime deploy` to apply")
+            }
+            let result = try manager.uninstall(id)
             print("removed \(result.removed.count) files")
             if !result.kept.isEmpty { print("kept \(result.kept.count) modified files: \(result.kept.joined(separator: ", "))") }
         }
@@ -357,14 +363,25 @@ struct Subscribe: AsyncParsableCommand {
 
     struct Update: AsyncParsableCommand {
         @OptionGroup var workspace: WorkspaceOptions
-        @Flag(help: "Ignore the 12 h interval.") var force = false
+        @Flag(help: "Check even manual feeds, ignoring each feed's update interval (up to 32 per run).") var force = false
         func run() async throws {
             let manager = SubscriptionManager(paths: workspace.paths)
-            for item in manager.subscriptions() {
-                let updated = try await manager.update(id: item.id, force: force)
-                print("\(item.id): \(updated?.entryCount ?? 0) entries, +\(updated?.newEntries ?? 0) new\(updated?.lastError.map { "  ⚠️ \($0)" } ?? "")")
+            let result = await manager.refresh(mode: force ? .manual : .due)
+            let checked = Swift.Set(result.checkedIDs)
+            for item in manager.subscriptions() where checked.contains(item.id) {
+                print("\(item.id): \(item.entryCount) entries, +\(item.newEntries) new")
             }
-            print("tables rebuilt with \(try Subscribe.rebuild(workspace)) entries")
+            for (id, error) in result.errors.sorted(by: { $0.key < $1.key }) {
+                print("\(id): ⚠️ \(error)")
+            }
+            if let error = result.catalogError { print("catalog: ⚠️ \(error)") }
+            if result.deferredCount > 0 { print("\(result.deferredCount) feeds deferred to the next run") }
+            if result.changed {
+                print("tables rebuilt with \(try Subscribe.rebuild(workspace)) entries")
+                print("run `aime deploy` to apply")
+            } else {
+                print("checked \(result.checkedIDs.count) feeds; cached content unchanged")
+            }
         }
     }
 

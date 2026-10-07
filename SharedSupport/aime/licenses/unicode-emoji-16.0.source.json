@@ -1,0 +1,83 @@
+{
+  "id": "unicode-emoji-16.0",
+  "unicodeVersion": "16.0",
+  "sourceURL": "https://www.unicode.org/Public/emoji/16.0/emoji-test.txt",
+  "sourceSHA256": "24f0c534e86cf142e2496953e8f0e46a3e702392911eddcd29c6cced85139697",
+  "sourceBytes": 640215,
+  "sourceCopyright": "© 2024 Unicode®, Inc.",
+  "attribution": "Unicode, Inc.",
+  "license": "Unicode-3.0",
+  "licenseURL": "https://www.unicode.org/license.txt",
+  "licenseFile": "unicode-emoji-16.0.LICENSE.txt",
+  "licenseSHA256": "e7a93b009565cfce55919a381437ac4db883e9da2126fa28b91d12732bc53d96",
+  "filter": {
+    "status": "fully-qualified",
+    "excludeSkinToneScalars": [
+      "U+1F3FB",
+      "U+1F3FC",
+      "U+1F3FD",
+      "U+1F3FE",
+      "U+1F3FF"
+    ],
+    "retainHairStyleComponents": true,
+    "preserveVariationSelectors": true,
+    "preserveZWJSequences": true,
+    "ordering": "original CLDR order"
+  },
+  "sourceFullyQualifiedEntries": 3781,
+  "excludedSkinToneVariants": 1875,
+  "retainedHairStyleVariants": 12,
+  "outputEntries": 1906,
+  "categories": [
+    {
+      "id": "smileys",
+      "title": "表情",
+      "entries": 169
+    },
+    {
+      "id": "people",
+      "title": "人物",
+      "entries": 386
+    },
+    {
+      "id": "nature",
+      "title": "自然",
+      "entries": 159
+    },
+    {
+      "id": "food",
+      "title": "美食",
+      "entries": 131
+    },
+    {
+      "id": "travel",
+      "title": "旅行",
+      "entries": 218
+    },
+    {
+      "id": "activities",
+      "title": "活动",
+      "entries": 85
+    },
+    {
+      "id": "objects",
+      "title": "物品",
+      "entries": 264
+    },
+    {
+      "id": "symbols",
+      "title": "符号",
+      "entries": 224
+    },
+    {
+      "id": "flags",
+      "title": "旗帜",
+      "entries": 270
+    }
+  ],
+  "outputFile": "aime/emoji.json",
+  "outputSHA256": "c4d37ac0796d4a83f41d304412438e5f7472fb52ae992ff3fef0f22daf053178",
+  "generator": "scripts/generate-emojis.py",
+  "changes": "Selected fully-qualified sequences without skin-tone modifiers; kept hair styles and exact Unicode sequences; translated group headings into Chinese; converted to AIME board JSON.",
+  "verifiedOn": "2026-10-05"
+}

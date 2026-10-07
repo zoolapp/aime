@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-09-29",
+  "updated": "2026-10-05",
   "packages": [
     {
       "id": "rime-ice",
@@ -153,6 +153,31 @@
       "size": 5887319,
       "advanced": true,
       "audience": "只有声明 use_preset_vocabulary 的方案才用得到，雾凇不需要。"
+    },
+    {
+      "id": "wanxiang-lts-zh-hans",
+      "title": "万象 · 简体整句模型",
+      "summary": "通过本机语法模型调整整句候选排序；按需下载，不进行联网推理。",
+      "homepage": "https://github.com/amzxyz/RIME-LMDG",
+      "license": "CC-BY-4.0",
+      "licenseURL": "https://creativecommons.org/licenses/by/4.0/",
+      "attribution": "amzxyz and RIME-LMDG contributors",
+      "kind": "model",
+      "schemas": [],
+      "requires": [
+        "octagram"
+      ],
+      "source": {
+        "type": "github-release-asset",
+        "repo": "amzxyz/RIME-LMDG",
+        "tag": "LTS",
+        "asset": "wanxiang-lts-zh-hans.gram",
+        "assetID": 607935157,
+        "filename": "wanxiang-lts-zh-hans.gram"
+      },
+      "sha256": "e3f958d2557a2c027543e874c802dcce9022b9b6fe1673d97c0bd1ef30592264",
+      "size": 404661292,
+      "audience": "适合经常输入长句、希望改善整句首选的人；约 405 MB，安装后需在整句设置中启用。"
     }
   ]
 }

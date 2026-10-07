@@ -77,7 +77,7 @@ notarize() {  # <file>: 0 accepted, 2 still in progress; exits on rejection
   exit 1
 }
 
-AIME_REQUIRE_TIMESTAMP=$([[ "$IDENTITY" == "-" ]] && echo 0 || echo 1) bash scripts/build-app.sh
+AIME_RELEASE_VERSION="$VERSION" AIME_REQUIRE_TIMESTAMP=$([[ "$IDENTITY" == "-" ]] && echo 0 || echo 1) bash scripts/build-app.sh
 APP="$ROOT/build/Release/AIME.app"
 
 rm -rf "$OUT" && mkdir -p "$OUT"
@@ -112,31 +112,9 @@ SRC="$OUT/AIME-$VERSION-source.tar.gz"
 bash scripts/source-archive.sh "$VERSION" "$OUT"
 (cd "$OUT" && shasum -a 256 "$(basename "$PKG")" "$(basename "$ZIP")" "$(basename "$SRC")" > SHA256SUMS.txt)
 
-# The update manifest served at get.zool.app/aime/latest.json, signed with Ed25519 so the
-# app trusts it independently of the host. Official builds must sign it.
+# Each channel uses the same Ed25519 trust chain; stable releases update both.
 BUILD="$(awk -F'"' '/CURRENT_PROJECT_VERSION/ {print $2; exit}' project.yml)"
-python3 - "$OUT" "$VERSION" "$BUILD" "$STATUS" <<'PY'
-import hashlib, json, os, sys, datetime
-out, version, build, status = sys.argv[1:5]
-def entry(name):
-    path = os.path.join(out, name)
-    return {"name": name, "size": os.path.getsize(path), "sha256": hashlib.sha256(open(path, "rb").read()).hexdigest()}
-manifest = {
-    "product": "aime", "version": version, "build": int(build),
-    "date": datetime.date.today().isoformat(), "prerelease": "-" in version or status != "notarized",
-    "minimumSystemVersion": "26.0", "default": "pkg",
-    "files": {"pkg": entry(f"AIME-{version}.pkg"), "zip": entry(f"AIME-{version}.zip"),
-              "source": entry(f"AIME-{version}-source.tar.gz"), "sums": {"name": "SHA256SUMS.txt"}},
-}
-json.dump(manifest, open(os.path.join(out, "latest.json"), "w"), ensure_ascii=False, indent=2)
-open(os.path.join(out, "latest.json"), "a").write("\n")
-PY
-if [[ -n "${AIME_MANIFEST_KEY:-}" ]]; then
-  swift scripts/sign-manifest.swift sign "$OUT/latest.json"
-elif [[ "$NOTARIZE" == 1 ]]; then
-  echo "AIME_MANIFEST_KEY is required to sign latest.json for an official release" >&2
-  exit 1
-fi
+bash scripts/write-update-manifests.sh "$OUT" "$VERSION" "$BUILD" "$STATUS"
 
 # Release notes: the CHANGELOG section for this version, else a template.
 NOTES="$OUT/RELEASE_NOTES.md"

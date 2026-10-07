@@ -3,52 +3,113 @@ import AppKit
 import SwiftUI
 
 /// Click, then press a key combination; stored in Rime notation. No typing of key names.
-struct KeyRecorder: View {
+struct KeyRecorder: NSViewRepresentable {
     let value: String
     var placeholder: String?
     let commit: (String) -> Void
-    @State private var recording = false
-    @State private var monitor: Any?
+    func makeNSView(context: Context) -> RecorderButton { RecorderButton() }
+    func updateNSView(_ button: RecorderButton, context: Context) {
+        button.idleTitle = value.isEmpty ? (placeholder ?? "未设置") : HotkeyFormatter.display(value)
+        button.commit = commit
+        button.isEnabled = context.environment.isEnabled
+        if !button.isEnabled { button.stop() }
+        button.refreshTitle()
+    }
+    func sizeThatFits(_ proposal: ProposedViewSize, nsView: RecorderButton, context: Context) -> CGSize? {
+        nsView.intrinsicContentSize
+    }
+    static func dismantleNSView(_ button: RecorderButton, coordinator: ()) { button.stop() }
+}
 
-    var body: some View {
-        Button {
-            recording ? stop() : start()
-        } label: {
-            Text(recording ? "请按下按键…" : (value.isEmpty && placeholder != nil ? placeholder! : HotkeyFormatter.display(value)))
-                .font(.body.monospaced())
-                .frame(minWidth: 96)
-                .padding(.vertical, 2)
-        }
-        .buttonStyle(.bordered)
-        .tint(recording ? .accentColor : nil)
-        .help("点击后直接按下想要的按键组合；按 Esc 取消")
-        .onDisappear(perform: stop)
+/// A dedicated responder keeps recording events out of the active input method.
+@MainActor final class RecorderButton: NSButton {
+    var idleTitle = "未设置"
+    var commit: (String) -> Void = { _ in }
+    private var recording = HotkeyRecording()
+    private var monitor: Any?
+    private var observers: [any NSObjectProtocol] = []
+    private var deadline: Task<Void, Never>?
+    private var generation: UInt64 = 0
+    override var acceptsFirstResponder: Bool { true }
+    override var inputContext: NSTextInputContext? { nil }
+    override var intrinsicContentSize: NSSize {
+        let size = super.intrinsicContentSize
+        return NSSize(width: max(96, size.width), height: max(28, size.height))
     }
 
-    private func start() {
-        recording = true
-        monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { event in
-            defer { stop() }
-            if event.keyCode == 0x35, event.modifierFlags.intersection(.deviceIndependentFlagsMask).isEmpty { return nil }
-            var modifiers: HotkeyFormatter.Modifiers = []
-            let flags = event.modifierFlags
-            if flags.contains(.control) { modifiers.insert(.control) }
-            if flags.contains(.option) { modifiers.insert(.alt) }
-            if flags.contains(.shift) { modifiers.insert(.shift) }
-            if flags.contains(.command) { modifiers.insert(.command) }
-            if let name = HotkeyFormatter.rimeName(keyCode: event.keyCode, character: event.charactersIgnoringModifiers, modifiers: modifiers) {
-                commit(name)
-            } else {
-                NSSound.beep()
+    init() {
+        super.init(frame: .zero)
+        bezelStyle = .rounded
+        font = .monospacedSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
+        target = self
+        action = #selector(toggleRecording)
+        toolTip = "点击后按下组合键，全部松开后保存；Esc 取消。单独长按修饰键请在「快捷键 → 快捷菜单」设置。"
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    @objc private func toggleRecording() {
+        if recording.active { stop(); return }
+        guard let window, window.makeFirstResponder(self) else { NSSound.beep(); return }
+        stop()
+        recording.start(modifiers: Self.modifiers(NSEvent.modifierFlags))
+        refreshTitle()
+        let token = generation
+        monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .keyUp, .flagsChanged]) { [weak self, weak window] event in
+            let consumed = MainActor.assumeIsolated {
+                guard let self, self.generation == token, self.recording.active,
+                      let window, window.isKeyWindow, event.window == nil || event.window === window else { return false }
+                let kind: HotkeyRecording.Event = event.type == .keyDown ? .down : (event.type == .keyUp ? .up : .modifiers)
+                let result = self.recording.handle(kind, keyCode: event.keyCode,
+                                                  character: event.type == .keyDown ? event.charactersIgnoringModifiers : nil,
+                                                  modifiers: Self.modifiers(event.modifierFlags), repeatKey: event.type == .keyDown && event.isARepeat)
+                switch result {
+                case let .commit(name): self.stop(); self.commit(name)
+                case .cancel: self.stop()
+                case .unsupported: NSSound.beep(); self.refreshTitle()
+                case .waiting, .retry: self.refreshTitle()
+                }
+                return true
             }
-            return nil
+            return consumed ? nil : event
+        }
+        for (name, object) in [(NSWindow.didResignKeyNotification, window as AnyObject),
+                               (NSApplication.didResignActiveNotification, NSApp as AnyObject)] {
+            observers.append(NotificationCenter.default.addObserver(forName: name, object: object, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { if self?.generation == token { self?.stop() } }
+            })
+        }
+        deadline = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(20))
+            guard !Task.isCancelled, self?.generation == token else { return }
+            self?.stop()
         }
     }
 
-    private func stop() {
-        recording = false
+    func stop() {
+        generation &+= 1
+        recording.stop()
         if let monitor { NSEvent.removeMonitor(monitor) }
         monitor = nil
+        for observer in observers { NotificationCenter.default.removeObserver(observer) }
+        observers.removeAll()
+        deadline?.cancel()
+        deadline = nil
+        refreshTitle()
+    }
+    override func resignFirstResponder() -> Bool { stop(); return super.resignFirstResponder() }
+    override func viewWillMove(toWindow newWindow: NSWindow?) { if newWindow == nil { stop() }; super.viewWillMove(toWindow: newWindow) }
+    func refreshTitle() {
+        title = recording.active ? (recording.waitingForRelease ? "请松开按键…" : "请按组合键…") : idleTitle
+        contentTintColor = recording.active ? .controlAccentColor : nil
+        invalidateIntrinsicContentSize()
+    }
+    private static func modifiers(_ flags: NSEvent.ModifierFlags) -> HotkeyFormatter.Modifiers {
+        var result: HotkeyFormatter.Modifiers = []
+        if flags.contains(.control) { result.insert(.control) }
+        if flags.contains(.option) { result.insert(.alt) }
+        if flags.contains(.shift) { result.insert(.shift) }
+        if flags.contains(.command) { result.insert(.command) }
+        return result
     }
 }
 
@@ -76,6 +137,7 @@ struct HotkeyListControl: View {
                 if !values.contains(new) { commit(values + [new]) }
             }
         }
+        .fixedSize(horizontal: true, vertical: false)
     }
 }
 

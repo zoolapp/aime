@@ -51,5 +51,8 @@ ditto "$ROOT/SharedSupport" "$OUT"
 rm -f "$OUT/aime_tech.txt" "$OUT/aime/aime_tech.tsv"
 
 echo "rime-ice $(basename "$ASSET")" > "$OUT/aime/VERSION"
+# Diagnostic metadata for Settings, which intentionally does not link librime.
+sed -n 's/^LIBRIME_VERSION=//p' "$ROOT/Vendor/librime.lock" > "$OUT/aime/LIBRIME_VERSION"
+/usr/bin/python3 "$ROOT/scripts/dictionary-metadata.py" --shared-dir "$OUT" --registry "$REGISTRY"
 bash "$ROOT/scripts/stage-plugins.sh" >/dev/null
 echo "==> done: $(du -sh "$OUT" | cut -f1) in $OUT"

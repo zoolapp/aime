@@ -37,9 +37,7 @@ public struct ModifierHold: Sendable, Equatable {
 
     /// Ends the input context and invalidates any timer from its previous hold.
     public mutating func reset() {
-        isArmed = false
-        isFired = false
-        token += 1
+        cancel()
     }
 
     /// Feed every modifier change. Returns a token when the caller should start the
@@ -62,6 +60,13 @@ public struct ModifierHold: Sendable, Equatable {
     /// Any key press while armed turns the hold into an ordinary shortcut.
     public mutating func keyPressed() {
         if isArmed { isArmed = false; token += 1 }
+    }
+
+    /// Leaving a field invalidates its pending timer without reusing a token.
+    public mutating func cancel() {
+        token += 1
+        isArmed = false
+        isFired = false
     }
 
     /// Called by the timer. True when the hold is still valid: open the menu.

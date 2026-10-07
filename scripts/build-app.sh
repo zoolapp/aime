@@ -18,6 +18,8 @@ cd "$ROOT"
 [[ -f build/SharedSupport/default.yaml ]] || bash scripts/fetch-dicts.sh
 # AIME's own data changes more often than the dictionaries: always refresh it.
 ditto SharedSupport build/SharedSupport
+# Refresh public metadata even when reusing an older dictionary build cache.
+/usr/bin/python3 scripts/dictionary-metadata.py --shared-dir build/SharedSupport
 command -v xcodegen >/dev/null || { echo "xcodegen is required: brew install xcodegen" >&2; exit 1; }
 xcodegen generate --quiet
 
@@ -39,6 +41,14 @@ cp "$CLI_DIR/aime" "$APP/Contents/Helpers/aime"
 ditto "$CLI_DIR/AIMEKit_AIMECore.bundle" "$APP/Contents/Helpers/AIMEKit_AIMECore.bundle"
 install_name_tool -add_rpath "@executable_path/../Frameworks" "$APP/Contents/Helpers/aime" 2>/dev/null || true
 ditto "$BUILT/AIME Settings.app" "$APP/Contents/Applications/AIME Settings.app"
+
+# Keep CFBundleShortVersionString numeric, but retain the full SemVer for updates.
+# This only modifies staging bundles, before signing; project/CLI versions stay unchanged.
+if [[ -n "${AIME_RELEASE_VERSION:-}" ]]; then
+  for bundle in "$APP" "$APP/Contents/Applications/AIME Settings.app"; do
+    plutil -replace AIMEReleaseVersion -string "$AIME_RELEASE_VERSION" "$bundle/Contents/Info.plist"
+  done
+fi
 
 # Local builds are signed ad-hoc by default. Set AIME_SIGN_IDENTITY to a certificate
 # hash to use a real identity — but make sure it is not revoked: macOS treats code

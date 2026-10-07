@@ -34,6 +34,88 @@ struct PanelTests {
         #expect(light.fontPoint == 17)
     }
 
+    @Test(arguments: ["argb", "rgba", "bgr"])
+    func numericColorsRetainLeadingZeroes(format: String) throws {
+        let yaml = try ConfigValue.parse(yaml: "blue: 31487\nblack: 0\nhex_blue: 0x007AFF\n")
+        #expect(yaml["blue"] == .int(0x007AFF))
+        #expect(yaml["hex_blue"] == .string("0x007AFF"))
+        #expect(ThemeColor(rime: yaml["blue"], format: format) == ThemeColor(rime: "0x007AFF", format: format))
+        #expect(ThemeColor(rime: yaml["black"], format: format) == ThemeColor(red: 0, green: 0, blue: 0))
+        #expect(ThemeColor(rime: .int(0x80123456), format: format) == ThemeColor(rime: "0x80123456", format: format))
+    }
+
+    @Test func explicitAlphaAndInvalidNumericColorsRemainDistinct() {
+        #expect(ThemeColor(rime: "0x00000000", format: "argb") == .clear)
+        #expect(ThemeColor(rime: "0x00123456", format: "argb")?.alpha == 0)
+        #expect(ThemeColor(rime: .int(-1), format: "argb") == nil)
+        #expect(ThemeColor(rime: .int(Int(UInt32.max) + 1), format: "argb") == nil)
+        #expect(ThemeColor(rime: .double(.infinity), format: "argb") == nil)
+        #expect(ThemeColor(rime: .double(1.5), format: "argb") == nil)
+    }
+
+    @Test func numericImportedBlueReachesCandidateTheme() throws {
+        let frontend = try ConfigValue.parse(yaml: """
+        style:
+          color_scheme: imported_blue
+        preset_color_schemes:
+          imported_blue:
+            name: 浅蓝测试
+            color_format: argb
+            back_color: 0xFFFFFF
+            candidate_text_color: 0
+            hilited_candidate_back_color: 31487
+            hilited_candidate_text_color: 0xFFFFFF
+        """)
+        let theme = PanelTheme(frontend: frontend, dark: false)
+        #expect(theme.displayName == "浅蓝测试")
+        #expect(theme.hilitedCandidateBackColor == ThemeColor(red: 0, green: Double(0x7A)/255, blue: 1))
+        #expect(theme.candidateTextColor == ThemeColor(red: 0, green: 0, blue: 0))
+    }
+
+    @Test func legacyHighlightBackgroundIsUsedOnlyWithoutCandidateOverride() throws {
+        var frontend = try ConfigValue.parse(yaml: """
+        style:
+          color_scheme: legacy
+        preset_color_schemes:
+          legacy:
+            hilited_back_color: 0xF8AA4D
+        """)
+        let expected = ThemeColor(red: Double(0x4D)/255, green: Double(0xAA)/255, blue: Double(0xF8)/255)
+        #expect(PanelTheme(frontend: frontend, dark: false).hilitedCandidateBackColor == expected)
+        frontend.set("0x0E6BD8", at: "preset_color_schemes/legacy/hilited_candidate_back_color")
+        #expect(PanelTheme(frontend: frontend, dark: false).hilitedCandidateBackColor == ThemeColor(rime: "0x0E6BD8", format: "bgr"))
+        frontend.set("0x00000000", at: "preset_color_schemes/legacy/hilited_candidate_back_color")
+        #expect(PanelTheme(frontend: frontend, dark: false).hilitedCandidateBackColor == .clear)
+        frontend.set("invalid", at: "preset_color_schemes/legacy/hilited_candidate_back_color")
+        let defaultTheme = PanelTheme(frontend: .map([]), dark: false)
+        #expect(PanelTheme(frontend: frontend, dark: false).hilitedCandidateBackColor == defaultTheme.hilitedCandidateBackColor)
+    }
+
+    @MainActor @Test func numericBlueIsDrawnByActualCandidateView() throws {
+        var frontend = Self.frontend
+        frontend.set("argb", at: "preset_color_schemes/aime_light/color_format")
+        frontend.set(.int(0x007AFF), at: "preset_color_schemes/aime_light/hilited_candidate_back_color")
+        let view = CandidateView()
+        view.theme = PanelTheme(frontend: frontend, dark: false)
+        view.state = .sample
+        view.frame = NSRect(origin: .zero, size: view.fittingContentSize)
+        let bitmap = try #require(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+        view.cacheDisplay(in: view.bounds, to: bitmap)
+        var bluePixels = 0
+        for y in 0..<bitmap.pixelsHigh {
+            for x in 0..<bitmap.pixelsWide {
+                if let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB),
+                   color.redComponent < 0.02, abs(color.greenComponent - CGFloat(0x7A)/255) < 0.02,
+                   color.blueComponent > 0.98 { bluePixels += 1 }
+            }
+        }
+        #expect(bluePixels > 100)
+        if let directory = ProcessInfo.processInfo.environment["AIME_TEST_ARTIFACT_DIR"] {
+            let url = URL(fileURLWithPath: directory).appendingPathComponent("I14-candidate-blue.png")
+            try bitmap.representation(using: .png, properties: [:])?.write(to: url)
+        }
+    }
+
     /// Every shipped scheme must keep candidate text legible (WCAG AA for large text).
     @Test func shippedSchemesAreLegible() {
         for (id, _) in PanelTheme.schemeNames(in: Self.frontend) {

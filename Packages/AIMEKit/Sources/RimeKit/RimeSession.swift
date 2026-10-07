@@ -115,6 +115,13 @@ public final class RimeSession {
         api.pointee.process_key(sid, keycode, modifiers)
     }
 
+    /// The frontend consumed a key between modifier press/release (menu or draft).
+    /// A non-printable Super event clears ascii_composer's tap latch; standard RIME
+    /// processors leave Super events alone, so it neither edits nor commits text.
+    public func cancelModifierTap() {
+        processKey(RimeKey.voidSymbol, modifiers: RimeKey.superMask)
+    }
+
     /// Feeds a key sequence in librime notation, e.g. `"nihao{space}"`.
     @discardableResult
     public func simulate(keySequence: String) -> Bool {

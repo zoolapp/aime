@@ -282,9 +282,14 @@ struct DictionariesView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("雾凇拼音 · 基础词库").font(.body.weight(.medium))
                         Text("常用字词、全拼与双拼方案 · GPL-3.0").font(.caption).foregroundStyle(.secondary)
+                        if let metadata = model.baseDictionaryMetadata {
+                            Text("\(metadata.rawRows.formatted()) 条原始记录（未去重）")
+                                .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                        }
                     }
                 }
             }
+            LanguageModelsSection()
             SubscriptionsSection()
             RecommendedFeedsSection()
             SchemeCatalogSection()
@@ -295,69 +300,82 @@ struct DictionariesView: View {
     }
 }
 
-/// The official catalog from aime.zool.app: every feed with its size, version and date,
-/// one click to subscribe. Feeds already subscribed show as such.
-private struct RecommendedFeedsSection: View {
+private struct LanguageModelsSection: View {
     @Environment(SettingsModel.self) private var model
 
     var body: some View {
-        let subscribed = Set(model.subscriptions.compactMap(\.feedID))
-        let subscribedURLs = Set(model.subscriptions.map(\.url))
-        let feeds = model.vocabularyCatalog?.feeds ?? []
-        if !feeds.isEmpty {
-            Section {
-                ForEach(feeds) { feed in
-                    let isSubscribed = subscribed.contains(feed.id) || subscribedURLs.contains(feed.url)
-                    HStack(alignment: .top, spacing: 12) {
-                        Image(systemName: feed.category == "ai" ? "sparkles" : "globe.asia.australia")
-                            .foregroundStyle(Theme.accentText).font(.title3).frame(width: 26)
-                        VStack(alignment: .leading, spacing: 3) {
-                            HStack(spacing: 6) {
-                                Text(feed.name).font(.body.weight(.medium))
-                                if let entries = feed.entries { Text("\(entries) 词").font(.caption.monospacedDigit()).foregroundStyle(.secondary) }
-                            }
-                            Text(feed.description).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-                            HStack(spacing: 10) {
-                                if let updated = feed.updated ?? feed.version { Label("更新于 \(updated)", systemImage: "clock") }
-                                if let size = feed.size { Text(ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file)) }
-                                if feed.sha256 != nil { Label("SHA-256 校验", systemImage: "checkmark.shield") }
-                            }
-                            .font(.caption2).foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        if isSubscribed {
-                            Label("已订阅", systemImage: "checkmark.circle.fill").font(.caption).foregroundStyle(Theme.success)
-                        } else {
-                            Button("订阅") { Task { await model.addSubscription(url: feed.url.absoluteString, name: feed.name, feed: feed) } }
-                                .disabled(model.subscriptionActivity != nil)
-                        }
-                    }
-                    .padding(.vertical, 4)
-                }
-            } header: {
-                HStack {
-                    Text("官方词库")
-                    if let updated = model.vocabularyCatalog?.updated {
-                        Text("目录 \(updated)").font(.caption).foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Button { Task { await model.loadVocabularyCatalog(force: true) } } label: {
-                        Label("刷新目录", systemImage: "arrow.clockwise")
-                    }
-                    .buttonStyle(.borderless).controlSize(.small).disabled(model.catalogRefreshing)
-                    if let home = model.vocabularyCatalog?.homepage {
-                        Link(destination: home) { Label("官网", systemImage: "arrow.up.right.square") }.font(.caption)
-                    }
-                }
-            } footer: {
-                Text(model.catalogError ?? "目录来自 aime.zool.app，每个词库都登记了版本与 SHA-256，下载后校验一致才会使用；有新版本时，已订阅的词库按你设定的频率自动跟进。")
-                    .font(.caption).foregroundStyle(model.catalogError == nil ? AnyShapeStyle(.secondary) : AnyShapeStyle(Theme.warning))
+        Section {
+            ForEach(model.registry.packages.filter { $0.kind == .model }) { package in
+                AddonRow(package: package)
             }
+        } header: {
+            Text("整句语言模型 · 可选")
+        } footer: {
+            Text("下载后在「输入习惯 → 整句语言模型」中选用。整句选词在本机完成；默认关闭。")
         }
     }
 }
 
-/// Online vocabularies (e.g. a raw GitHub file) that are checked twice a day.
+/// The official catalog from aime.zool.app: every feed with its size, version and date,
+/// one click to subscribe. Added feeds are managed once in SubscriptionsSection.
+private struct RecommendedFeedsSection: View {
+    @Environment(SettingsModel.self) private var model
+
+    var body: some View {
+        let feeds = model.vocabularyCatalog?.availableFeeds(subscriptions: model.subscriptions) ?? []
+        Section {
+            if feeds.isEmpty {
+                Text(model.vocabularyCatalog?.feeds.isEmpty == false
+                     ? "目录中的词库均已添加，可在上方管理更新。"
+                     : "暂无可添加词库。请刷新目录，或添加自定义链接。")
+                    .font(.callout).foregroundStyle(.secondary)
+            }
+            ForEach(feeds) { feed in
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: feed.category == "ai" ? "sparkles" : "globe.asia.australia")
+                        .foregroundStyle(Theme.accentText).font(.title3).frame(width: 26)
+                    VStack(alignment: .leading, spacing: 3) {
+                        HStack(spacing: 6) {
+                            Text(feed.name).font(.body.weight(.medium))
+                            if let entries = feed.entries { Text("\(entries) 条补充词").font(.caption.monospacedDigit()).foregroundStyle(.secondary) }
+                        }
+                        Text(feed.description).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                        HStack(spacing: 10) {
+                            if let updated = feed.updated ?? feed.version { Label("更新于 \(updated)", systemImage: "clock") }
+                            if let size = feed.size { Text(ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file)) }
+                            if feed.sha256 != nil { Label("SHA-256 校验", systemImage: "checkmark.shield") }
+                        }
+                        .font(.caption2).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Button("添加") { Task { await model.addSubscription(url: feed.url.absoluteString, name: feed.name, feed: feed) } }
+                        .disabled(!model.canAddSubscription)
+                }
+                .padding(.vertical, 4)
+            }
+        } header: {
+            HStack {
+                Text("可添加词库")
+                if let updated = model.vocabularyCatalog?.updated {
+                    Text("目录 \(updated)").font(.caption).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button { Task { await model.loadVocabularyCatalog(force: true) } } label: {
+                    Label("刷新目录", systemImage: "arrow.clockwise")
+                }
+                .buttonStyle(.borderless).controlSize(.small).disabled(model.catalogRefreshing || model.subscriptionActivity != nil)
+                if let home = model.vocabularyCatalog?.homepage {
+                    Link(destination: home) { Label("官网", systemImage: "arrow.up.right.square") }.font(.caption)
+                }
+            }
+        } footer: {
+            Text(model.catalogError ?? "这些是基础词库之外的补充词，可随词表版本扩充。目录登记版本与 SHA-256，下载校验通过才会使用；已订阅词库按设定频率跟进新版本。")
+                .font(.caption).foregroundStyle(model.catalogError == nil ? AnyShapeStyle(.secondary) : AnyShapeStyle(Theme.warning))
+        }
+    }
+}
+
+/// Online vocabularies (e.g. a raw GitHub file), checked at each feed's chosen interval.
 private struct SubscriptionsSection: View {
     @Environment(SettingsModel.self) private var model
     @State private var adding = false
@@ -373,7 +391,7 @@ private struct SubscriptionsSection: View {
                         .onSubmit(add)
                     Button("粘贴") { url = NSPasteboard.general.string(forType: .string)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? url }
                     Button("取消") { adding = false; url = "" }
-                    Button("订阅", action: add).buttonStyle(.borderedProminent).disabled(url.isEmpty)
+                    Button("订阅", action: add).buttonStyle(.borderedProminent).disabled(url.isEmpty || !model.canAddSubscription)
                 }
                 .controlSize(.small)
                 Text("支持 RIME dict.yaml、「词条⇥编码⇥权重」表格或每行一个词；拼音自动生成，全拼与小鹤双拼均可打出。")
@@ -382,14 +400,17 @@ private struct SubscriptionsSection: View {
             if let activity = model.subscriptionActivity {
                 HStack(spacing: 8) { ProgressView().controlSize(.small); Text(activity).font(.caption).foregroundStyle(.secondary) }
             }
+            if let notice = model.subscriptionNotice {
+                Text(notice).font(.caption).foregroundStyle(.secondary)
+            }
         } header: {
             HStack {
-                Text("在线词库")
+                Text("已添加词库")
                 Spacer()
                 if !model.subscriptions.isEmpty {
                     Button { Task { await model.refreshSubscriptions() } } label: { Label("立即检查", systemImage: "arrow.clockwise") }
                         .buttonStyle(.borderless).controlSize(.small)
-                        .disabled(model.subscriptionActivity != nil)
+                        .disabled(model.subscriptionActivity != nil || model.catalogRefreshing)
                 }
                 if !adding {
                     Button {
@@ -399,11 +420,16 @@ private struct SubscriptionsSection: View {
                         adding = true
                     } label: { Label("添加", systemImage: "plus") }
                         .buttonStyle(.borderless).controlSize(.small)
+                        .disabled(!model.canAddSubscription)
                 }
             }
         } footer: {
             if model.subscriptions.isEmpty && !adding {
-                Text("可以订阅上面的官方词库，或粘贴任何兼容 RIME 的词表链接。每个订阅可设为每天、每周自动更新或仅手动；新词在你停止打字后自动生效。")
+                Text("可以添加下方目录中的词库，或粘贴兼容 RIME 的单表链接。每个词库可设为每天、每周自动更新或仅手动；新词在你停止打字后自动生效。")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            if model.subscriptions.count >= SubscriptionManager.maxSubscriptions {
+                Text("最多添加 \(SubscriptionManager.maxSubscriptions) 个在线词库；移除旧订阅后可以继续添加。已有订阅仍会保留，每次最多检查 \(SubscriptionManager.maxBatchSize) 个。")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
@@ -425,18 +451,23 @@ private struct SubscriptionRow: View {
     let item: VocabularySubscription
 
     var body: some View {
+        let feed = model.vocabularyCatalog?.feeds.first { $0.matches(item) }
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: "antenna.radiowaves.left.and.right")
                 .foregroundStyle(Theme.accentText).font(.title3).frame(width: 26)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(item.name).font(.body.weight(.medium))
-                    Text("\(item.entryCount) 词").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                    Text("\(item.entryCount) 条补充词").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                    if feed != nil { Text("目录词库").font(.caption).foregroundStyle(.secondary) }
                     if item.newEntries > 0 {
                         Text("+\(item.newEntries) 新词").font(.caption.weight(.medium))
                             .padding(.horizontal, 6).padding(.vertical, 1)
                             .background(Theme.success.opacity(0.15), in: Capsule()).foregroundStyle(Theme.success)
                     }
+                }
+                if let feed {
+                    Text(feed.description).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 }
                 Text(item.url.absoluteString).font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
                 HStack(spacing: 10) {
@@ -642,16 +673,28 @@ private struct AddonRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(package.title).font(.body.weight(.medium))
-                    Text(package.version).font(.caption.monospaced()).foregroundStyle(.secondary)
+                    if package.kind != .model {
+                        Text(package.version).font(.caption.monospaced()).foregroundStyle(.secondary)
+                    }
                 }
                 Text(package.audience ?? package.summary).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                if package.kind == .model {
+                    HStack(spacing: 10) {
+                        if let size = package.size { Text(ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file)) }
+                        Text(package.license)
+                        if installed != nil { Label("已安装", systemImage: "checkmark.circle") }
+                    }.font(.caption2).foregroundStyle(.secondary)
+                }
             }
             Spacer()
             if model.packageActivity[package.id] != nil {
                 ProgressView().controlSize(.small)
             } else if installed == nil {
-                Button("安装") { Task { await model.install(package) } }.controlSize(.small)
+                Button(package.kind == .model ? "下载并安装" : "安装") { Task { await model.install(package) } }.controlSize(.small)
             } else {
+                if package.kind == .model && installed?.version != package.version {
+                    Button("更新") { Task { await model.install(package) } }.controlSize(.small)
+                }
                 Button("卸载", role: .destructive) { model.uninstall(package) }.controlSize(.small)
             }
         }
@@ -947,4 +990,3 @@ private struct ScreenshotScroll: ViewModifier {
         }
     }
 }
-

@@ -106,3 +106,5 @@ Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/): `typ
 3. Run relevant checks, inspect the diff for secrets, personal data, generated artifacts, and license provenance, then commit. For AI-assisted commits made by Codex, add `Co-Authored-By: Codex <noreply@openai.com>` as a trailer.
 4. Fill in the PR template: problem, resulting behavior, linked issue, exact verification results, and limitations. Update both READMEs/contribution guides when applicable; add shipped changes under `Unreleased` in the changelog and track open work in GitHub Issues.
 5. Request review and address feedback. Do not claim CI passed without a run, or merge/publish on behalf of maintainers without authorization.
+
+For troubleshooting and diagnostic exports, see the [troubleshooting guide (Chinese)](docs/troubleshooting.md).

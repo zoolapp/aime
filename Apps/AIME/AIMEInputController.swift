@@ -25,6 +25,9 @@ final class AIMEInputController: IMKInputController {
     var menuHold = ModifierHold()
     /// 输入图层: committed text waiting at the cursor (underlined) until it is confirmed.
     var draft = DraftBuffer()
+    /// Read only on an explicit paste; tests can supply synthetic text without the
+    /// user's pasteboard. No clipboard polling or text logging.
+    var clipboardText: () -> String? = { NSPasteboard.general.string(forType: .string) }
     /// What was just inserted into this field, so AI actions can work on "what I just
     /// typed" without a selection. Memory only; verified against the app before use.
     var recentText = RecentText()
@@ -36,6 +39,7 @@ final class AIMEInputController: IMKInputController {
 
     private var engine: InputEngine { InputEngine.shared }
     private var textClient: (any IMKTextInput)? { client() as? any IMKTextInput }
+    var ownsPanel: Bool { engine.activeController === self }
 
     // MARK: - Session
 
@@ -89,7 +93,8 @@ final class AIMEInputController: IMKInputController {
     private func rememberAsciiMode() {
         guard let session = liveSession else { return }
         DebugLog.write("ascii record app=\(bundleID ?? "?") appDefault=\(appOptions.asciiMode.map(String.init) ?? "nil") ascii=\(session.option("ascii_mode"))")
-        engine.asciiState.record(session.option("ascii_mode"), app: bundleID, appDefault: appOptions.asciiMode)
+        engine.asciiState.record(session.option("ascii_mode"), app: bundleID, appDefault: appOptions.asciiMode,
+                                 isActive: engine.activeController === self)
     }
 
     // MARK: - IMKStateSetting
@@ -108,6 +113,7 @@ final class AIMEInputController: IMKInputController {
         engine.refreshTheme()
         bundleID = client?.bundleIdentifier()
         appOptions = engine.appOptions(for: bundleID)
+        lastModifiers = NSEvent.modifierFlags.intersection(.deviceIndependentFlagsMask)
         // Nothing here may call back into the client: it is blocked until activateServer
         // returns. A reused session may be stale if another window of the same app
         // switched Chinese/English meanwhile, so re-apply the remembered state.
@@ -119,13 +125,14 @@ final class AIMEInputController: IMKInputController {
         MainActor.assumeIsolated {
             DebugLog.write("deactivate app=\(this.bundleID ?? "?")")
             this.rememberAsciiMode()
+            this.menuHold.cancel()
+            this.liveSession?.cancelModifierTap()
             this.recentText.reset()
-            this.menuHold.reset()
             this.lastModifiers = []
             this.closeMenu()
             this.cancelPolish()
             this.commitPending(client)
-            this.engine.panel.hide()
+            if this.ownsPanel { this.engine.panel.hide() }
             this.engine.usage.flush()
             if this.engine.activeController === this { this.engine.activeController = nil }
         }
@@ -187,6 +194,11 @@ final class AIMEInputController: IMKInputController {
 
         switch event.type {
         case .keyDown:
+            // Menu/draft keys may return before reaching RIME. Its ascii_composer
+            // still saw the modifier press; clear that tap latch so the release
+            // cannot turn a consumed Shift+key into an accidental mode switch.
+            var forwardedToRime = false
+            defer { if !forwardedToRime { session.cancelModifierTap() } }
             engine.lastUserKeyAt = Date()
             if menuHold.isArmed { engine.panel.hideHoldCue(animated: true) }
             menuHold.keyPressed() // a key while the modifier is down is a shortcut, not a hold
@@ -201,6 +213,13 @@ final class AIMEInputController: IMKInputController {
                 // Choose: translate, polish or one of the user's own. With nothing to work on, say so.
                 if hasActionTarget(client: client) { openMenu(client: client, page: .ai) }
                 else { engine.showStatus("没有可处理的文字：先打一段字，或选中一段文字") }
+                return true
+            }
+            // Paste joins the local draft before the generic shortcut path can flush
+            // it. Menu/AI shortcuts keep their existing priority.
+            if event.modifierFlags.intersection([.command, .control, .option, .shift]) == .command,
+               event.charactersIgnoringModifiers?.lowercased() == "v",
+               pasteIntoDraft(client: client, session: session) {
                 return true
             }
             // A pending draft (nothing being composed): Return / Esc confirm it, ⌫ edits
@@ -231,9 +250,11 @@ final class AIMEInputController: IMKInputController {
             ) else { return false }
             if keysym == RimeKey.escape, appOptions.vimMode, !isComposing {
                 session.setOption("ascii_mode", true)
+                rememberAsciiMode()
                 return false
             }
             engine.cancelStatus()
+            forwardedToRime = true
             handled = session.processKey(keysym, modifiers: mask)
             DebugLog.write("keyDown kind=\(keysym < 0x80 ? "ascii" : "special") mask=\(mask) handled=\(handled) ascii=\(session.option("ascii_mode"))")
             if !handled {
@@ -323,7 +344,7 @@ final class AIMEInputController: IMKInputController {
     /// After a short status (中 / 英…) the panel goes back to what it showed: the draft
     /// hint while a draft is pending, nothing otherwise.
     func restorePanelAfterStatus() {
-        guard !isComposing else { return }
+        guard ownsPanel, !isComposing else { return }
         if !draft.isEmpty, quickMenu == nil, polish == nil {
             engine.panel.show(draftHint, at: cursorRect(client: textClient))
         } else if draft.isEmpty {
@@ -348,6 +369,54 @@ final class AIMEInputController: IMKInputController {
         }
     }
 
+    /// ⌘V appends plain text without inserting into the host. Return/Esc and the
+    /// user's auto-commit preference still confirm the draft in the usual way.
+    private func pasteIntoDraft(client: (any IMKTextInput)?, session: RimeSession) -> Bool {
+        guard draftLayerActive, let client else { return false }
+        defer { rememberAsciiMode() }
+        guard let pasted = clipboardText() else {
+            engine.showStatus("输入图层支持纯文本粘贴")
+            return true
+        }
+        guard !pasted.isEmpty else { return true }
+        let context = session.context()
+        if context.isComposing, context.candidates.isEmpty || context.commitTextPreview == nil {
+            engine.showStatus("请先选词或取消组字，再粘贴")
+            return true
+        }
+        // A previous client-less callback may have left a real commit queued. Keep
+        // it before the pasted text and include it in the capacity check.
+        if !context.isComposing { sync(client: client, commitToDraft: true) }
+        let preview = context.isComposing ? context.commitTextPreview ?? "" : ""
+        guard draft.canPaste(pasted, afterComposition: preview) else {
+            engine.showStatus("文字过长，请先上屏后在应用中粘贴")
+            return true
+        }
+        draftTimer?.cancel()
+        if context.isComposing {
+            let accepted = session.commitComposition()
+            let committed = session.consumeCommit()
+            if let committed {
+                // Keep the actual formatter output, even if it exceeds the preview.
+                // Normal append/sync could overflow or insert pure punctuation.
+                engine.usage.record(committed, app: bundleID)
+                lastCommitted = committed
+                draft.replace(with: draft.text + committed)
+            }
+            sync(client: client, commitToDraft: true)
+            guard accepted, committed != nil, !isComposing else {
+                engine.showStatus("请先选词或取消组字，再粘贴")
+                return true
+            }
+        }
+        guard draft.paste(pasted) else {
+            engine.showStatus("文字过长，请先上屏后在应用中粘贴")
+            return true
+        }
+        sync(client: client, commitToDraft: true)
+        return true
+    }
+
     /// Puts the draft into the app (replacing the marked text that showed it).
     func flushDraft(client: (any IMKTextInput)?) {
         draftTimer?.cancel()
@@ -356,7 +425,7 @@ final class AIMEInputController: IMKInputController {
         (client ?? textClient)?.insertText(text, replacementRange: NSRange(location: NSNotFound, length: 0))
         hasMarkedText = false
         recentText.append(text)
-        if !isComposing, quickMenu == nil, polish == nil { engine.panel.hide() }
+        if ownsPanel, !isComposing, quickMenu == nil, polish == nil { engine.panel.hide() }
     }
 
     /// Restarts the auto-commit countdown; it only runs while a draft is pending and
@@ -373,6 +442,17 @@ final class AIMEInputController: IMKInputController {
     }
 
     // MARK: - Output
+
+    /// Menu text replaces unconfirmed composition, after preserving an existing draft.
+    /// Both continuous and closing insertions must leave no old preedit to restore.
+    func insertMenuText(_ text: String, client: (any IMKTextInput)?) {
+        guard let client = client ?? textClient else { return }
+        if isComposing { liveSession?.clearComposition() }
+        isComposing = false
+        flushDraft(client: client)
+        client.insertText(text, replacementRange: NSRange(location: NSNotFound, length: 0))
+        hasMarkedText = false
+    }
 
     /// Marked text with InputMethodKit's own highlight attributes. Hand-made attributes
     /// (e.g. a raw underline style) do not survive the IMK XPC bridge on macOS 26+, and
@@ -400,10 +480,10 @@ final class AIMEInputController: IMKInputController {
                               replacementRange: NSRange(location: NSNotFound, length: 0))
         hasMarkedText = false
         isComposing = false
-        engine.panel.hide()
+        if ownsPanel { engine.panel.hide() }
     }
 
-    func sync(client: (any IMKTextInput)?) {
+    func sync(client: (any IMKTextInput)?, commitToDraft: Bool = false) {
         guard let session = liveSession, let client else { return }
 
         if let text = session.consumeCommit() {
@@ -411,7 +491,9 @@ final class AIMEInputController: IMKInputController {
             engine.usage.record(text, app: bundleID)
             lastCommitted = text
             // A commit of only punctuation or digits does not open a draft.
-            if draftLayerActive, !draft.isEmpty || DraftBuffer.opensDraft(text) {
+            if commitToDraft {
+                draft.replace(with: draft.text + text)
+            } else if draftLayerActive, !draft.isEmpty || DraftBuffer.opensDraft(text) {
                 appendToDraft(text, client: client)
             } else {
                 // The layer was switched off with a draft pending: it goes first.
@@ -465,6 +547,9 @@ final class AIMEInputController: IMKInputController {
             hasMarkedText = false
         }
 
+        // A delayed old-context commit still reaches that client, but cannot replace
+        // the shared panel belonging to the newly active field.
+        guard ownsPanel else { return }
         scheduleDraftAutoCommit()
         guard isComposing else {
             // A pending draft shows a small hint under it (what the layer is waiting for).

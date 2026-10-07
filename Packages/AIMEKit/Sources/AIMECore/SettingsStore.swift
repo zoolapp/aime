@@ -92,6 +92,11 @@ public struct SettingsStore: Sendable {
 
     /// Records a new value in the generated layer. Call deploy afterwards.
     public func set(_ value: ConfigValue, for setting: SettingCatalog.Setting, schemaID: String? = nil) throws {
+        if setting.id == "grammar.language" {
+            guard case let .string(name) = value else { throw WriteError.outOfRange(setting.id) }
+            try setLanguageModel(name, schemaID: schemaID)
+            return
+        }
         guard let target = setting.target(schemaID: schemaID ?? primarySchema()) else {
             throw WriteError.unknownTarget(setting.id)
         }
@@ -116,6 +121,10 @@ public struct SettingsStore: Sendable {
 
     /// Drops the generated override so the imported / shipped value applies again.
     public func reset(_ setting: SettingCatalog.Setting, schemaID: String? = nil) throws {
+        if setting.id == "grammar.language" {
+            try resetLanguageModel(schemaID: schemaID)
+            return
+        }
         guard let target = setting.target(schemaID: schemaID ?? primarySchema()) else { return }
         guard let keypath = resolve(setting.keypath, target: target) else { return }
         try layers.setGenerated(target, keypath: keypath, value: nil)

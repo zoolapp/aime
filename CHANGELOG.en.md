@@ -12,6 +12,61 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-10-07
+
+> Stable release · Developer ID signed · notarized by Apple
+
+### Added
+
+- Settings › Overview has a new "Export Diagnostics…" button. It packs the version, installation state, update state and filtered logs into one ZIP to attach to a bug report; it never includes typed text, word frequencies, frequent phrases, statistics, configuration contents or keys. `aime diagnostics --output <file>.zip` exports the same from the command line; see docs/troubleshooting.md.
+- Settings › Overview has a new "Receive beta versions" option. When on, update checks also offer beta versions; when off, only stable releases. A stable release always counts as newer than a beta with the same number.
+- The input layer handles Command+V plain-text appends, preserving newlines and emoji. An addition that exceeds draft capacity is rejected as a whole instead of committing the draft early.
+
+### Changed
+
+- Quick-menu hold triggers and schema-switcher shortcuts are grouped in Keyboard Shortcuts; Appearance keeps the candidate-window menu button's visibility setting.
+- About uses a narrower content column and aligned version details, Chinese build dates and a GitHub icon for the repository link.
+- Vocabulary settings uses Added and Available lists so subscribed official feeds appear once.
+- The schema switcher caption setting explains where its prompt appears in composition or the candidate panel.
+
+### Fixed
+
+- Skipping a version in Settings no longer overwrites the update check the input method just recorded, and the input method no longer shows a notification for the skipped version.
+- Imported themes support the legacy highlighted-background field and numeric colors with leading zeroes.
+- Hotkey recording saves after all keys and modifiers are released and stops on pane or window changes to avoid duplicate entries.
+- The three default schema-switcher bindings keep their names on one line in the minimum settings window.
+
+### Known issues
+
+- Real-host draft paste routing, physical modifier-hold recording and the caret issue after cancelling snippets still need testing after installation.
+- The emoji board, vocabulary settings and About page from 0.1.3 still need native acceptance in real input hosts.
+
+## [0.1.3] - 2026-10-05
+
+> Local development build · ad-hoc signed · native acceptance pending
+
+### Added
+
+- Optional Wanxiang offline sentence model download and settings, preserving imported configuration; download and activation are off by default.
+- Quick-menu key 4 opens an offline emoji board with 1906 Unicode 16.0 sequences in nine categories, using the symbol board's keyboard and continuous-insertion controls.
+- An About page and native About menu show the version, build time, licenses and repository.
+
+### Changed
+
+- Quick-menu settings moves to key 0, reserving 1–9 for content entries; 0 still selects the tenth category inside the symbol board.
+- Vocabulary settings distinguishes the base dictionary from supplemental feeds; manual and automatic refresh share catalog checks. New subscriptions are capped at 32, with up to 32 checks per batch.
+
+### Fixed
+
+- Consumed quick-menu or input-layer keys no longer accidentally switch language modes, and an old input context cannot overwrite the current mode. Stale modifier-hold timers no longer open the menu after leaving a field.
+- Equal-count vocabulary replacements and code or weight changes trigger a rebuild; identical content and 304 responses skip redeployment.
+- Continuous menu insertion clears old composition so Escape does not restore earlier pinyin; directly uninstalling an offline model clears its configuration references.
+- Dictionary capacity metadata is generated with public resource permissions so it remains readable after system installation.
+
+### Known issues
+
+- The emoji board, vocabulary settings and About page still need native acceptance; the caret issue after cancelling snippets with Escape has not been reproduced in a real IMK host.
+
 ## [0.1.2] - 2026-10-02
 
 > Developer preview · Developer ID signed · notarization pending
@@ -72,7 +127,8 @@ The first public developer preview.
 - The installer is signed with ZOOL LLC's Developer ID; Apple notarization is still pending, so the first launch needs Control-click › Open in Finder.
 - The `aime` command-line tool supports Apple silicon only.
 
-[Unreleased]: https://github.com/zoolapp/aime/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/zoolapp/aime/compare/v0.1.4...HEAD
+[0.1.4]: https://github.com/zoolapp/aime/compare/v0.1.2...v0.1.4
 [0.1.2]: https://github.com/zoolapp/aime/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/zoolapp/aime/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/zoolapp/aime/releases/tag/v0.1.0

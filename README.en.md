@@ -31,7 +31,7 @@
 </p>
 
 > [!IMPORTANT]
-> **Developer preview (0.1.x).** Features are still moving quickly. The current public v0.1.0 release is labeled “notarization in progress”; check the latest [release notes and checksums](https://github.com/zoolapp/aime/releases) before downloading. AIME is an independent project, not a fork of
+> **Early release (0.1.x).** Features are still moving quickly. Stable installers are signed with a Developer ID and notarized by Apple; check the [release notes and checksums](https://github.com/zoolapp/aime/releases) before downloading. AIME is an independent project, not a fork of
 > Squirrel, contains none of its GPL source, and can be installed alongside it.
 
 ## Some words are better typed in quiet
@@ -54,12 +54,14 @@ If you want to keep full or double pinyin and your own word lists while editing 
 
 ## Features
 
-- **Quick menu** — hold ⌥ while typing: Space opens AI actions, digits open snippets, symbols, frequent words and settings; no mouse needed.
+- **Quick menu** — hold ⌥ while typing: Space opens AI actions, 1–4 open snippets, symbols, frequent words and emoji, and 0 opens settings; no mouse needed.
+- **Emoji board** — 1,906 offline emoji in nine categories. Digits switch categories, letters select cells, Shift+letter or Space keeps the board open, Return inserts and closes, and Esc goes back.
 - **AI actions** — translate, polish, convert or run custom actions (e.g. Cantonese) on the selection, the text just typed, or the candidate being composed; results appear as candidates and Return replaces the text.
 - **Draft layer (optional)** — typed text waits at the cursor until Return, so a whole sentence can be polished before it is sent.
 - **Visual settings** — 80+ options covering everyday RIME configuration: candidates, Chinese/English switching, fuzzy pinyin, shortcuts, Traditional output, per-app defaults ([research notes](docs/rime-config-reference.md)).
 - **Appearance** — colour scheme gallery with live preview, fonts, horizontal or vertical layout, radii and spacing, custom schemes with contrast warnings.
 - **Vocabulary** — an official online catalogue (versioned, SHA-256 verified, daily or weekly updates), any RIME-compatible word list, and one-click schema packages (rime-ice, Wanxiang, rime-frost) with conflict warnings.
+- **Sentence scoring (optional)** — download the approximately 405 MB Wanxiang offline language model from Vocabulary, then enable it in typing settings. Disabled by default; scoring stays on the Mac.
 - **Snippets and phrases** — categorised snippets (phone, email, address…) and a table editor for custom phrases.
 - **Input statistics (optional, local only)** — daily characters, hours and apps, frequent words you can pin.
 - **Sync and backup** — merge learned frequencies across Macs through a RIME sync folder; export and restore a local backup file. AIME runs no sync server.
@@ -86,7 +88,7 @@ If you want to keep full or double pinyin and your own word lists while editing 
    shasum -a 256 -c SHA256SUMS.txt --ignore-missing
    ```
 
-2. Read that release's signing and notarization status, then follow its installation instructions. v0.1.0 is currently a developer preview; an available download does not mean notarization is complete. Check the release notes if macOS displays a security warning.
+2. Read that release's signing and notarization status, then follow its installation instructions. Stable releases are notarized by Apple; a release labeled preview or “notarization in progress” is not. Check the release notes if macOS displays a security warning.
 3. Open **System Settings › Keyboard › Input Sources › Edit…**, click **+** and add **AIME** under Chinese, Simplified. If it does not appear after the first install, log out and back in.
 
 ### Build from source
@@ -173,3 +175,5 @@ so **the installer as a whole is distributed under the terms of GPL-3.0**, while
 AIME's online word lists are CC BY 4.0. Other third-party components are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), and the native plugin licence review is in [docs/native-plugin-license-audit.md](docs/native-plugin-license-audit.md).
 
 <p align="center"><sub>Published and maintained by <a href="https://zool.app">ZOOL LLC</a> · Developed by Luo Lei (<a href="https://github.com/foru17">@foru17</a>) · AIME and 艾么输入法 are product names of ZOOL LLC</sub></p>
+
+For troubleshooting and diagnostic exports, see the [troubleshooting guide (Chinese)](docs/troubleshooting.md).

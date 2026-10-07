@@ -10,6 +10,7 @@ AIME is an open-source Chinese input method for macOS, built on RIME, with local
 | 了解产品与迁移 / Product and migration | [中文 README](../README.md) · [English README](../README.en.md) |
 | 调整输入习惯 / Configure typing | [RIME 配置参考](rime-config-reference.md) |
 | 分享与自定义配色 / Themes | [主题说明](themes.md) |
+| 排障与导出诊断信息 / Troubleshooting | [排障指南](troubleshooting.md) |
 | 了解本地输入与 AI 边界 / Privacy and AI | [隐私说明](privacy.md) · [Security policy](../SECURITY.md) |
 | 参与代码贡献 / Contribute code | [中文贡献指南](../CONTRIBUTING.zh.md) · [English contribution guide](../CONTRIBUTING.md) |
 | 贡献公共词库 / Contribute word lists | [aime-dicts](https://github.com/zoolapp/aime-dicts) |

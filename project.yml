@@ -8,8 +8,8 @@ options:
   groupSortPosition: top
 settings:
   base:
-    MARKETING_VERSION: "0.1.2"
-    CURRENT_PROJECT_VERSION: "5"
+    MARKETING_VERSION: "0.1.4"
+    CURRENT_PROJECT_VERSION: "10"
     SWIFT_VERSION: "6.0"
     SWIFT_STRICT_CONCURRENCY: complete
     SWIFT_EMIT_LOC_STRINGS: YES
@@ -20,7 +20,7 @@ settings:
     CODE_SIGN_STYLE: Automatic
     DEVELOPMENT_TEAM: PX694P4CGY
     CODE_SIGN_IDENTITY: "-"
-    INFOPLIST_KEY_NSHumanReadableCopyright: "© 2026 ZOOL LLC. MIT License."
+    INFOPLIST_KEY_NSHumanReadableCopyright: "© 2026 ZOOL LLC. 原创源码 MIT；发行包 GPL-3.0。"
   configs:
     Debug:
       CODE_SIGN_IDENTITY: Apple Development
@@ -51,6 +51,7 @@ targets:
       properties:
         CFBundleDisplayName: AIME
         CFBundleName: AIME
+        NSHumanReadableCopyright: "© 2026 ZOOL LLC. 原创源码 MIT；发行包 GPL-3.0。"
         LSUIElement: true
         LSBackgroundOnly: false
         NSPrincipalClass: NSApplication
@@ -82,9 +83,17 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.zool.inputmethod.aime
+        AIME_INFO_TEMPLATE: "$(SRCROOT)/Apps/AIME/Info.plist"
+        INFOPLIST_FILE: "$(DERIVED_FILE_DIR)/AIMEInfo.plist"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks"
         CODE_SIGN_ENTITLEMENTS: Apps/AIME/AIME.entitlements
+    preBuildScripts:
+      - name: Stamp build metadata
+        script: bash "$SRCROOT/scripts/stamp-build-metadata.sh"
+        inputFiles: ["$(AIME_INFO_TEMPLATE)"]
+        outputFiles: ["$(DERIVED_FILE_DIR)/AIMEInfo.plist"]
+        basedOnDependencyAnalysis: false
     postBuildScripts:
       - name: Embed librime plugins and SharedSupport
         script: bash "$SRCROOT/scripts/embed-runtime.sh"
@@ -95,6 +104,7 @@ targets:
     productName: AIME Settings
     sources:
       - path: Apps/AIMESettings
+        excludes: [".impeccable"]
       - path: Apps/Shared
     dependencies:
       - package: AIMEKit
@@ -108,6 +118,7 @@ targets:
       properties:
         CFBundleDisplayName: AIME Settings
         CFBundleName: AIME Settings
+        NSHumanReadableCopyright: "© 2026 ZOOL LLC. 原创源码 MIT；发行包 GPL-3.0。"
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSApplicationCategoryType: public.app-category.productivity
@@ -120,8 +131,16 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.zool.aime.settings
+        AIME_INFO_TEMPLATE: "$(SRCROOT)/Apps/AIMESettings/Info.plist"
+        INFOPLIST_FILE: "$(DERIVED_FILE_DIR)/AIMEInfo.plist"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         CODE_SIGN_ENTITLEMENTS: Apps/AIMESettings/AIMESettings.entitlements
+    preBuildScripts:
+      - name: Stamp build metadata
+        script: bash "$SRCROOT/scripts/stamp-build-metadata.sh"
+        inputFiles: ["$(AIME_INFO_TEMPLATE)"]
+        outputFiles: ["$(DERIVED_FILE_DIR)/AIMEInfo.plist"]
+        basedOnDependencyAnalysis: false
 schemes:
   AIME:
     build:

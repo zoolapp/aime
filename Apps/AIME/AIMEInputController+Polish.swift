@@ -192,6 +192,7 @@ extension AIMEInputController {
         guard let request = polish else { return }
         request.task?.cancel()
         polish = nil
+        guard ownsPanel else { return }
         if let message {
             InputEngine.shared.showStatus(message)
         } else if !draft.isEmpty || isComposing {
