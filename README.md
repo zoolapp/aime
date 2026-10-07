@@ -80,7 +80,15 @@ AIME 为这些时刻而做：保留 RIME 的开放与自由，用原生界面管
 
 ## 安装
 
-### 预发布安装包
+### Homebrew
+
+```bash
+brew install --cask zoolapp/tap/aime
+```
+
+安装后按下方第 3 步添加输入法。升级用 `brew upgrade --cask aime`。
+
+### 安装包
 
 1. 在 [Releases](https://github.com/zoolapp/aime/releases) 下载最新的 `AIME-<版本>.pkg`，并用同一页面的 `SHA256SUMS.txt` 校验：
 

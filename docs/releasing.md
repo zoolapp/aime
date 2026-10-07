@@ -29,6 +29,7 @@
    ```
 
 4. 在 Actions 里等 Release 工作流跑完，到 Releases 页面检查草稿：附件、校验值、签名状态，确认无误后点 Publish。
+5. 正式版（已公证、非 `-beta`）发布后更新 Homebrew：在 [zoolapp/homebrew-tap](https://github.com/zoolapp/homebrew-tap) 运行 `bash scripts/update-cask.sh <版本>`（从 get.zool.app 读取 pkg 的 SHA-256），`brew audit --cask --online zoolapp/tap/aime` 通过后推送。
 
 **试跑**：Actions › Release › Run workflow，填写 tag（如 `v0.2.0`，可以还不存在）。
 试跑只把产物上传到这次运行的 artifact，不创建 Release。

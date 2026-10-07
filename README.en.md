@@ -80,7 +80,15 @@ If you want to keep full or double pinyin and your own word lists while editing 
 
 ## Install
 
-### Pre-release package
+### Homebrew
+
+```bash
+brew install --cask zoolapp/tap/aime
+```
+
+Then add the input method as in step 3 below. Upgrade with `brew upgrade --cask aime`.
+
+### Installer package
 
 1. Download the latest `AIME-<version>.pkg` from [Releases](https://github.com/zoolapp/aime/releases) and verify it with the `SHA256SUMS.txt` on the same page:
 
