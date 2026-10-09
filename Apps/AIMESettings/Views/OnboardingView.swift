@@ -303,20 +303,25 @@ private struct EnableStep: View {
     @State private var tick = 0
 
     var body: some View {
-        let enabled = { _ = tick; return model.isInputSourceEnabled }()
+        let state = { _ = tick; return model.inputSourceState }()
+        let enabled = state == .ready
         VStack(alignment: .leading, spacing: 16) {
             EnableStatusCard(done: enabled,
-                       title: enabled ? "已添加到输入法" : "还没有添加",
+                       title: enabled ? "已添加到输入法" : state == .needsRelogin ? "还差一步：注销或重启" : "还没有添加",
                        detail: enabled ? "可以用 ⌃空格 或菜单栏的输入法图标切换到艾么输入法。"
-                                       : "打开 系统设置 › 键盘 › 输入法 › 编辑…，点左下角 +，在「简体中文」里选「艾么输入法」。")
+                           : state == .needsRelogin ? "首次安装后，macOS 要在注销或重启一次后才会把艾么输入法放进输入法列表。可以先完成后面的设置，重新登录后再切换。"
+                           : "打开 系统设置 › 键盘 › 输入法 › 编辑…，点左下角 +，在「简体中文」里选「艾么输入法」。")
             if !enabled {
+                // Kept for the relogin state too: the heuristic behind it could be wrong, and
+                // adding AIME by hand is the next step either way.
                 Button {
                     if let url = URL(string: "x-apple.systempreferences:com.apple.Keyboard-Settings.extension") { NSWorkspace.shared.open(url) }
                 } label: {
                     Label("打开键盘设置", systemImage: "keyboard")
                 }
                 .controlSize(.large)
-                Text("添加后这里会自动变成已完成。第一次添加后，个别应用可能需要重新打开。")
+                Text(state == .needsRelogin ? "重新登录后列表里仍没有艾么输入法，再到这里手动添加。"
+                                            : "添加后这里会自动变成已完成。第一次添加后，个别应用可能需要重新打开。")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }

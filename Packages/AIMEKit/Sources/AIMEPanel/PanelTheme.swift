@@ -119,6 +119,9 @@ public struct PanelTheme: Sendable, Hashable {
     public static let fallback = PanelTheme(frontend: .map([]), dark: false)
     static let minimumCornerRadius = 8.0
     static let minimumHilitedCornerRadius = 5.0
+    /// Font sizes the panel draws; hand-edited or imported styles outside it are clamped so a
+    /// typo (font_point: 400) cannot blow the panel past the screen.
+    public static let fontPointRange = 8.0...40.0
 
     /// Names of all color schemes defined in the frontend config.
     public static func schemeNames(in frontend: ConfigValue) -> [(id: String, name: String)] {
@@ -171,11 +174,14 @@ public struct PanelTheme: Sendable, Hashable {
         baseOffset = double("base_offset", 0)
         maxWidth = max(0, double("max_width", 640))
         fontFace = string("font_face", "PingFang SC").components(separatedBy: ",").first!.trimmingCharacters(in: .whitespaces)
-        fontPoint = double("font_point", 17)
+        func point(_ key: String, _ fallback: Double) -> Double {
+            Swift.min(Swift.max(double(key, fallback), Self.fontPointRange.lowerBound), Self.fontPointRange.upperBound)
+        }
+        fontPoint = point("font_point", 17)
         labelFontFace = string("label_font_face", fontFace).components(separatedBy: ",").first!.trimmingCharacters(in: .whitespaces)
-        labelFontPoint = double("label_font_point", fontPoint * 0.8)
+        labelFontPoint = point("label_font_point", fontPoint * 0.8)
         commentFontFace = string("comment_font_face", fontFace).components(separatedBy: ",").first!.trimmingCharacters(in: .whitespaces)
-        commentFontPoint = double("comment_font_point", fontPoint * 0.8)
+        commentFontPoint = point("comment_font_point", fontPoint * 0.8)
         candidateFormat = string("candidate_format", "[label] [candidate] [comment]")
 
         backColor = color("back_color", defaultBack)

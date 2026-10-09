@@ -70,12 +70,15 @@ struct OverviewView: View {
     private var statusGrid: some View {
         Grid(horizontalSpacing: 14, verticalSpacing: 14) {
             GridRow {
+                let state = model.inputSourceState
                 StatusCard(
                     title: "输入法",
-                    value: !model.isInstalled ? "未安装" : model.isInputSourceEnabled ? "已启用" : "已安装",
+                    value: !model.isInstalled ? "未安装" : state == .ready ? "已启用" : state == .needsRelogin ? "还差一步" : "已安装",
                     detail: !model.isInstalled ? "运行 scripts/install-dev.sh 或安装 pkg"
-                        : model.isInputSourceEnabled ? "按 ⌃空格 切换到艾么输入法即可输入" : "系统设置 › 键盘 › 输入法 中添加艾么输入法",
-                    symbol: "keyboard.badge.ellipsis", ok: model.isInstalled && model.isInputSourceEnabled
+                        : state == .ready ? "按 ⌃空格 切换到艾么输入法即可输入"
+                        : state == .needsRelogin ? "注销或重启一次 Mac，艾么输入法才会出现在输入法列表里"
+                        : "系统设置 › 键盘 › 输入法 中添加艾么输入法",
+                    symbol: "keyboard.badge.ellipsis", ok: model.isInstalled && state == .ready
                 )
                 StatusCard(
                     title: "部署", value: model.isDeployed ? "已部署" : "等待首次部署",

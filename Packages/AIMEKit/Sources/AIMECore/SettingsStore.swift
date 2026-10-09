@@ -108,15 +108,47 @@ public struct SettingsStore: Sendable {
             var entries = list(target: target, keypath: setting.keypath)
             entries.removeAll(where: toggled.contains)
             if enabled {
-                // Spelling variants must be derived before abbreviations are generated.
-                let insertAt = entries.firstIndex { $0.stringValue?.hasPrefix("abbrev/") == true } ?? entries.endIndex
-                entries.insert(contentsOf: toggled, at: insertAt)
+                entries.insert(contentsOf: toggled, at: Self.insertionPoint(for: toggled, in: entries))
             }
+            entries = relocatingMisplacedVariants(entries, keypath: setting.keypath)
             try layers.setGenerated(target, keypath: setting.keypath, value: .list(entries))
             return
         }
         guard let keypath = resolve(setting.keypath, target: target) else { throw WriteError.unknownTarget(setting.id) }
         try layers.setGenerated(target, keypath: keypath, value: value)
+    }
+
+    private static func hasPrefix(_ entry: ConfigValue, _ prefixes: [String]) -> Bool {
+        prefixes.contains { entry.stringValue?.hasPrefix($0) == true }
+    }
+
+    /// Where a toggled group of algebra rules goes. Spelling variants (derive/erase) must be
+    /// derived from full pinyin: before abbreviations are generated and before double-pinyin
+    /// schemas xform/xlit it into their keys — appended after those, `derive/^([zcs])h/` never
+    /// matched (#9). Abbreviation groups keep their old place, so on double pinyin 超级简拼
+    /// still abbreviates the keys rather than the full spelling.
+    static func insertionPoint(for toggled: [ConfigValue], in entries: [ConfigValue]) -> Int {
+        let stops = toggled.contains { hasPrefix($0, ["abbrev/"]) } ? ["abbrev/"] : ["abbrev/", "xform/", "xlit/"]
+        return entries.firstIndex { hasPrefix($0, stops) } ?? entries.endIndex
+    }
+
+    func relocatingMisplacedVariants(_ entries: [ConfigValue], keypath: String) -> [ConfigValue] {
+        Self.relocatingMisplacedVariants(entries, keypath: keypath, catalog: catalog)
+    }
+
+    /// Before #9 was fixed, spelling variants toggled on a double-pinyin schema landed after its
+    /// xform/xlit rules. Moves any catalog variant found there back in front, keeping order.
+    /// Runs on every toggle and once per deploy (`ConfigLayers.migrateSpellingVariants`).
+    static func relocatingMisplacedVariants(_ entries: [ConfigValue], keypath: String, catalog: SettingCatalog) -> [ConfigValue] {
+        let variants = Set(catalog.settings.filter { $0.keypath == keypath }
+            .compactMap(\.listItems).filter { !$0.contains { Self.hasPrefix($0, ["abbrev/"]) } }
+            .joined())
+        guard let transform = entries.firstIndex(where: { Self.hasPrefix($0, ["xform/", "xlit/"]) }) else { return entries }
+        let misplaced = entries[transform...].filter(variants.contains)
+        guard !misplaced.isEmpty else { return entries }
+        var kept = Array(entries[..<transform]) + entries[transform...].filter { !variants.contains($0) }
+        kept.insert(contentsOf: misplaced, at: Self.insertionPoint(for: misplaced, in: kept))
+        return kept
     }
 
     /// Drops the generated override so the imported / shipped value applies again.

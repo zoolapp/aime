@@ -28,8 +28,17 @@ enum InputSourceRegistrar {
     static func status() -> String {
         let all = sources()
         guard !all.isEmpty else { return "not registered (run `aime register`)" }
-        let enabled = all.contains { (property($0, kTISPropertyInputSourceIsEnabled) as? Bool) == true }
-        return enabled ? "registered, enabled" : "registered (enable it in System Settings › Keyboard › Input Sources)"
+        func enabled(_ id: String) -> Bool? {
+            all.first { property($0, kTISPropertyInputSourceID) as? String == id }
+                .map { (property($0, kTISPropertyInputSourceIsEnabled) as? Bool) == true }
+        }
+        guard enabled(AIMEIdentity.inputModeID) == true else {
+            return "registered (enable it in System Settings › Keyboard › Input Sources)"
+        }
+        // The mode alone reports enabled right after a first install; macOS lists and selects
+        // AIME only once its input method is enabled too, which takes a log out (#8).
+        return enabled(AIMEIdentity.bundleID) == false
+            ? "registered, pending (log out and back in once so macOS lists AIME)" : "registered, enabled"
     }
 
     @discardableResult

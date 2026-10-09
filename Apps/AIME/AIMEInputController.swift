@@ -633,7 +633,9 @@ final class AIMEInputController: IMKInputController {
             item.target = self
             return item
         }
-        menu.addItem(item(String(localized: "艾么输入法设置…"), #selector(openSettings(_:)), ","))
+        // No key equivalent: input menu shortcuts are live in every app, so ⌘, here would
+        // shadow each app's own Settings shortcut (#6).
+        menu.addItem(item(String(localized: "艾么输入法设置…"), #selector(openSettings(_:))))
         if let update = engine.pendingUpdate {
             menu.addItem(item(String(localized: "更新到 \(update.version)…"), #selector(openUpdate(_:))))
         }

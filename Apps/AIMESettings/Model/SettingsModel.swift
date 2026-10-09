@@ -71,15 +71,34 @@ final class SettingsModel {
 
     var isInstalled: Bool { Locations.inputMethodApp != nil }
 
-    /// Whether the AIME input mode is enabled in System Settings › Keyboard › Input Sources.
-    var isInputSourceEnabled: Bool {
-        _ = revision
-        let filter = [kTISPropertyInputSourceID as String: "app.zool.inputmethod.aime.hans"] as CFDictionary
-        guard let list = TISCreateInputSourceList(filter, true)?.takeRetainedValue() as? [TISInputSource],
-              let source = list.first, let raw = TISGetInputSourceProperty(source, kTISPropertyInputSourceIsEnabled)
-        else { return false }
-        return CFBooleanGetValue(Unmanaged<CFBoolean>.fromOpaque(raw).takeUnretainedValue())
+    enum InputSourceState {
+        /// Not known to Text Input Sources at all.
+        case missing
+        /// Registered but not added in System Settings › Keyboard › Input Sources.
+        case notAdded
+        /// The mode reports enabled but its input method is not: right after a first install
+        /// (or a move between /Library and ~/Library) macOS lists and selects AIME only after
+        /// the user logs out and back in (#8).
+        case needsRelogin
+        case ready
     }
+
+    var inputSourceState: InputSourceState {
+        _ = revision
+        func enabled(_ id: String) -> Bool? {
+            let filter = [kTISPropertyInputSourceID as String: id] as CFDictionary
+            guard let list = TISCreateInputSourceList(filter, true)?.takeRetainedValue() as? [TISInputSource],
+                  let source = list.first else { return nil }
+            guard let raw = TISGetInputSourceProperty(source, kTISPropertyInputSourceIsEnabled) else { return false }
+            return CFBooleanGetValue(Unmanaged<CFBoolean>.fromOpaque(raw).takeUnretainedValue())
+        }
+        guard let mode = enabled("app.zool.inputmethod.aime.hans") else { return .missing }
+        guard mode else { return .notAdded }
+        return enabled("app.zool.inputmethod.aime") == false ? .needsRelogin : .ready
+    }
+
+    /// Whether AIME can be switched to right now.
+    var isInputSourceEnabled: Bool { inputSourceState == .ready }
     var isDeployed: Bool { FileManager.default.fileExists(atPath: paths.builtConfig("default").path) }
     var enabledSchemas: [String] { _ = revision; return store.pendingSchemas() }
     var availableSchemas: [SchemaInfo] { _ = revision; return SchemaDiscovery.available(paths: paths) }

@@ -644,8 +644,8 @@ public final class CandidateView: NSView {
             cursorY += rowHeight
         }
         // The AIME button. A row: right after the last candidate (wrapped rows: the top-right
-        // corner). A vertical list never gets a second column for it: it sits at the end
-        // of the preedit row when there is one, otherwise in a slim footer, right-aligned.
+        // corner). A vertical list never gets a second column for it: it always sits in a
+        // slim footer below the list, right-aligned, whether or not a preedit row is shown.
         if state.showsMenuButton, !items.isEmpty, mode == .linear {
             let side = min(items[0].rect.height, symbolSide + 8)
             let lastEdge: Double = items.last.map { Double($0.rect.maxX) } ?? maxWidth
@@ -654,14 +654,9 @@ public final class CandidateView: NSView {
             maxWidth = menuButtonRect.maxX
         } else if state.showsMenuButton, !items.isEmpty, mode == .stacked {
             let side = symbolSide + 4
-            if preeditLine != nil {
-                maxWidth = max(maxWidth, preeditRect.maxX + 10 + side)
-                menuButtonRect = NSRect(x: maxWidth - side, y: preeditRect.midY - side / 2, width: side, height: side)
-            } else {
-                cursorY += 3
-                menuButtonRect = NSRect(x: maxWidth - side, y: cursorY, width: side, height: side)
-                cursorY += side
-            }
+            cursorY += 3
+            menuButtonRect = NSRect(x: maxWidth - side, y: cursorY, width: side, height: side)
+            cursorY += side
         }
         heroLayout?.rect.size.width = maxWidth - insetX
         if state.candidates.isEmpty, preeditLine != nil, heroLayout == nil { cursorY -= theme.lineSpacing + 2 }

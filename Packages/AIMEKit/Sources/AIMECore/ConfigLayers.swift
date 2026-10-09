@@ -259,6 +259,7 @@ public struct ConfigLayers: Sendable {
     @discardableResult
     public func prepareForDeploy(extraTargets: [ConfigTarget] = []) throws -> [String] {
         migrateStyleOverrides()
+        migrateSpellingVariants()
         // Vocabulary tables (bundled + subscribed) are regenerated only when their inputs changed.
         do {
             try SubscriptionManager(paths: paths).ensureTables()
@@ -300,6 +301,22 @@ public struct ConfigLayers: Sendable {
                 let value = patch[index].value
                 patch.remove(at: index)
                 if !patch.contains(where: { $0.key == pair.new }) { patch.append(.init(pair.new, value)) }
+            }
+        }
+    }
+
+    /// Fuzzy pinyin toggled on a double-pinyin schema by 0.1.6 and earlier sits after the
+    /// schema's xform/xlit rules and never matches (#9); move it back in front once.
+    func migrateSpellingVariants(catalog: SettingCatalog = .bundled) {
+        let keypath = "speller/algebra"
+        for target in managedTargets() {
+            guard case .schema = target, let patch = try? generatedPatch(target),
+                  let list = patch.first(where: { $0.key == keypath })?.value.listValue else { continue }
+            let fixed = SettingsStore.relocatingMisplacedVariants(list, keypath: keypath, catalog: catalog)
+            guard fixed != list else { continue }
+            try? updateGenerated(target) { patch in
+                guard let index = patch.firstIndex(where: { $0.key == keypath }) else { return }
+                patch[index] = .init(keypath, .list(fixed))
             }
         }
     }

@@ -444,6 +444,11 @@ extension PanelTests {
         #expect(withButton.height > plain.height)                // a slim footer instead
         #expect(view.menuButtonFrame.minY >= plain.height - 12)  // below the last candidate
         #expect(view.menuButtonFrame.maxX <= withButton.width)
+        // A preedit row in the panel does not pull the button up beside it.
+        view.state = PanelState(preedit: "zhi neng", candidates: candidates)
+        let withPreedit = view.fittingContentSize
+        view.state = PanelState(preedit: "zhi neng", candidates: candidates, showsMenuButton: true)
+        #expect(view.menuButtonFrame.minY >= withPreedit.height - 12)
         if let path = ProcessInfo.processInfo.environment["AIME_PANEL_SHOT"] {
             let panel = CandidatePanel()
             panel.theme = theme

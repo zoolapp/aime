@@ -1029,6 +1029,8 @@
       "keypath": "style/aime/font_point",
       "type": "double",
       "default": 16,
+      "min": 12,
+      "max": 40,
       "doc": "#style",
       "options": [
         {
@@ -1073,6 +1075,8 @@
       "keypath": "style/aime/label_font_point",
       "type": "double",
       "default": 12,
+      "min": 8,
+      "max": 32,
       "doc": "#style",
       "options": [
         {
@@ -1117,6 +1121,8 @@
       "keypath": "style/aime/comment_font_point",
       "type": "double",
       "default": 12,
+      "min": 8,
+      "max": 32,
       "doc": "#style",
       "options": [
         {

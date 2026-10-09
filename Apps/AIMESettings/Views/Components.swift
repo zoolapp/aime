@@ -192,7 +192,8 @@ struct SettingRow: View {
             let value = current?.doubleValue ?? setting.default?.doubleValue ?? 0
             if let steps = setting.options, !steps.isEmpty {
                 // A few fixed sizes (font sizes): stepped "A" control instead of a free number.
-                SizeStepControl(steps: steps.compactMap { step in step.value.doubleValue.map { ($0, step.title) } }, value: value) {
+                SizeStepControl(steps: steps.compactMap { step in step.value.doubleValue.map { ($0, step.title) } },
+                                range: setting.min.flatMap { min in setting.max.map { min...$0 } }, value: value) {
                     model.set(.double($0), for: setting)
                 }
             } else {
@@ -321,25 +322,34 @@ struct DoubleControl: View {
 }
 
 /// Five (or so) preset sizes shown as letters of growing size, with a sliding selection —
-/// like the text-size control of a reader app. Whole points only.
+/// like the text-size control of a reader app — plus a ±1 pt stepper for a custom size within
+/// `range` (#7). Whole points only.
 struct SizeStepControl: View {
     let steps: [(value: Double, title: String)]
+    /// Bounds for the custom stepper; without them only the presets are offered.
+    var range: ClosedRange<Double>? = nil
     let value: Double
     let commit: (Double) -> Void
     @Namespace private var selection
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private var selectedIndex: Int {
-        steps.indices.min { abs(steps[$0].value - value) < abs(steps[$1].value - value) } ?? 0
+    /// The preset matching the value; nil for a custom size.
+    private var selectedIndex: Int? {
+        steps.firstIndex { $0.value == value.rounded() }
     }
 
     var body: some View {
-        let selected = selectedIndex
-        let exact = steps.indices.contains(selected) && steps[selected].value == value
+        let selected = selectedIndex ?? -1
         HStack(spacing: 10) {
-            Text(exact ? "\(steps[selected].title) · \(Int(value)) pt" : "\(Int(value.rounded())) pt")
-                .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
-                .contentTransition(.numericText())
+            let points = "\(Int(value.rounded())) pt"
+            // Narrow windows drop the preset name rather than clip the label.
+            ViewThatFits(in: .horizontal) {
+                Text(selectedIndex.map { "\(steps[$0].title) · \(points)" } ?? (range == nil ? points : "自定义 · \(points)"))
+                Text(points)
+            }
+            .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+            .lineLimit(1)
+            .contentTransition(.numericText())
             HStack(spacing: 0) {
                 ForEach(steps.indices, id: \.self) { index in
                     Button {
@@ -368,6 +378,16 @@ struct SizeStepControl: View {
             .padding(2)
             .background(Theme.divider, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             .animation(reduceMotion ? nil : .snappy(duration: 0.2), value: selected)
+            if let range {
+                Stepper("", value: Binding(
+                    get: { min(max(value.rounded(), range.lowerBound), range.upperBound) },
+                    set: { commit(min(max($0, range.lowerBound), range.upperBound)) }
+                ), in: range, step: 1)
+                .labelsHidden()
+                .help("自定义字号（\(Int(range.lowerBound))–\(Int(range.upperBound)) pt）")
+                .accessibilityLabel("自定义字号")
+                .accessibilityValue("\(Int(value.rounded())) 磅")
+            }
         }
     }
 }

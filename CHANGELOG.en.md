@@ -12,6 +12,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-10-09
+
+> Stable release · Developer ID signed · notarization pending
+
+### Added
+
+- Settings › Appearance › Fonts: besides the five presets, candidate, label and comment sizes can be set in 1 pt steps with the ± control next to them. Candidates go up to 40 pt, labels and comments up to 32 pt, and changing other settings no longer resets the size.
+
+### Fixed
+
+- With AIME selected, pressing ⌘, in any app opened AIME's settings instead of that app's own. The input menu no longer takes ⌘,.
+- With double pinyin schemes such as Xiaohe, the zh/z, an/ang, en/eng and other fuzzy pinyin switches in Settings › Fuzzy pinyin & spelling had no effect. They now work; switches turned on earlier are corrected on upgrade, no need to set them again.
+- In some apps the vertical candidate list showed the AIME menu button on the input code row, above the candidates. In vertical layout it now always sits below the list.
+- Right after a first install, while macOS had not yet added AIME to the input source list, Settings and onboarding still said it was enabled. They now say to log out or restart the Mac once, and the installer's last page says so too.
+
 ## [0.1.6] - 2026-10-07
 
 > Stable release · Developer ID signed · notarized by Apple

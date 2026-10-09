@@ -69,12 +69,14 @@ struct AppearanceView: View {
                 rows(["appearance.font_face", "appearance.font_point", "appearance.label_font_face", "appearance.label_font_point",
                       "appearance.comment_font_face", "appearance.comment_font_point", "appearance.candidate_format"])
             }
+            .id("fonts")
             Section("尺寸与间距") {
                 rows(["appearance.max_width", "appearance.corner_radius", "appearance.hilited_corner_radius", "appearance.border_width",
                       "appearance.border_height", "appearance.spacing", "appearance.line_spacing", "appearance.base_offset"])
             }
         }
         .formStyle(.cards)
+        .scrollTargetForScreenshots()
     }
 
     @ViewBuilder
