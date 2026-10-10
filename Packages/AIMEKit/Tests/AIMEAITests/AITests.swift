@@ -79,6 +79,7 @@ struct PolishTests {
     @Test func featuresDecodeWithMissingKeys() throws {
         let features = try JSONDecoder().decode(AIMEFeatures.self, from: Data(#"{"usageStats":true}"#.utf8))
         #expect(features.usageStats && !features.aiPolish && !features.aiRemoteAllowed && features.aiProvider == "apple")
+        #expect(features.aiExtraJSON.isEmpty)
     }
 }
 
@@ -128,6 +129,15 @@ struct CredentialAndErrorTests {
         #expect(OpenAICompatibleProvider.explain(status: 429, body: "").contains("额度"))
         #expect(OpenAICompatibleProvider.explain(URLError(.timedOut), host: "api.example.com") == "连接 api.example.com 超时")
         #expect(AIError.http(524, OpenAICompatibleProvider.explain(status: 524, body: "")).description.hasPrefix("HTTP 524："))
+    }
+
+    @Test func extraFieldsParseOnlyJSONObjects() {
+        #expect(OpenAICompatibleProvider.extraFields(from: "").isEmpty)
+        #expect(OpenAICompatibleProvider.extraFields(from: "  ").isEmpty)
+        #expect(OpenAICompatibleProvider.extraFields(from: "not json").isEmpty)
+        #expect(OpenAICompatibleProvider.extraFields(from: "[1,2]").isEmpty)
+        let fields = OpenAICompatibleProvider.extraFields(from: #"{"enable_thinking":false,"n":1}"#)
+        #expect(fields["enable_thinking"] as? Bool == false && fields["n"] as? Int == 1)
     }
 
     @Test func missingKeyFailsBeforeAnyRequest() async {

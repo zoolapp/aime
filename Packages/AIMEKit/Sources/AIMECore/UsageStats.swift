@@ -11,6 +11,9 @@ public struct AIMEFeatures: Sendable, Codable, Equatable {
     public var aiProvider = "apple"
     public var aiBaseURL = "https://api.openai.com/v1"
     public var aiModel = "gpt-5-mini"
+    /// Extra JSON object merged into every request body (`model` and `messages`
+    /// stay under program control). Empty means no extra fields.
+    public var aiExtraJSON = ""
     /// Explicit consent to send the selected text to `aiBaseURL` when polishing.
     public var aiRemoteAllowed = false
     /// Small AIME button at the end of the candidate window (opens the quick menu).
@@ -51,6 +54,7 @@ public struct AIMEFeatures: Sendable, Codable, Equatable {
         aiProvider = try container.decodeIfPresent(String.self, forKey: .aiProvider) ?? defaults.aiProvider
         aiBaseURL = try container.decodeIfPresent(String.self, forKey: .aiBaseURL) ?? defaults.aiBaseURL
         aiModel = try container.decodeIfPresent(String.self, forKey: .aiModel) ?? defaults.aiModel
+        aiExtraJSON = try container.decodeIfPresent(String.self, forKey: .aiExtraJSON) ?? defaults.aiExtraJSON
         aiRemoteAllowed = try container.decodeIfPresent(Bool.self, forKey: .aiRemoteAllowed) ?? defaults.aiRemoteAllowed
         panelMenuButton = try container.decodeIfPresent(Bool.self, forKey: .panelMenuButton) ?? defaults.panelMenuButton
         menuHoldKey = try container.decodeIfPresent(ModifierHold.Key.self, forKey: .menuHoldKey) ?? defaults.menuHoldKey
