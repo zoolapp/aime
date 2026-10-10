@@ -14,7 +14,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [0.1.8] - 2026-10-10
 
-> Stable release · Developer ID signed · notarization pending
+> Stable release · Developer ID signed · notarized by Apple
 
 ### Added
 
