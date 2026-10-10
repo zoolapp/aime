@@ -7,13 +7,17 @@ public struct OpenAICompatibleProvider: AIProvider {
     public var displayName: String { "OpenAI 兼容接口（\(model)）" }
     public var baseURL: URL
     public var model: String
+    /// User-supplied JSON object merged into every request body (top-level keys
+    /// only; `model` and `messages` are never overridden). Invalid JSON is ignored.
+    public let extraFieldsJSON: String
     let credentials: CredentialStore
     let session: URLSession
 
     public init(baseURL: URL, model: String, keychainAccount: String = "openai-compatible",
-                credentials: CredentialStore? = nil, session: URLSession = .shared) {
+                credentials: CredentialStore? = nil, session: URLSession = .shared, extraFieldsJSON: String = "") {
         self.baseURL = baseURL
         self.model = model
+        self.extraFieldsJSON = extraFieldsJSON
         self.credentials = credentials ?? CredentialStore(account: keychainAccount)
         self.session = session
     }
@@ -53,6 +57,9 @@ public struct OpenAICompatibleProvider: AIProvider {
         request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
         var body: [String: Any] = ["model": model, "temperature": temperature, "messages": messages]
         if let maxTokens { body["max_tokens"] = maxTokens }
+        for (key, value) in Self.extraFields(from: extraFieldsJSON) where key != "model" && key != "messages" {
+            body[key] = value
+        }
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         let data: Data, response: URLResponse
         do {
@@ -70,6 +77,16 @@ public struct OpenAICompatibleProvider: AIProvider {
               let content = message["content"] as? String
         else { throw AIError.badResponse("接口返回的不是 chat/completions 格式") }
         return (content, json["model"] as? String)
+    }
+
+    /// Parses the user's extra-fields JSON. Anything that is not a JSON object
+    /// (or is invalid) contributes nothing.
+    static func extraFields(from json: String) -> [String: Any] {
+        let trimmed = json.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, let data = trimmed.data(using: .utf8),
+              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else { return [:] }
+        return object
     }
 
     /// Plain-language reason for an HTTP error, so "524" is not all the user sees.

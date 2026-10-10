@@ -62,6 +62,8 @@ struct AIAssistantView: View {
     @AppStorage("ai.provider") private var providerID = "apple"
     @AppStorage("ai.baseURL") private var baseURL = "https://api.openai.com/v1"
     @AppStorage("ai.model") private var modelName = "gpt-5-mini"
+    /// Extra JSON object merged into every chat/completions request body.
+    @AppStorage("ai.extraJSON") private var extraJSON = ""
     @State private var apiKey = ""
     @State private var availability: AIAvailability?
     /// Outcome of the last connection check (OpenAI-compatible endpoint).
@@ -101,6 +103,58 @@ struct AIAssistantView: View {
         }
     }
 
+    /// Each vendor's way of turning the model's thinking off. One click merges
+    /// the fields into the custom-JSON box; nothing else is touched.
+    struct ThinkingPreset {
+        var title: String
+        var hint: String
+        var fields: [String: Any]
+    }
+
+    static let thinkingPresets: [ThinkingPreset] = [
+        .init(title: "Claude", hint: "Claude（OpenRouter）", fields: ["reasoning": ["effort": "none"]]),
+        .init(title: "DeepSeek", hint: "DeepSeek / Qwen", fields: ["enable_thinking": false]),
+        .init(title: "Gemini", hint: "Gemini", fields: ["reasoning_effort": "none"]),
+        .init(title: "GLM", hint: "智谱 GLM", fields: ["thinking": ["type": "disabled"]]),
+        .init(title: "Kimi", hint: "Kimi / Moonshot", fields: ["enable_thinking": false]),
+        .init(title: "OpenAI", hint: "OpenAI", fields: ["reasoning_effort": "minimal"]),
+        .init(title: "Qwen", hint: "通义 Qwen", fields: ["enable_thinking": false]),
+    ]
+
+    /// Parses the box as a JSON object. nil = empty or not a valid JSON object.
+    private var extraJSONObject: [String: Any]? {
+        let trimmed = extraJSON.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, let data = trimmed.data(using: .utf8) else { return nil }
+        return try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+    }
+
+    /// Live verdict under the box: field count when valid, a hint when not.
+    @ViewBuilder private var extraJSONStatus: some View {
+        let trimmed = extraJSON.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            EmptyView()
+        } else if let object = extraJSONObject {
+            Label("JSON 有效，将合并 \(object.count) 个字段", systemImage: "checkmark.circle.fill")
+                .foregroundStyle(Theme.success)
+        } else {
+            Label("JSON 格式不正确，不会被发送", systemImage: "exclamationmark.triangle.fill")
+                .foregroundStyle(Theme.warning)
+        }
+    }
+
+    /// Merges a preset's fields into the box. Merges into the existing object
+    /// when it parses; non-empty invalid JSON is left alone so the user does
+    /// not lose a half-written object.
+    private func mergeFields(_ fields: [String: Any]) {
+        let trimmed = extraJSON.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty, extraJSONObject == nil { return }
+        var object = extraJSONObject ?? [:]
+        for (key, value) in fields { object[key] = value }
+        guard let data = try? JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys]),
+              let text = String(data: data, encoding: .utf8) else { return }
+        extraJSON = text
+    }
+
     private func saveKeyAndVerify() {
         let key = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !key.isEmpty else { return }
@@ -120,7 +174,7 @@ struct AIAssistantView: View {
         }
         check = .running
         do {
-            check = .passed(try await OpenAICompatibleProvider(baseURL: url, model: modelName).verify())
+            check = .passed(try await OpenAICompatibleProvider(baseURL: url, model: modelName, extraFieldsJSON: extraJSON).verify())
         } catch let error as AIError {
             check = .failed(error.description)
         } catch {
@@ -130,7 +184,7 @@ struct AIAssistantView: View {
 
     private var provider: any AIProvider {
         if providerID == "openai", let url = URL(string: baseURL) {
-            return OpenAICompatibleProvider(baseURL: url, model: modelName)
+            return OpenAICompatibleProvider(baseURL: url, model: modelName, extraFieldsJSON: extraJSON)
         }
         return FoundationModelsProvider()
     }
@@ -169,6 +223,28 @@ struct AIAssistantView: View {
                         Button("保存并验证", action: saveKeyAndVerify)
                             .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     }
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("自定义请求体")
+                        TextField("{\"enable_thinking\": false}", text: $extraJSON, axis: .vertical)
+                            .font(.caption.monospaced())
+                            .textFieldStyle(.roundedBorder)
+                            .lineLimit(3...7)
+                        HStack(spacing: 6) {
+                            Text("关闭思考：").foregroundStyle(.secondary)
+                            ForEach(Self.thinkingPresets, id: \.title) { preset in
+                                Button(preset.title) { mergeFields(preset.fields) }
+                                    .controlSize(.small)
+                                    .help(preset.hint)
+                            }
+                            Spacer()
+                        }
+                        .font(.caption)
+                        HStack(spacing: 6) {
+                            extraJSONStatus
+                            Text("顶层字段合并进每次请求的 body；model 与 messages 由程序控制，不会被覆盖。")
+                        }
+                        .font(.caption)
+                    }
                 }
                 LabeledContent("状态") {
                     if providerID == "openai" {
@@ -188,13 +264,14 @@ struct AIAssistantView: View {
             }
             .task(id: providerID) { availability = await provider.availability() }
             // Address or model changed: the previous check no longer says anything.
-            .onChange(of: [baseURL, modelName]) { check = .idle }
-            .onChange(of: [providerID, baseURL, modelName], initial: true) {
+            .onChange(of: [baseURL, modelName, extraJSON]) { check = .idle }
+            .onChange(of: [providerID, baseURL, modelName, extraJSON], initial: true) {
                 // The input method reads the provider from aime/features.json.
                 model.updateFeatures {
                     $0.aiProvider = providerID
                     $0.aiBaseURL = baseURL
                     $0.aiModel = modelName
+                    $0.aiExtraJSON = extraJSON
                 }
             }
 

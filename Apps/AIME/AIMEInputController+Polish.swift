@@ -114,7 +114,7 @@ extension AIMEInputController {
             guard features.aiRemoteAllowed, let url = URL(string: features.aiBaseURL) else {
                 return engine.showStatus("未允许把文字发送到自备接口：设置 › AI 助手")
             }
-            provider = OpenAICompatibleProvider(baseURL: url, model: features.aiModel)
+            provider = OpenAICompatibleProvider(baseURL: url, model: features.aiModel, extraFieldsJSON: features.aiExtraJSON)
         } else {
             provider = FoundationModelsProvider()
         }
