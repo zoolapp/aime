@@ -11,6 +11,16 @@ struct UsageStatsTests {
             .appendingPathComponent("aime-stats-\(UUID().uuidString)"))
     }
 
+    /// Older features.json files lack the punctuation default; it starts Chinese (#10).
+    @Test func punctuationDefaultDecodesAndDefaultsToChinese() throws {
+        let decoder = JSONDecoder()
+        #expect(try decoder.decode(AIMEFeatures.self, from: Data(#"{"usageStats":true}"#.utf8)).asciiPunct == false)
+        #expect(try decoder.decode(AIMEFeatures.self, from: Data(#"{"asciiPunct":true}"#.utf8)).asciiPunct == true)
+        var features = AIMEFeatures()
+        features.asciiPunct = true
+        #expect(try decoder.decode(AIMEFeatures.self, from: JSONEncoder().encode(features)).asciiPunct == true)
+    }
+
     @Test func countsOnlyShortChineseWords() {
         #expect(UsageStatsStore.isCountable("智能体"))
         #expect(!UsageStatsStore.isCountable("我"))

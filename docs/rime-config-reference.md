@@ -364,7 +364,7 @@ key_binder:
 - **when 条件**：`composing`（有输入码）、`has_menu`（有候选）、`paging`（翻过多页）、`always`（任意时刻）。
 - **动作**：`accept: 按键名`（捕获的键）、`send: 按键名`（改发其它键）、`toggle: 开关名`（切换 switches 中的开关）、`select: 方案ID或.next`（切换输入方案）。
 - **editor/bindings**（schema 内）：编辑键，如 `space: confirm`、`Return: commit_raw_input`、`Control+BackSpace: back_syllable`、`Escape: cancel`。
-- **以词定字**：`key_binder/select_first_character: bracketleft`、`select_last_character: grave`（本机 custom 把尾字键从 `]` 改成了 `` ` ``），由 lua_processor@select_character 消费。
+- **以词定字**：`key_binder/select_first_character: bracketleft`、`select_last_character: bracketright`，由 lua_processor@select_character 消费；它排在 key_binder 之前，所以与「用 [ ] 翻页」只能二选一：设置页里后改的一项生效，另一项自动让位（清空以词定字键或关闭 [ ] 翻页）。快捷键可清除为空字符串。
 - 出厂预设集中在 `key_bindings.yaml`：emacs_editing、paging_with_minus_equal、paging_with_comma_period、paging_with_brackets、numbered_mode_switch、windows_compatible_mode_switch 等，用 `bindings/__patch: key_bindings:/xxx` 引入。
 
 AIME 可视化：已收录（翻页方式、以词定字、开关切换热键）。

@@ -73,6 +73,12 @@ struct RimeKitTests {
         #expect(RimeKey.translate(keyCode: slash, charactersIgnoringModifiers: "/", characters: "/", flags: 0)?.keysym == Int32(UInt8(ascii: "/")))
         #expect(RimeKey.translate(keyCode: slash, charactersIgnoringModifiers: "/", characters: "\u{1f}", flags: shift | control)?.keysym == Int32(UInt8(ascii: "/")))
         #expect(RimeKey.translate(keyCode: 0x00, charactersIgnoringModifiers: "a", characters: "A", flags: shift)?.keysym == Int32(UInt8(ascii: "A")))
+        // Real NSEvent values for ⌃⇧3 / ⌃⇧4 / ⌃⇧/: Shift stays applied in
+        // charactersIgnoringModifiers, `characters` holds the unshifted key (#10).
+        #expect(RimeKey.translate(keyCode: 0x14, charactersIgnoringModifiers: "#", characters: "3", flags: shift | control)?.keysym == Int32(UInt8(ascii: "3")))
+        #expect(RimeKey.translate(keyCode: 0x15, charactersIgnoringModifiers: "$", characters: "4", flags: shift | control)?.keysym == Int32(UInt8(ascii: "4")))
+        #expect(RimeKey.translate(keyCode: slash, charactersIgnoringModifiers: "?", characters: "/", flags: shift | control)?.keysym == Int32(UInt8(ascii: "/")))
+        #expect(RimeKey.translate(keyCode: 0x14, charactersIgnoringModifiers: "#", characters: "3", flags: shift | control)?.mask == RimeKey.shiftMask | RimeKey.controlMask)
     }
 
     @Test func selectsByLabelAndPages() throws {
@@ -115,6 +121,31 @@ struct RimeKitTests {
         session.processKey(RimeKey.shiftL)
         session.processKey(RimeKey.shiftL, modifiers: RimeKey.shiftMask | RimeKey.releaseMask)
         #expect(session.option("ascii_mode"))
+    }
+
+    /// Caps Lock goes to English and back, like Squirrel (#11). The frontend sees the
+    /// lock state after the toggle and must hand librime the state before it.
+    @Test func capsLockTogglesAsciiModeBothWays() throws {
+        let capsOn: UInt = 1 << 16
+        #expect(RimeKey.capsLockMask(fromCocoaFlags: capsOn) == 0)
+        #expect(RimeKey.capsLockMask(fromCocoaFlags: 0) == RimeKey.lockMask)
+        #expect(RimeKey.capsLockMask(fromCocoaFlags: capsOn | 1 << 17) == RimeKey.shiftMask)
+
+        let session = try RimeEngine.shared.createSession()
+        session.setOption("ascii_mode", false)
+        func pressCapsLock(flagsAfterToggle flags: UInt) {
+            let mask = RimeKey.capsLockMask(fromCocoaFlags: flags)
+            session.processKey(RimeKey.capsLock, modifiers: mask)
+            session.processKey(RimeKey.capsLock, modifiers: mask | RimeKey.releaseMask)
+        }
+        pressCapsLock(flagsAfterToggle: capsOn)
+        #expect(session.option("ascii_mode"))
+        pressCapsLock(flagsAfterToggle: 0)
+        #expect(!session.option("ascii_mode"))
+        pressCapsLock(flagsAfterToggle: capsOn)
+        #expect(session.option("ascii_mode"))
+        pressCapsLock(flagsAfterToggle: 0)
+        #expect(!session.option("ascii_mode"))
     }
 
     @Test func readsMergedConfig() throws {

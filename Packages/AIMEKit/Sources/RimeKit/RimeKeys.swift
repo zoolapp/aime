@@ -134,6 +134,13 @@ public enum RimeKey {
         return mask
     }
 
+    /// Mask for a Caps Lock key event. NSFlagsChanged already carries the new lock
+    /// state, but librime's ascii_composer decides the direction from the state before
+    /// the toggle, so the lock bit is flipped back.
+    public static func capsLockMask(fromCocoaFlags flags: UInt) -> Int32 {
+        mask(fromCocoaFlags: flags) ^ lockMask
+    }
+
     /// Full translation of a key-down event.
     ///
     /// - Parameters:
@@ -149,12 +156,15 @@ public enum RimeKey {
         }
         guard var scalar = charactersIgnoringModifiers?.unicodeScalars.first else { return nil }
         // X11 convention: the keysym is the symbol actually typed, Shift stays in the mask
-        // (Shift+/ is "question", not "slash"). `charactersIgnoringModifiers` does not
-        // apply Shift to symbol keys, so with Shift alone take the layout's output.
-        // Ctrl / Option / ⌘ combinations keep the unmodified key for bindings.
-        if mask & (controlMask | altMask | superMask) == 0, mask & shiftMask != 0,
+        // (Shift+/ is "question", not "slash"); with Shift alone take the layout's output.
+        // Ctrl / Option / ⌘ combinations keep the unshifted key for bindings such as
+        // Control+Shift+3. `charactersIgnoringModifiers` still applies Shift ("#" for
+        // ⌃⇧3), while `characters` drops it under Control ("3"), so prefer that when it
+        // is a printable symbol (#10).
+        let isLetterKey = ("a"..."z").contains(scalar) || ("A"..."Z").contains(scalar)
+        if mask & shiftMask != 0, !isLetterKey,
            let typed = characters?.unicodeScalars.first, (0x21...0x7e).contains(typed.value),
-           !(("a"..."z").contains(scalar) || ("A"..."Z").contains(scalar)) {
+           !(("a"..."z").contains(typed) || ("A"..."Z").contains(typed)) {
             scalar = typed
         }
         var effective = scalar

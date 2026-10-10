@@ -20,6 +20,10 @@ final class InputEngine {
     let usage = UsageRecorder()
     /// aime/features.json, reloaded when Settings posts `AIMEFeatures.changedNotification`.
     private(set) var features = AIMEFeatures()
+    /// Chinese/English punctuation shared by all apps, following ⌃⇧3 wherever it is
+    /// pressed. Nil until the first session: it then starts from librime's remembered
+    /// state when `switcher/save_options` lists ascii_punct, else from the setting.
+    var asciiPunct: Bool?
     let logger = Logger(subsystem: "app.zool.aime", category: "engine")
     private(set) var paths: AIMEPaths
     private(set) var frontend: ConfigValue = .map([])
@@ -140,9 +144,13 @@ final class InputEngine {
     }
 
     private func reloadFeatures() {
-        let wasTraditional = features.traditional
+        let wasTraditional = features.traditional, wasAsciiPunct = features.asciiPunct
         features = AIMEFeatures.load(paths)
         if features.traditional != wasTraditional { activeController?.applyScriptOption() }
+        if features.asciiPunct != wasAsciiPunct, asciiPunct != nil {
+            asciiPunct = features.asciiPunct
+            activeController?.applyPunctOption()
+        }
         usage.isEnabled = features.usageStats
         if !features.aiPolish { activeController?.cancelPolish() }
     }
@@ -484,6 +492,8 @@ final class InputEngine {
     struct AppOptions {
         /// Configured initial state: true = English, false = Chinese, nil = shared state.
         var asciiMode: Bool?
+        /// Punctuation pinned for this app: true = English, nil = the shared state.
+        var asciiPunct: Bool?
         var inline: Bool?
         var vimMode = false
     }
@@ -492,6 +502,7 @@ final class InputEngine {
         guard let bundleID, let options = frontend["app_options"]?[bundleID] else { return AppOptions() }
         var result = AppOptions()
         result.asciiMode = options["ascii_mode"]?.boolValue
+        result.asciiPunct = options["ascii_punct"]?.boolValue
         if options["no_inline"]?.boolValue == true { result.inline = false }
         if options["inline"]?.boolValue == true { result.inline = true }
         result.vimMode = options["vim_mode"]?.boolValue ?? false

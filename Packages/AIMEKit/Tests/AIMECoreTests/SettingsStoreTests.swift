@@ -32,6 +32,48 @@ struct SettingsStoreTests {
         catalog = try JSONDecoder().decode(SettingCatalog.self, from: Data(json.utf8))
     }
 
+    /// 以词定字 and [ ] paging both want the brackets; the one changed last wins (#13).
+    @Test func bracketPagingAndSelectCharacterKeysYieldToEachOther() throws {
+        let catalog = SettingCatalog.bundled
+        let store = SettingsStore(paths: paths, catalog: catalog)
+        let first = catalog.setting("key_binder.select_first_character")!
+        let last = catalog.setting("key_binder.select_last_character")!
+        let paging = catalog.setting("keys.paging_brackets")!
+        #expect(store.value(for: first) == "bracketleft")
+        #expect(store.value(for: paging) == false)
+
+        // Keys can be cleared outright, and the empty key reaches the built YAML.
+        try store.set("", for: last)
+        #expect(store.value(for: last) == "")
+        try store.reset(last)
+        #expect(store.value(for: last) == "bracketright")
+
+        try store.set(true, for: paging)
+        #expect(store.value(for: paging) == true)
+        #expect(store.value(for: first) == "")
+        #expect(store.value(for: last) == "")
+
+        // A non-bracket key coexists with bracket paging.
+        try store.set("grave", for: last)
+        #expect(store.value(for: paging) == true)
+
+        // Recording a bracket again turns bracket paging off; so does a reset to [.
+        try store.set("bracketleft", for: first)
+        #expect(store.value(for: paging) == false)
+        try store.set(true, for: paging)
+        #expect(store.value(for: first) == "")
+        // After a deploy build/ holds the cleared key; a reset must still restore [.
+        try """
+        key_binder:
+          select_first_character: ""
+          select_last_character: grave
+        """.write(to: paths.builtConfig("default"), atomically: true, encoding: .utf8)
+        try store.reset(first)
+        #expect(!store.isCustomized(first))
+        #expect(store.value(for: paging) == false)
+        #expect(store.value(for: last) == "grave")
+    }
+
     @Test func readsDeployedValuesAndSchemas() throws {
         let store = SettingsStore(paths: paths, catalog: catalog)
         #expect(store.enabledSchemas() == ["rime_ice"])

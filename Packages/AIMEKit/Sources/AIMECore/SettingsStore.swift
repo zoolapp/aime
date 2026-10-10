@@ -112,10 +112,33 @@ public struct SettingsStore: Sendable {
             }
             entries = relocatingMisplacedVariants(entries, keypath: setting.keypath)
             try layers.setGenerated(target, keypath: setting.keypath, value: .list(entries))
+            try yieldBracketKeys(to: setting, value: value, schemaID: schemaID)
             return
         }
         guard let keypath = resolve(setting.keypath, target: target) else { throw WriteError.unknownTarget(setting.id) }
         try layers.setGenerated(target, keypath: keypath, value: value)
+        try yieldBracketKeys(to: setting, value: value, schemaID: schemaID)
+    }
+
+    static let bracketPaging = "keys.paging_brackets"
+    static let selectCharacterKeys = ["key_binder.select_first_character", "key_binder.select_last_character"]
+    static let bracketKeys: Set<String> = ["bracketleft", "bracketright"]
+
+    /// select_character.lua runs before key_binder, so while 以词定字 uses [ or ] those
+    /// keys never page (#13). The setting changed last wins: turning on [ ] paging clears
+    /// 以词定字 keys still on a bracket, and recording a bracket for 以词定字 turns paging off.
+    private func yieldBracketKeys(to setting: SettingCatalog.Setting, value: ConfigValue, schemaID: String?) throws {
+        if setting.id == Self.bracketPaging, value.boolValue == true {
+            for id in Self.selectCharacterKeys {
+                guard let key = catalog.setting(id),
+                      let current = self.value(for: key, schemaID: schemaID)?.stringValue,
+                      Self.bracketKeys.contains(current) else { continue }
+                try set(.string(""), for: key, schemaID: schemaID)
+            }
+        } else if Self.selectCharacterKeys.contains(setting.id), let key = value.stringValue, Self.bracketKeys.contains(key),
+                  let paging = catalog.setting(Self.bracketPaging), self.value(for: paging, schemaID: schemaID)?.boolValue == true {
+            try set(.bool(false), for: paging, schemaID: schemaID)
+        }
     }
 
     private static func hasPrefix(_ entry: ConfigValue, _ prefixes: [String]) -> Bool {
@@ -160,6 +183,13 @@ public struct SettingsStore: Sendable {
         guard let target = setting.target(schemaID: schemaID ?? primarySchema()) else { return }
         guard let keypath = resolve(setting.keypath, target: target) else { return }
         try layers.setGenerated(target, keypath: keypath, value: nil)
+        if Self.selectCharacterKeys.contains(setting.id) {
+            // build/ still holds the value from before the reset until the next deploy.
+            let below = ConfigLayers.compose([try layers.defaultsPatch(target), try layers.importedPatch(target)])
+            let restored = below.last { $0.key == keypath }?.value
+                ?? ConfigValue.map(below).value(at: keypath) ?? setting.default
+            if let restored { try yieldBracketKeys(to: setting, value: restored, schemaID: schemaID) }
+        }
     }
 
     /// Whether the generated layer overrides this setting.

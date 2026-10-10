@@ -12,6 +12,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.1.8] - 2026-10-10
+
+> Stable release · Developer ID signed · notarization pending
+
+### Added
+
+- Settings › Typing › Punctuation: choose Chinese or English punctuation as the default while typing Chinese. Switching with ⌃⇧3 now applies to every app instead of only the current one.
+- Settings › Shortcuts › hold-to-open key: Option, Control and Command can each be limited to the left or right key only (e.g. right ⌥), leaving the other side for normal use; pick “either side” to keep the old behavior.
+
+### Fixed
+
+- ⌃⇧3 (Chinese/English punctuation) and ⌃⇧4 (Simplified/Traditional) did nothing while typing. Both work now, and other Control+Shift combinations such as Control+Shift+/ match the key names used in settings.
+- After Caps Lock switched to English, pressing it again did not switch back to Chinese; only Shift did. Caps Lock now toggles both ways, like Squirrel.
+- The 以词定字 (pick a character from a word) shortcuts in Settings › Shortcuts could not be cleared and kept [ ] busy, so [ ] paging did nothing. The shortcuts now have a clear button; turning on [ ] paging clears 以词定字 keys still on [ or ], and setting 以词定字 to [ or ] turns [ ] paging off.
+
 ## [0.1.7] - 2026-10-09
 
 > Stable release · Developer ID signed · notarized by Apple

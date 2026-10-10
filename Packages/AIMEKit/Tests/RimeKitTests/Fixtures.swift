@@ -11,9 +11,11 @@ enum Fixtures {
     menu:
       page_size: 5
     ascii_composer:
+      good_old_caps_lock: true
       switch_key:
         Shift_L: commit_code
         Shift_R: commit_code
+        Caps_Lock: clear
     """
 
     static let schemaYAML = """

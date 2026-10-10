@@ -53,7 +53,10 @@ struct CatalogPane: View {
                     Label("作用于主方案「\(schema)」", systemImage: "info.circle").foregroundStyle(.secondary).font(.callout)
                 }
             }
-            if pane == .general { ScriptSection() }
+            if pane == .general {
+                ScriptSection()
+                PunctuationSection()
+            }
             if pane == .keys {
                 QuickMenuShortcutsSection()
                 Section("方案选单") {
@@ -87,9 +90,15 @@ private struct QuickMenuShortcutsSection: View {
                     get: { model.features.menuHoldKey },
                     set: { key in model.updateFeatures { $0.menuHoldKey = key } }
                 )) {
-                    Text("⌥ Option").tag(ModifierHold.Key.option)
-                    Text("⌃ Control").tag(ModifierHold.Key.control)
-                    Text("⌘ Command").tag(ModifierHold.Key.command)
+                    Text("⌥ Option（左右均可）").tag(ModifierHold.Key.option)
+                    Text("左 ⌥ Option").tag(ModifierHold.Key.optionLeft)
+                    Text("右 ⌥ Option").tag(ModifierHold.Key.optionRight)
+                    Text("⌃ Control（左右均可）").tag(ModifierHold.Key.control)
+                    Text("左 ⌃ Control").tag(ModifierHold.Key.controlLeft)
+                    Text("右 ⌃ Control").tag(ModifierHold.Key.controlRight)
+                    Text("⌘ Command（左右均可）").tag(ModifierHold.Key.command)
+                    Text("左 ⌘ Command").tag(ModifierHold.Key.commandLeft)
+                    Text("右 ⌘ Command").tag(ModifierHold.Key.commandRight)
                     Text("关闭").tag(ModifierHold.Key.off)
                 }
                 .labelsHidden()
@@ -107,6 +116,34 @@ private struct QuickMenuShortcutsSection: View {
             Text("快捷菜单")
         } footer: {
             Text("关闭长按后仍可用 ⌃⌥M 打开。方案选单是切换输入方案和开关的菜单，触发键在下方单独设置。")
+        }
+    }
+}
+
+/// Chinese / English punctuation, shared by all apps (#10).
+private struct PunctuationSection: View {
+    @Environment(SettingsModel.self) private var model
+
+    var body: some View {
+        Section {
+            LabeledContent {
+                Picker("", selection: Binding(get: { model.features.asciiPunct }, set: { value in model.updateFeatures { $0.asciiPunct = value } })) {
+                    Text("中文标点").tag(false)
+                    Text("英文标点").tag(true)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .fixedSize()
+                .padding(.trailing, 28) // lines up with catalog rows (their reset-button slot)
+            } label: {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("中文输入时的标点")
+                    Text("所有 App 共用：打字时按 ⌃⇧3 切换，其他 App 也跟着变。输入法启动时用这里的选择；「记忆的开关」里勾选了英文标点时，沿用上次的状态。")
+                        .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        } header: {
+            Text("标点")
         }
     }
 }
@@ -204,7 +241,24 @@ struct SettingRow: View {
         case .color: colorControl(current)
         case .stringList: listControl(current)
         case .hotkey:
-            KeyRecorder(value: current?.stringValue ?? "") { model.set(.string($0), for: setting) }
+            let key = current?.stringValue ?? ""
+            HStack(spacing: 4) {
+                KeyRecorder(value: key) { model.set(.string($0), for: setting) }
+                // Fixed slot so recorders line up whether or not the key is set.
+                ZStack {
+                    if !key.isEmpty {
+                        Button {
+                            model.set(.string(""), for: setting)
+                        } label: {
+                            Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.borderless)
+                        .help("清除快捷键")
+                        .accessibilityLabel("清除快捷键")
+                    }
+                }
+                .frame(width: 18)
+            }
         case .hotkeyList:
             HotkeyListControl(values: (current?.listValue ?? []).compactMap(\.stringValue)) {
                 model.set(.list($0.map(ConfigValue.string)), for: setting)
