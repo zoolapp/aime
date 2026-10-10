@@ -87,9 +87,15 @@ private struct QuickMenuShortcutsSection: View {
                     get: { model.features.menuHoldKey },
                     set: { key in model.updateFeatures { $0.menuHoldKey = key } }
                 )) {
-                    Text("⌥ Option").tag(ModifierHold.Key.option)
-                    Text("⌃ Control").tag(ModifierHold.Key.control)
-                    Text("⌘ Command").tag(ModifierHold.Key.command)
+                    Text("⌥ Option（左右均可）").tag(ModifierHold.Key.option)
+                    Text("左 ⌥ Option").tag(ModifierHold.Key.optionLeft)
+                    Text("右 ⌥ Option").tag(ModifierHold.Key.optionRight)
+                    Text("⌃ Control（左右均可）").tag(ModifierHold.Key.control)
+                    Text("左 ⌃ Control").tag(ModifierHold.Key.controlLeft)
+                    Text("右 ⌃ Control").tag(ModifierHold.Key.controlRight)
+                    Text("⌘ Command（左右均可）").tag(ModifierHold.Key.command)
+                    Text("左 ⌘ Command").tag(ModifierHold.Key.commandLeft)
+                    Text("右 ⌘ Command").tag(ModifierHold.Key.commandRight)
                     Text("关闭").tag(ModifierHold.Key.off)
                 }
                 .labelsHidden()

@@ -13,6 +13,8 @@ final class AIMEInputController: IMKInputController {
     private(set) var session: RimeSession?
     private var sessionGeneration = -1
     private var lastModifiers: NSEvent.ModifierFlags = []
+    /// Unmasked flags of the last modifier event: device bits tell ⌥ left from right.
+    private var lastDeviceFlags: UInt = 0
     private var appOptions = InputEngine.AppOptions()
     private var bundleID: String?
     private var hasMarkedText = false
@@ -113,7 +115,10 @@ final class AIMEInputController: IMKInputController {
         engine.refreshTheme()
         bundleID = client?.bundleIdentifier()
         appOptions = engine.appOptions(for: bundleID)
-        lastModifiers = NSEvent.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        // One snapshot for both views so a flag flip between reads can't desync them.
+        let currentFlags = NSEvent.modifierFlags
+        lastModifiers = currentFlags.intersection(.deviceIndependentFlagsMask)
+        lastDeviceFlags = currentFlags.rawValue
         // Nothing here may call back into the client: it is blocked until activateServer
         // returns. A reused session may be stale if another window of the same app
         // switched Chinese/English meanwhile, so re-apply the remembered state.
@@ -129,6 +134,7 @@ final class AIMEInputController: IMKInputController {
             this.liveSession?.cancelModifierTap()
             this.recentText.reset()
             this.lastModifiers = []
+            this.lastDeviceFlags = 0
             this.closeMenu()
             this.cancelPolish()
             this.commitPending(client)
@@ -282,24 +288,36 @@ final class AIMEInputController: IMKInputController {
 
         case .flagsChanged:
             engine.lastUserKeyAt = Date()
+            // Two views of the same event: the raw value keeps device-dependent bits
+            // (left vs right ⌥/⌃/⌘) for the menu-hold state machine; librime only
+            // understands the device-independent mask, which merges the sides.
+            let deviceFlags = event.modifierFlags.rawValue
             let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
             // Modifier transitions only (never character keys): safe to log for diagnosis.
             engine.logger.debug("flagsChanged keyCode=\(event.keyCode, privacy: .public) flags=\(flags.rawValue, privacy: .public) last=\(self.lastModifiers.rawValue, privacy: .public)")
-            defer { lastModifiers = flags }
+            defer { lastModifiers = flags; lastDeviceFlags = deviceFlags }
             DebugLog.write("flagsChanged keyCode=\(event.keyCode) flags=\(flags.rawValue) last=\(lastModifiers.rawValue) ascii=\(session.option("ascii_mode"))")
             // Mac Catalyst apps (Messages) deliver every modifier event twice. A repeat
             // has the same flags as the last one and would read as "released", toggling
             // Chinese/English the moment Shift goes down.
-            guard flags != lastModifiers else { return false }
+            guard deviceFlags != lastDeviceFlags else { return false }
             // Hold-to-open for the quick menu. The release after a fired hold is kept from
             // librime, where a lone modifier tap can switch Chinese/English.
             menuHold.key = engine.features.menuHoldKey
-            if menuHold.consumeRelease(flags.rawValue) { return true }
-            if let token = menuHold.modifiersChanged(flags.rawValue) {
+            if menuHold.consumeRelease(deviceFlags) {
+                // The release we just swallowed was part of the hold; clear librime's
+                // tap latch so a surviving opposite-side key can't end the sequence
+                // with a lone release that ascii_composer reads as a 中/英 toggle tap.
+                session.cancelModifierTap()
+                return true
+            }
+            if let token = menuHold.modifiersChanged(deviceFlags) {
                 scheduleMenuHold(token: token)
             } else if !menuHold.isArmed {
                 engine.panel.hideHoldCue(animated: true) // let go early, or another modifier joined
             }
+            // Side-only changes (left ⌥ held, right ⌥ joins) carry no keysym for librime.
+            guard flags != lastModifiers else { return false }
             guard let keysym = RimeKey.keysym(forVirtualKey: event.keyCode) else { return false }
             if keysym == RimeKey.capsLock {
                 // Caps Lock toggles on a single event; report press + release.
@@ -337,8 +355,14 @@ final class AIMEInputController: IMKInputController {
     private var draftHint: PanelState {
         let hold: String = switch engine.features.menuHoldKey {
         case .option: "长按 ⌥ 动作"
+        case .optionLeft: "长按左⌥ 动作"
+        case .optionRight: "长按右⌥ 动作"
         case .control: "长按 ⌃ 动作"
+        case .controlLeft: "长按左⌃ 动作"
+        case .controlRight: "长按右⌃ 动作"
         case .command: "长按 ⌘ 动作"
+        case .commandLeft: "长按左⌘ 动作"
+        case .commandRight: "长按右⌘ 动作"
         case .off: "⌃⌥M 动作"
         }
         var state = PanelState(status: "↩ 上屏   \(hold)")

@@ -12,6 +12,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added
+
+- Settings › Shortcuts › hold-to-open key: Option, Control and Command can each be limited to the left or right key only (e.g. right ⌥), leaving the other side for normal use; pick “either side” to keep the old behavior.
+
 ## [0.1.7] - 2026-10-09
 
 > Stable release · Developer ID signed · notarized by Apple
