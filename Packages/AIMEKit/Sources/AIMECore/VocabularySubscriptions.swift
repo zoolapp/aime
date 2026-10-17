@@ -16,29 +16,77 @@ public struct VocabularyEntry: Sendable, Hashable {
 
 public enum VocabularyParser {
     /// Parses a Rime `dict.yaml`, a `text<TAB>code[<TAB>weight]` table, or a plain word
-    /// list (pinyin computed locally). Comment and header lines are skipped.
+    /// list (pinyin computed locally). Declared dictionary columns override the TSV order;
+    /// malformed headers return no entries rather than guessing column roles.
     public static func parse(_ content: String) -> [VocabularyEntry] {
-        var lines = content.components(separatedBy: .newlines)
-        if let end = lines.firstIndex(where: { $0.trimmingCharacters(in: .whitespaces) == "..." }),
-           lines.prefix(end).contains(where: { $0.hasPrefix("name:") || $0 == "---" }) {
-            lines = Array(lines[(end + 1)...])
-        }
-        var seen = Set<String>()
+        let content = content.hasPrefix("\u{feff}") ? String(content.dropFirst()) : content
+        guard let (lines, declaredColumns) = splitHeader(content.components(separatedBy: .newlines)) else { return [] }
+        let textIndex = declaredColumns?.firstIndex(of: "text") ?? 0
+        let codeIndex = declaredColumns == nil ? 1 : declaredColumns?.firstIndex(of: "code")
+        let weightIndex = declaredColumns?.firstIndex(of: "weight")
+        var seen: [String: Int] = [:]
         var entries: [VocabularyEntry] = []
         for raw in lines {
             let line = raw.trimmingCharacters(in: .whitespaces)
             if line.isEmpty || line.hasPrefix("#") { continue }
-            let columns = line.components(separatedBy: "\t")
-            let text = columns[0].trimmingCharacters(in: .whitespaces)
+            // Split before trimming so empty fields do not shift the following columns.
+            let columns = raw.components(separatedBy: "\t").map { $0.trimmingCharacters(in: .whitespaces) }
+            func field(_ index: Int?) -> String {
+                guard let index, columns.indices.contains(index) else { return "" }
+                return columns[index]
+            }
+            let text = field(textIndex)
             guard !text.isEmpty, text.count <= 32 else { continue }
-            var code = columns.count > 1 ? columns[1].trimmingCharacters(in: .whitespaces) : ""
-            // `text code weight`, or `text code tag weight` (aime_tech): first numeric column.
-            let weight = columns.dropFirst(2).lazy.compactMap { Int($0.trimmingCharacters(in: .whitespaces)) }.first ?? 50
-            if code.isEmpty || Int(code) != nil { code = pinyin(for: text) ?? "" }
-            guard !code.isEmpty, seen.insert("\(text)\t\(code)").inserted else { continue }
-            entries.append(VocabularyEntry(text: text, pinyin: code.lowercased(), weight: weight))
+            var code = field(codeIndex)
+            // Undeclared tables accept `text weight`, `text code weight` and `text code tag weight` (aime_tech).
+            let weight = if declaredColumns != nil {
+                Int(field(weightIndex)) ?? 50
+            } else if columns.count == 2 {
+                Int(code) ?? 50
+            } else {
+                columns.dropFirst(2).lazy.compactMap { Int($0) }.first ?? 50
+            }
+            if code.isEmpty || (declaredColumns == nil && Int(code) != nil) { code = pinyin(for: text) ?? "" }
+            code = code.split(whereSeparator: \.isWhitespace).joined(separator: " ").lowercased()
+            guard !code.isEmpty else { continue }
+            let key = "\(text)\t\(code)"
+            if let index = seen[key] {
+                entries[index].weight = max(entries[index].weight, weight)
+            } else {
+                seen[key] = entries.count
+                entries.append(VocabularyEntry(text: text, pinyin: code, weight: weight))
+            }
         }
         return entries
+    }
+
+    private static func splitHeader(_ lines: [String]) -> (ArraySlice<String>, [String]?)? {
+        guard let end = lines.firstIndex(where: { $0.trimmingCharacters(in: .whitespaces) == "..." }),
+              lines.prefix(end).contains(where: { $0.hasPrefix("name:") || $0 == "---" }) else {
+            let first = lines.lazy.map { $0.trimmingCharacters(in: .whitespaces) }
+                .first { !$0.isEmpty && !$0.hasPrefix("#") }
+            // A truncated header is not a list of words to auto-annotate.
+            if first == "---" || first?.hasPrefix("name:") == true { return nil }
+            return (lines[...], nil)
+        }
+        let headerLines = lines.prefix(end)
+        // Parse only the small YAML header, never the vocabulary body.
+        guard headerLines.reduce(0, { $0 + $1.utf8.count + 1 }) <= 64 * 1024,
+              let header = try? ConfigValue.parse(yaml: headerLines.joined(separator: "\n")),
+              let fields = header.entries,
+              fields.filter({ $0.key == "columns" }).count <= 1 else { return nil }
+        var columns: [String]?
+        if let value = header["columns"] {
+            guard let values = value.listValue else { return nil }
+            var names: [String] = []
+            for value in values {
+                guard case let .string(name) = value, !name.isEmpty else { return nil }
+                names.append(name)
+            }
+            guard names.contains("text"), Set(names).count == names.count else { return nil }
+            columns = names
+        }
+        return (lines[(end + 1)...], columns)
     }
 
     /// Space-separated toneless pinyin for Chinese text; lowercase alphanumerics for Latin.
@@ -563,7 +611,7 @@ public struct SubscriptionManager: Sendable {
 
     func tableSignature(schemas: [String], items: [VocabularySubscription]) -> String {
         func digest(_ url: URL) -> String { (try? PackageManager.sha256(of: url)) ?? "missing" }
-        var parts = ["v2", schemas.sorted().joined(separator: ",")]
+        var parts = ["v3", schemas.sorted().joined(separator: ",")]
         if let shipped = paths.sharedDataDir?.appendingPathComponent("aime/aime_tech.tsv") { parts.append(digest(shipped)) }
         for item in items.sorted(by: { $0.id < $1.id }) { parts.append("\(item.id)=\(digest(cacheURL(item.id)))") }
         return parts.joined(separator: "|")

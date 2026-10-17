@@ -12,6 +12,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Fixed
+
+- Subscribed dictionaries with a non-default column order could have words, readings or weights read incorrectly. AIME now follows the declared column order, accepts files with a leading BOM and undeclared two-column word/weight tables, and keeps the highest weight for duplicate entries. Existing subscriptions are rebuilt on the next deployment without downloading them again.
+
 ## [0.1.9] - 2026-10-13
 
 > Stable release · Developer ID signed · notarized by Apple
