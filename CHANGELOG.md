@@ -11,6 +11,21 @@ AIME 每个版本面向用户的变动都记在这里，官网「更新日志」
 
 ## [Unreleased]
 
+## [0.1.10] - 2026-10-20
+
+> 正式版 · Developer ID 签名 · 公证处理中
+
+### 修复
+
+- 补上自然码双拼的订阅词库支持，已有订阅在下次部署时自动生成自然码词表并接入候选。
+- 从鼠须管导入的配置里若引用了 AIME 没有的文件（如 `__include: squirrel.yaml:/style`），整份外观补丁会被静默丢弃：设置里能选中配色，候选窗却一直是默认样式。现在只跳过找不到的那一处引用，已导入的用户升级后下次部署即生效，无需重新导入（#22）。
+- 导入的鼠须管配置里若有空的 `app_options:`，设置里的逐应用中英文选项会让整份外观配置编译失败，所选皮肤同样不生效；现在空值按「清空」处理（#22）。
+- 扁平类皮肤的负边距（`border_width: -5`）不再把第一个候选裁掉一截。
+- 从鼠须管导入时读取 `installation.yaml` 里的自定义同步目录，首次导入也会真正合并词频快照；词频没能迁移时，概览和部署状态会显示提醒，不再只显示「已生效」（#23）。
+- 订阅词库按文件里的 `columns` 声明读取各列，兼容 BOM，重复词条保留较高词频，「词条 + 词频」两列表不再丢掉词频；已有订阅下次部署时重新生成（感谢 @takeshi264，#24）。
+- 升级安装后结束仍在运行的旧版输入法进程，下一次输入由系统拉起新版。
+- `aime deploy` 指定 `--user-dir` 或 `AIME_USER_DIR` 时不再通知已安装的输入法重新部署。
+
 ## [0.1.9] - 2026-10-13
 
 > 正式版 · Developer ID 签名 · 已通过 Apple 公证
@@ -133,7 +148,7 @@ AIME 每个版本面向用户的变动都记在这里，官网「更新日志」
 
 ## [0.1.2] - 2026-10-02
 
-> 开发预览 · Developer ID 签名 · 公证处理中
+> 正式版 · Developer ID 签名 · 公证处理中
 
 ### 修复
 
@@ -159,7 +174,7 @@ AIME 每个版本面向用户的变动都记在这里，官网「更新日志」
 
 ## [0.1.1] - 2026-10-02
 
-> 开发预览 · Developer ID 签名 · 公证处理中
+> 正式版 · Developer ID 签名 · 公证处理中
 
 ### 修复
 
@@ -168,7 +183,7 @@ AIME 每个版本面向用户的变动都记在这里，官网「更新日志」
 
 ## [0.1.0] - 2026-10-01
 
-> 开发预览 · Developer ID 签名 · 公证处理中
+> 正式版 · Developer ID 签名 · 公证处理中
 
 首个公开的开发预览版。
 
@@ -191,7 +206,8 @@ AIME 每个版本面向用户的变动都记在这里，官网「更新日志」
 - 安装包已用 ZOOL LLC 的 Developer ID 签名，Apple 公证仍在处理中；首次打开需在 Finder 中右键 › 打开。
 - 命令行工具 `aime` 目前仅支持 Apple 芯片。
 
-[Unreleased]: https://github.com/zoolapp/aime/compare/v0.1.6...HEAD
+[Unreleased]: https://github.com/zoolapp/aime/compare/v0.1.10...HEAD
+[0.1.10]: https://github.com/zoolapp/aime/compare/v0.1.6...v0.1.10
 [0.1.6]: https://github.com/zoolapp/aime/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/zoolapp/aime/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/zoolapp/aime/compare/v0.1.2...v0.1.4

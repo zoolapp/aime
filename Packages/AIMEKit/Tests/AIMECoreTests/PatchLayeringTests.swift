@@ -110,6 +110,66 @@ struct PatchLayeringTests {
         #expect(composed.map(\.key) == ["preset_color_schemes/aime_light", "preset_color_schemes/mac_light", "style"])
     }
 
+    @Test func collectionDirectivesMergeInsteadOfBecomingItems() {
+        let composed = ConfigLayers.compose([[
+            .init("preset_color_schemes", .map([
+                .init("__include", "squirrel.yaml:/preset_color_schemes"),
+                .init("mac_light", .map([.init("name", "Mac")])),
+            ])),
+        ]])
+        #expect(composed.map(\.key) == ["preset_color_schemes/+", "preset_color_schemes/mac_light"])
+        #expect(composed.first?.value == .map([.init("__include", "squirrel.yaml:/preset_color_schemes")]))
+    }
+
+    /// #22: one unresolvable include used to drop the whole optional patch, Settings included.
+    @Test func missingIncludeDoesNotDropThePatch() throws {
+        try "switcher:\n  hotkeys: [F9]\n".write(to: paths.userDataDir.appendingPathComponent("extra.yaml"), atomically: true, encoding: .utf8)
+        try FileManager.default.createDirectory(at: paths.importedDir, withIntermediateDirectories: true)
+        try """
+        patch:
+          menu:
+            __include: squirrel.yaml:/menu
+            page_size: 9
+          switcher:
+            __include: extra:/switcher
+        """.write(to: layers.importedURL(.default), atomically: true, encoding: .utf8)
+        try layers.setGenerated(.default, keypath: "switcher/caption", value: "「方案」")
+
+        let shim = try ConfigValue.load(contentsOf: layers.shimURL(.default))
+        #expect(shim["patch"]?["menu"]?["__include"]?.stringValue == "squirrel.yaml:/menu?")
+        #expect(shim["patch"]?["switcher"]?["__include"]?.stringValue == "extra:/switcher")
+        let built = try deploy()
+        #expect(built.value(at: "menu/page_size")?.intValue == 9)
+        #expect(built.value(at: "switcher/hotkeys")?.listValue == ["F9"])
+        #expect(built.value(at: "switcher/caption")?.stringValue == "「方案」")
+    }
+
+    @Test(arguments: ["", "\"\""])
+    func emptyImportedCollectionKeepsSelectedSkin(empty: String) throws {
+        try FileManager.default.createDirectory(at: paths.importedDir, withIntermediateDirectories: true)
+        try """
+        patch:
+          app_options: \(empty)
+          style:
+            color_scheme: flat_light
+            color_scheme_dark: flat_dark
+          preset_color_schemes/wechat_light:
+            name: 微信浅色
+            back_color: 0xFFFFFF
+          app_options/com.apple.Terminal:
+            ascii_mode: true
+          style/color_scheme: wechat_light
+        """.write(to: layers.importedURL(.default), atomically: true, encoding: .utf8)
+        try layers.setGenerated(.default, keypath: "menu/page_size", value: 9)
+        let built = try deploy()
+        #expect(built.value(at: "style/color_scheme")?.stringValue == "wechat_light")
+        #expect(built.value(at: "preset_color_schemes/wechat_light/name")?.stringValue == "微信浅色")
+        #expect(built.value(at: "app_options/com.apple.Terminal/ascii_mode")?.boolValue == true)
+        #expect(built.value(at: "menu/page_size")?.intValue == 9)
+        // Empty strings remain strings outside collection keys.
+        #expect(try ConfigValue.parse(yaml: "label: \"\"\n")["label"] == .string(""))
+    }
+
     @Test func sameLayerParentAndChildBothSurvive() {
         let composed = ConfigLayers.compose([[
             .init("style/font_point", 22), .init("style", .map([.init("color_scheme", "dark")])),

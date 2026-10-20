@@ -167,10 +167,16 @@ struct DeployStatus: View {
                     .foregroundStyle(Theme.warning)
                     .help(message)
             case .succeeded where !model.hasPendingChanges:
-                Label("已生效", systemImage: "checkmark.circle.fill")
-                    .foregroundStyle(Theme.success)
-                    .labelStyle(.titleAndIcon)
-                    .transition(.opacity)
+                if !model.justImported || model.importWarnings.isEmpty {
+                    Label("已生效", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(Theme.success)
+                        .labelStyle(.titleAndIcon)
+                        .transition(.opacity)
+                } else {
+                    Label("配置已生效，导入有提醒", systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(Theme.warning)
+                        .help(model.importWarnings.joined(separator: "\n"))
+                }
             default:
                 if model.hasPendingChanges {
                     Text("即将应用…").foregroundStyle(.secondary)

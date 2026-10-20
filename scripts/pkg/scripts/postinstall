@@ -11,5 +11,9 @@ if [[ ! -x "$app/Contents/MacOS/AIME" ]]; then
 fi
 if [[ -n "$login_user" && "$login_user" != "root" ]]; then
   /usr/bin/sudo -u "$login_user" "$app/Contents/MacOS/AIME" --install || true
+  # An upgrade replaces the bundle, but the old IMK process may still be alive.
+  # Stop only this user's instance; imklaunchagent starts the installed version
+  # on the next input. Never manually launch the input method as an ordinary app.
+  /usr/bin/sudo -u "$login_user" /usr/bin/pkill -x AIME || true
 fi
 exit 0

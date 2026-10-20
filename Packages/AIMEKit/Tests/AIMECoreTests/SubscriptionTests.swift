@@ -46,18 +46,48 @@ struct SubscriptionTests {
 
     @Test func rebuildWritesLayoutTablesAndMountsSchemas() async throws {
         let source = root.appendingPathComponent("feed.txt")
-        try "氛围编程\n".write(to: source, atomically: true, encoding: .utf8)
+        try "氛围编程\n向量数据库\txiang liang shu ju ku\t80\n".write(to: source, atomically: true, encoding: .utf8)
         let manager = SubscriptionManager(paths: paths)
         try await manager.add(url: source.absoluteString, name: nil)
-        let count = try manager.rebuild(schemas: ["rime_ice", "double_pinyin_flypy"])
-        #expect(count == 3)
+        let count = try manager.rebuild(schemas: ["rime_ice", "double_pinyin_flypy", "double_pinyin", "double_pinyin_custom"])
+        #expect(count == 4)
         let full = try String(contentsOf: paths.userDataDir.appendingPathComponent("aime_online.txt"), encoding: .utf8)
         let flypy = try String(contentsOf: paths.userDataDir.appendingPathComponent("aime_online_flypy.txt"), encoding: .utf8)
+        let ziranma = try String(contentsOf: paths.userDataDir.appendingPathComponent("aime_online_ziranma.txt"), encoding: .utf8)
         #expect(full.contains("智能体\tzhinengti") && full.contains("DeepSeek\tdeepseek"))
         #expect(flypy.contains("智能体\tvingti") && flypy.contains("氛围编程\tffwwbmig"))
+        #expect(ziranma.contains("向量数据库\txdlduujuku\t80") && ziranma.contains("DeepSeek\tdeepseek"))
         let layers = ConfigLayers(paths: paths)
         #expect(layers.generatedValue(.schema("double_pinyin_flypy"), keypath: "aime_online")?["user_dict"] == "aime_online_flypy")
+        #expect(layers.generatedValue(.schema("double_pinyin"), keypath: "aime_online")?["user_dict"] == "aime_online_ziranma")
+        #expect(layers.generatedValue(.schema("double_pinyin"), keypath: "engine/translators/+") == ["table_translator@aime_online"])
+        #expect(layers.generatedValue(.schema("double_pinyin_custom"), keypath: "aime_online") == nil)
         #expect(layers.generatedValue(.schema("rime_ice"), keypath: "engine/translators/+") == ["table_translator@aime_online"])
+    }
+
+    @Test func existingSubscriptionCacheAddsMissingZiranmaTableWithoutDownloading() async throws {
+        try "schema_list:\n  - schema: double_pinyin\n".write(
+            to: paths.sharedDataDir!.appendingPathComponent("default.yaml"), atomically: true, encoding: .utf8)
+        let source = root.appendingPathComponent("feed.txt")
+        try "具身智能\tju shen zhi neng\t80\n".write(to: source, atomically: true, encoding: .utf8)
+        let manager = SubscriptionManager(paths: paths)
+        let added = try await manager.add(url: source.absoluteString, name: nil)
+        let cached = try Data(contentsOf: manager.cacheURL(added.id))
+        #expect(try manager.ensureTables())
+        #expect(try manager.ensureTables() == false)
+
+        // An older installation has the cache and signature, but no Ziranma table or mount.
+        let table = paths.userDataDir.appendingPathComponent("aime_online_ziranma.txt")
+        try FileManager.default.removeItem(at: table)
+        try FileManager.default.removeItem(at: paths.aimeDir.appendingPathComponent("generated/double_pinyin.yaml"))
+        try FileManager.default.removeItem(at: source)
+
+        #expect(try manager.ensureTables())
+        #expect(try String(contentsOf: table, encoding: .utf8).contains("具身智能\tjuufving\t80"))
+        #expect(ConfigLayers(paths: paths).generatedValue(.schema("double_pinyin"), keypath: "aime_online")?["user_dict"]
+                == "aime_online_ziranma")
+        #expect(try Data(contentsOf: manager.cacheURL(added.id)) == cached)
+        #expect(try manager.ensureTables() == false)
     }
 
     @Test func ensureTablesDedupesAndRebuildsOnlyWhenInputsChange() async throws {

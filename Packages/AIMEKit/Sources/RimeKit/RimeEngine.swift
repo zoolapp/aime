@@ -237,6 +237,20 @@ public final class RimeEngine {
         return api.pointee.sync_user_data()
     }
 
+    /// Merges a copied sync snapshot even when its dictionary does not exist locally.
+    /// `sync_user_data` alone enumerates existing databases and skips first imports.
+    /// The caller must hold the workspace lock and close sessions before restoring.
+    public func restoreUserDictionary(from snapshot: URL) -> Bool {
+        guard isInitialized, !isMaintaining else { return false }
+        ensureDeployerLoaded()
+        guard let module = api.pointee.find_module("levers"),
+              let getAPI = module.pointee.get_api, let raw = getAPI() else { return false }
+        let levers = UnsafeMutableRawPointer(raw).assumingMemoryBound(to: RimeLeversApi_stdbool.self)
+        guard Int(levers.pointee.data_size) >= MemoryLayout<RimeLeversApi_stdbool>.size - MemoryLayout<Int32>.size,
+              let restore = levers.pointee.restore_user_dict else { return false }
+        return snapshot.path.withCString { restore($0) }
+    }
+
     public func createSession() throws -> RimeSession {
         guard isInitialized else { throw RimeError.notInitialized }
         let id = api.pointee.create_session()

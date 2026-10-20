@@ -79,7 +79,7 @@ def verify(package, sums, output, preview_baseline=False):
             (root / "home").mkdir()
             prefix = ["/usr/bin/sandbox-exec", "-f", str(profile)]
             # Use a known existing forbidden file, so a missing file cannot fake isolation.
-            probe = run("deny-probe", prefix + ["/usr/bin/stat", str(repo / "AGENTS.md")], env, root)
+            probe = run("deny-probe", prefix + ["/usr/bin/stat", str(repo / "project.yml")], env, root)
             if probe.returncode == 0 or "Operation not permitted" not in probe.stderr:
                 raise ValueError("Sandbox denial was not verified")
             files = [cli, app / "Contents/MacOS/AIME"] + list((app / "Contents/Frameworks").rglob("*.dylib"))

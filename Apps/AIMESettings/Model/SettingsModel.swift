@@ -105,6 +105,12 @@ final class SettingsModel {
     var squirrelDirExists: Bool { FileManager.default.fileExists(atPath: AIMEPaths.squirrelUserDir.path) }
     var importReport: URL { paths.aimeDir.appendingPathComponent("import-report.json") }
     var hasImported: Bool { FileManager.default.fileExists(atPath: importReport.path) }
+    /// What the last import could not carry over (e.g. learned frequencies). A successful
+    /// deploy says nothing about these, so the import card shows them (#23).
+    var importWarnings: [String] { _ = revision; return SquirrelImporter.Report.load(paths)?.warnings ?? [] }
+    /// The deploy status mentions import warnings only for the import that produced them;
+    /// the import card keeps listing them.
+    private(set) var justImported = false
 
     // MARK: - Settings
 
@@ -372,6 +378,7 @@ final class SettingsModel {
         // An automatic pass queued behind another may find nothing left to apply.
         if automatic, !hasPendingChanges { return }
         let startedWith = changeCount
+        justImported = false
         deployState = .deploying
         deployStage = "正在保存设置…"
         let started = Date()
@@ -447,10 +454,25 @@ final class SettingsModel {
 
     func importSquirrel(from source: URL = AIMEPaths.squirrelUserDir) async {
         deployState = .deploying
-        let result = await deployer.run(["import-squirrel", "--from", source.path])
-        deployState = result.ok ? .succeeded(Date()) : .failed(result.output.suffix(400).description)
+        if deployer.usesInputMethod {
+            // The running input method holds the user dictionaries: import here, then let it
+            // deploy and merge the learned-frequency snapshots (#23).
+            let result = await deployer.run(["import-squirrel", "--from", source.path, "--no-deploy"])
+            if result.ok {
+                switch await deployer.deployImportedViaInputMethod() {
+                case .success: deployState = .succeeded(Date())
+                case let .failure(message): deployState = .failed(message)
+                }
+            } else {
+                deployState = .failed(result.output.suffix(400).description)
+            }
+        } else {
+            let result = await deployer.run(["import-squirrel", "--from", source.path])
+            deployState = result.ok ? .succeeded(Date()) : .failed(result.output.suffix(400).description)
+        }
+        justImported = true
         phrases = CustomPhrases.load(from: store.phraseTableURL(phraseTable))
-        if result.ok { hasPendingChanges = false }
+        if case .succeeded = deployState { hasPendingChanges = false }
         revision += 1
     }
 
@@ -717,6 +739,7 @@ final class SettingsModel {
 
     @discardableResult
     func syncNow() async -> Bool {
+        justImported = false
         deployState = .deploying
         let outcome = await deployer.sync()
         switch outcome {

@@ -27,7 +27,11 @@ struct Deploy: AsyncParsableCommand {
             printErr("see librime logs in \(workspace.paths.logDir.path)")
         }
         if !result.succeeded { throw ExitCode.failure }
-        if !dryRun { DistributedNotificationCenter.default().postNotificationName(.init("app.zool.aime.reload"), object: nil) }
+        // Explicit/test workspaces must never wake the installed input method,
+        // which serves a different directory and would redeploy real user data.
+        if !dryRun, workspace.userDir == nil, ProcessInfo.processInfo.environment["AIME_USER_DIR"] == nil {
+            DistributedNotificationCenter.default().postNotificationName(.init("app.zool.aime.reload"), object: nil)
+        }
     }
 }
 
@@ -153,7 +157,7 @@ struct ImportSquirrel: AsyncParsableCommand {
             switch action {
             case let .copy(path): print("copy      \(path)")
             case let .importCustom(path, target): print("layer     \(path) → aime/imported/\(target.customName).custom.yaml")
-            case let .importSnapshots(path): print("snapshots \(path)/*/*.userdb.txt → sync/ (merged on sync)")
+            case let .importSnapshots(path): print("snapshots \(path)/*/*.userdb.txt → sync/ (merged after deploy)")
             case let .skip(path, reason): print("skip      \(path) — \(reason)")
             }
         }
@@ -167,11 +171,20 @@ struct ImportSquirrel: AsyncParsableCommand {
         if noDeploy { return }
         let result = try Workspace.deploy(traits: workspace.traits(), paths: workspace.paths)
         print("deploy: \(result.succeeded ? "ok" : "FAILED") (\(result.schemas.joined(separator: ", ")))")
+        guard result.succeeded else { throw ExitCode.failure }
         if !report.snapshots.isEmpty {
-            print("merging user dictionaries: \(RimeEngine.shared.syncUserData() ? "started" : "failed")")
-            RimeEngine.shared.joinMaintenance()
+            guard report.snapshots.count <= 256 else { throw ValidationError("词频快照超过单次导入上限 256 份，请分批导入。") }
+            let engine = RimeEngine.shared
+            // Every snapshot is tried: an old device's broken snapshot must not block the rest.
+            let failed = report.snapshots.filter {
+                !engine.restoreUserDictionary(from: workspace.paths.userDataDir.appendingPathComponent("sync/\($0)"))
+            }
+            print("merged user dictionary snapshots: \(report.snapshots.count - failed.count)/\(report.snapshots.count)")
+            if !failed.isEmpty {
+                SquirrelImporter.Report.appendWarning(SquirrelImporter.Report.mergeFailed(failed.count), paths: workspace.paths)
+                throw ValidationError("词频快照合并失败 \(failed.count) 份（\(failed.joined(separator: ", "))），配置已导入。")
+            }
         }
-        if !result.succeeded { throw ExitCode.failure }
     }
 }
 

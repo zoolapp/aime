@@ -148,7 +148,7 @@ extension ConfigValue {
         }
         let text = scalar.string
         switch text {
-        case "", "~", "null", "Null", "NULL": return text.isEmpty ? .string("") : .null
+        case "", "~", "null", "Null", "NULL": return .null
         case "true", "True", "TRUE": return .bool(true)
         case "false", "False", "FALSE": return .bool(false)
         default: break

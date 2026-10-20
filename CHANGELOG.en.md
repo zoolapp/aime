@@ -12,6 +12,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.1.10] - 2026-10-20
+
+> Stable release · Developer ID signed · notarization pending
+
+### Fixed
+
+- Added missing Ziranma double-pinyin support for subscribed vocabularies. The next deployment generates and mounts Ziranma tables for existing subscriptions.
+- A Squirrel configuration that referenced a file AIME does not have (such as `__include: squirrel.yaml:/style`) silently dropped the whole appearance patch: a color scheme could be selected in Settings while the candidate window kept the default look. Only the missing reference is skipped now; existing imports take effect on the next deployment, no re-import needed (#22).
+- An empty `app_options:` in an imported Squirrel configuration made the per-app 中/英 options from Settings fail the whole appearance build, so the chosen skin did not apply either. Empty values now mean "clear" (#22).
+- Negative borders in flat skins (`border_width: -5`) no longer clip the first candidate.
+- Importing from Squirrel follows the custom sync directory in `installation.yaml` and actually merges the learned-frequency snapshots on a first import. When frequencies could not be migrated, Overview and the deploy status show a warning instead of only "已生效" (#23).
+- Subscribed vocabularies read columns as declared by `columns`, tolerate a BOM, keep the higher weight for duplicate entries, and no longer drop the weight of two-column "word + weight" tables. Existing subscriptions are regenerated on the next deployment (thanks @takeshi264, #24).
+- After an upgrade, the old input method process still running is stopped, and the system starts the new version on the next keystroke.
+- `aime deploy` with `--user-dir` or `AIME_USER_DIR` no longer tells the installed input method to redeploy.
+
 ## [0.1.9] - 2026-10-13
 
 > Stable release · Developer ID signed · notarized by Apple
@@ -134,7 +149,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [0.1.2] - 2026-10-02
 
-> Developer preview · Developer ID signed · notarization pending
+> Stable release · Developer ID signed · notarization pending
 
 ### Fixed
 
@@ -160,7 +175,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [0.1.1] - 2026-10-02
 
-> Developer preview · Developer ID signed · notarization pending
+> Stable release · Developer ID signed · notarization pending
 
 ### Fixed
 
@@ -169,7 +184,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [0.1.0] - 2026-10-01
 
-> Developer preview · Developer ID signed · notarization pending
+> Stable release · Developer ID signed · notarization pending
 
 The first public developer preview.
 
@@ -192,7 +207,8 @@ The first public developer preview.
 - The installer is signed with ZOOL LLC's Developer ID; Apple notarization is still pending, so the first launch needs Control-click › Open in Finder.
 - The `aime` command-line tool supports Apple silicon only.
 
-[Unreleased]: https://github.com/zoolapp/aime/compare/v0.1.6...HEAD
+[Unreleased]: https://github.com/zoolapp/aime/compare/v0.1.10...HEAD
+[0.1.10]: https://github.com/zoolapp/aime/compare/v0.1.6...v0.1.10
 [0.1.6]: https://github.com/zoolapp/aime/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/zoolapp/aime/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/zoolapp/aime/compare/v0.1.2...v0.1.4

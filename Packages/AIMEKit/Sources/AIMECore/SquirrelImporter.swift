@@ -41,6 +41,36 @@ public struct SquirrelImporter: Sendable {
         public var colorSchemesCarriedOver: [String]
         /// Things the user should know, e.g. learned frequencies that could not be migrated.
         public var warnings: [String] = []
+
+        public static func url(_ paths: AIMEPaths) -> URL { paths.aimeDir.appendingPathComponent("import-report.json") }
+
+        public static func load(_ paths: AIMEPaths) -> Report? {
+            guard let data = try? Data(contentsOf: url(paths)) else { return nil }
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+            return try? decoder.decode(Report.self, from: data)
+        }
+
+        public func save(_ paths: AIMEPaths) throws {
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            encoder.dateEncodingStrategy = .iso8601
+            try encoder.encode(self).write(to: Self.url(paths), options: .atomic)
+        }
+
+        /// Records a problem found after the import itself (e.g. a snapshot merge that
+        /// failed), so Settings shows it instead of a plain success.
+        public static func appendWarning(_ warning: String, paths: AIMEPaths) {
+            guard var report = load(paths), !report.warnings.contains(warning) else { return }
+            // One merge-failure line: a later attempt replaces the earlier count.
+            if warning.hasSuffix(mergeFailedSuffix) { report.warnings.removeAll { $0.hasSuffix(mergeFailedSuffix) } }
+            report.warnings.append(warning)
+            try? report.save(paths)
+        }
+
+        static let mergeFailedSuffix = " 份词频快照未能合并，学习到的词频可能没有完全迁移；可稍后重新导入。"
+
+        public static func mergeFailed(_ count: Int) -> String { "\(count)\(mergeFailedSuffix)" }
     }
 
     public enum ImportError: Error, CustomStringConvertible {
@@ -81,7 +111,8 @@ public struct SquirrelImporter: Sendable {
     public func plan() throws -> Plan {
         let fm = FileManager.default
         let names = try fm.contentsOfDirectory(atPath: source.path).sorted()
-        let actions: [Action] = names.map { name in
+        let syncDir = customSyncDir
+        var actions: [Action] = names.map { name in
             if let reason = Self.skipped[name] { return .skip(name, reason: reason) }
             // Hidden entries (.git, .specstory, .vscode…) and repository files are not
             // part of a Rime configuration and may hold unrelated private data.
@@ -90,7 +121,9 @@ public struct SquirrelImporter: Sendable {
                 return .skip(name, reason: "repository file, not Rime data")
             }
             if name.hasSuffix(".userdb") { return .skip(name, reason: "live LevelDB; merged through sync snapshots instead") }
-            if name == "sync" { return .importSnapshots(name) }
+            if name == "sync" {
+                return syncDir == nil ? .importSnapshots(name) : .skip(name, reason: "installation.yaml selects a different sync directory")
+            }
             if name.hasSuffix(".custom.yaml") {
                 let base = String(name.dropLast(".custom.yaml".count))
                 let target: ConfigTarget = switch base {
@@ -102,7 +135,17 @@ public struct SquirrelImporter: Sendable {
             }
             return .copy(name)
         }
+        if let syncDir { actions.append(.importSnapshots(syncDir.path)) }
         return Plan(source: source, actions: actions)
+    }
+
+    /// Source installation identity and sync location are read, never copied to AIME.
+    var customSyncDir: URL? {
+        guard let value = (try? ConfigValue.load(contentsOf: source.appendingPathComponent("installation.yaml")))?["sync_dir"]?.stringValue,
+              !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        let expanded = (value as NSString).expandingTildeInPath
+        let url = expanded.hasPrefix("/") ? URL(fileURLWithPath: expanded, isDirectory: true) : source.appendingPathComponent(expanded, isDirectory: true)
+        return url.standardizedFileURL
     }
 
     @discardableResult
@@ -151,7 +194,17 @@ public struct SquirrelImporter: Sendable {
                 report.customLayers.append("\(name) → \(imported.path.replacingOccurrences(of: paths.userDataDir.path + "/", with: ""))")
 
             case let .importSnapshots(name):
-                report.snapshots += try importSnapshots(from: source.appendingPathComponent(name))
+                let syncDir = name.hasPrefix("/") ? URL(fileURLWithPath: name, isDirectory: true) : source.appendingPathComponent(name)
+                let external = syncDir.resolvingSymlinksInPath().standardizedFileURL.path + "/"
+                if external.hasPrefix(to) || to.hasPrefix(external) {
+                    report.warnings.append("同步目录与 AIME 用户目录重叠，词频快照未导入。")
+                    continue
+                }
+                do {
+                    report.snapshots += try importSnapshots(from: syncDir)
+                } catch {
+                    report.warnings.append("同步目录不存在或无法完整读取，词频快照可能未导入：\(syncDir.path)")
+                }
 
             case .skip:
                 continue
@@ -165,10 +218,7 @@ public struct SquirrelImporter: Sendable {
             report.warnings.append("导入源没有 sync 目录，学习到的词频不会迁移。")
         }
 
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        encoder.dateEncodingStrategy = .iso8601
-        try encoder.encode(report).write(to: paths.aimeDir.appendingPathComponent("import-report.json"))
+        try report.save(paths)
         return report
     }
 
@@ -206,12 +256,12 @@ public struct SquirrelImporter: Sendable {
     private func importSnapshots(from syncDir: URL) throws -> [String] {
         let fm = FileManager.default
         var imported: [String] = []
-        let installations = (try? fm.contentsOfDirectory(atPath: syncDir.path)) ?? []
+        let installations = try fm.contentsOfDirectory(atPath: syncDir.path)
         for installation in installations.sorted() {
             let folder = syncDir.appendingPathComponent(installation)
             var isDirectory: ObjCBool = false
             guard fm.fileExists(atPath: folder.path, isDirectory: &isDirectory), isDirectory.boolValue else { continue }
-            let snapshots = ((try? fm.contentsOfDirectory(atPath: folder.path)) ?? []).filter { $0.hasSuffix(".userdb.txt") }
+            let snapshots = try fm.contentsOfDirectory(atPath: folder.path).filter { $0.hasSuffix(".userdb.txt") }
             guard !snapshots.isEmpty else { continue }
             let destination = paths.userDataDir.appendingPathComponent("sync/\(installation)", isDirectory: true)
             try fm.createDirectory(at: destination, withIntermediateDirectories: true)

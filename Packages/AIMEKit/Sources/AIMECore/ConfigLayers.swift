@@ -139,9 +139,60 @@ public struct ConfigLayers: Sendable {
     static let collectionKeys: Set<String> = ["preset_color_schemes", "app_options"]
 
     static func expandCollections(_ entry: ConfigValue.Entry) -> [ConfigValue.Entry] {
+        // Older AIME versions serialized an empty YAML scalar as "". Collection keys
+        // cannot be strings: librime otherwise rejects later child patches (#22).
+        if collectionKeys.contains(entry.key), entry.value == .string("") {
+            return [.init(entry.key, .null)]
+        }
         // An empty map keeps its meaning ("clear the collection").
         guard collectionKeys.contains(entry.key), let children = entry.value.entries, !children.isEmpty else { return [entry] }
-        return children.map { ConfigValue.Entry("\(entry.key)/\($0.key)", $0.value) }
+        // Directives (`__include: squirrel.yaml:/preset_color_schemes`) act on the whole map, so
+        // they are merged into it (`/+`) instead of becoming an item named `__include`.
+        let directives = children.filter { $0.key.hasPrefix("__") }
+        let merge = directives.isEmpty ? [] : [ConfigValue.Entry("\(entry.key)/+", .map(directives))]
+        return merge + children.filter { !$0.key.hasPrefix("__") }.map { ConfigValue.Entry("\(entry.key)/\($0.key)", $0.value) }
+    }
+
+    /// librime attaches `<name>.custom:/patch?` as an optional patch: when any reference in it
+    /// fails to resolve, the whole patch is dropped without an error, AIME Settings included
+    /// (#22: an imported `__include: squirrel.yaml:/style`, a file the importer skips, kept every
+    /// color scheme chosen in Settings from taking effect). References to config files found in
+    /// neither data directory are made optional, so librime skips just that include.
+    func softenMissingReferences(_ value: ConfigValue) -> ConfigValue {
+        switch value {
+        case let .map(entries):
+            return .map(entries.map { entry in
+                guard entry.key == "__include" || entry.key == "__patch" else {
+                    return .init(entry.key, softenMissingReferences(entry.value))
+                }
+                switch entry.value {
+                case let .string(reference): return .init(entry.key, .string(softened(reference)))
+                case let .list(items):
+                    return .init(entry.key, .list(items.map {
+                        if case let .string(reference) = $0 { .string(softened(reference)) } else { softenMissingReferences($0) }
+                    }))
+                default: return .init(entry.key, softenMissingReferences(entry.value))
+                }
+            })
+        case let .list(items):
+            return .list(items.map(softenMissingReferences))
+        default:
+            return value
+        }
+    }
+
+    /// `resource:/key/path` → `resource:/key/path?` when `resource.yaml` does not exist.
+    /// Local references (`/key`, `:/key`) and already optional ones are kept.
+    func softened(_ reference: String) -> String {
+        guard !reference.hasSuffix("?"), let sharedDir = paths.sharedDataDir,
+              let separator = reference.firstIndex(of: ":"), separator != reference.startIndex
+        else { return reference }
+        var resource = String(reference[..<separator])
+        if resource.hasSuffix(".yaml") { resource.removeLast(".yaml".count) }
+        let exists = [paths.userDataDir, sharedDir].contains {
+            FileManager.default.fileExists(atPath: $0.appendingPathComponent("\(resource).yaml").path)
+        }
+        return exists ? reference : reference + "?"
     }
 
     public func composedPatch(_ target: ConfigTarget) throws -> [ConfigValue.Entry] {
@@ -160,7 +211,7 @@ public struct ConfigLayers: Sendable {
             if fm.fileExists(atPath: imported.path) { try backup(imported) }
             try fm.moveItem(at: shim, to: imported)
         }
-        let patch = try composedPatch(target)
+        let patch = softenMissingReferences(.map(try composedPatch(target))).entries ?? []
         let header = """
         \(Self.shimMarker) — do not edit by hand; regenerated before every deploy.
         # Layers, in order (later wins):

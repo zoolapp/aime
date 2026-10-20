@@ -101,6 +101,11 @@ struct OverviewView: View {
                 Text(model.hasImported ? "重新导入 RIME 配置" : "导入 RIME 配置").font(.headline)
                 Text("一键导入鼠须管等 RIME 目录的方案、词库、全拼 / 双拼自定义短语与词频（只读，短语自动合并）。")
                     .font(.callout).foregroundStyle(Theme.secondaryText)
+                ForEach(model.importWarnings, id: \.self) { warning in
+                    Label(warning, systemImage: "exclamationmark.triangle.fill")
+                        .font(.callout).foregroundStyle(Theme.warning)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             Spacer()
             Button(model.hasImported ? "重新导入…" : "导入…") { showingImport = true }

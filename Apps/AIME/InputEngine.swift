@@ -48,7 +48,20 @@ final class InputEngine {
     /// Set while a user dictionary sync (not a deploy) holds the workspace.
     private var syncInProgress = false
     /// Requests that arrived while a deploy was running; run together afterwards.
-    private var queuedRequests: [(request: String?, incremental: Bool)] = []
+    private var queuedRequests: [QueuedDeploy] = []
+    /// An import travels with its own deploy: its snapshots are merged, and its request
+    /// answered, only after that deploy (never after an unrelated one queued before it).
+    private struct QueuedDeploy {
+        var request: String?
+        var incremental: Bool
+        var importedSnapshots: [String]? = nil
+    }
+    private struct ImportJob {
+        var requests: [String?] = []
+        var snapshots: [String] = []
+    }
+    /// The import riding on the running deploy, if any.
+    private var runningImport: ImportJob?
     private var lockRetryTask: Task<Void, Never>?
     private var frontendDeployed = true
 
@@ -111,6 +124,7 @@ final class InputEngine {
             if dirty?.isEmpty == true { ConfigLayers(paths: paths).markDeployed() }
             awaitingDeployAck = false
             deployLock = nil
+            finishImport(deployed: true)
         }
         observeReloadRequests()
         scheduleVocabularyUpdates()
@@ -225,7 +239,6 @@ final class InputEngine {
         }
     }
 
-    private var mergeSnapshotsAfterDeploy = false
     var firstRunMarker: URL { paths.aimeDir.appendingPathComponent(".initialized") }
 
     /// First launch on a Mac that already uses RIME (Squirrel): import its configuration
@@ -248,7 +261,8 @@ final class InputEngine {
         do {
             let importer = SquirrelImporter(paths: paths, source: source)
             let report = try importer.execute(importer.plan())
-            mergeSnapshotsAfterDeploy = !report.snapshots.isEmpty
+            // Rides the startup deploy that follows (see `start`).
+            if !report.snapshots.isEmpty { runningImport = ImportJob(snapshots: report.snapshots) }
             logger.info("imported existing RIME config: \(report.copied.count, privacy: .public) entries")
         } catch {
             logger.error("first-run import failed: \(String(describing: error), privacy: .public)")
@@ -265,9 +279,18 @@ final class InputEngine {
                 // Sync runs here because this process holds the user dictionaries open;
                 // a second process cannot export them (LevelDB lock).
                 if mode == "sync" { return InputEngine.shared.syncUserData(request: request) }
+                if mode == "import" { return InputEngine.shared.deployImported(request: request) }
                 InputEngine.shared.redeploy(request: request, incremental: mode == "auto")
             }
         }
+    }
+
+    /// Settings imported a RIME directory with the CLI (`--no-deploy`). The snapshots are
+    /// merged here after the deploy, because this process holds the user dictionaries open.
+    func deployImported(request: String?) {
+        let snapshots = SquirrelImporter.Report.load(paths)?.snapshots ?? []
+        queuedRequests.append(QueuedDeploy(request: request, incremental: false, importedSnapshots: snapshots))
+        drainDeployQueue()
     }
 
     /// Equivalent of Squirrel's 重新部署: rebuild everything and restart sessions.
@@ -279,7 +302,7 @@ final class InputEngine {
         logger.info("redeploy requested")
         // Never reject: rapid settings changes queue up and run as one deploy after
         // the current one (each request still gets its own answer).
-        queuedRequests.append((request, incremental))
+        queuedRequests.append(QueuedDeploy(request: request, incremental: incremental))
         drainDeployQueue()
     }
 
@@ -290,7 +313,8 @@ final class InputEngine {
             guard attempt < 50 else {
                 let batch = queuedRequests
                 queuedRequests.removeAll()
-                for item in batch { postResult(ok: false, request: item.request, message: "工作区被其他进程占用") }
+                for item in batch where item.importedSnapshots == nil { postResult(ok: false, request: item.request, message: "工作区被其他进程占用") }
+                if let job = Self.importJob(batch) { failImport(job, message: "工作区被其他进程占用，词频快照未合并") }
                 return
             }
             lockRetryTask?.cancel()
@@ -302,7 +326,44 @@ final class InputEngine {
         }
         let batch = queuedRequests
         queuedRequests.removeAll()
-        runDeploy(requests: batch.map(\.request), incremental: batch.allSatisfy(\.incremental), lock: lock)
+        let job = Self.importJob(batch)
+        runningImport = job
+        runDeploy(requests: batch.filter { $0.importedSnapshots == nil }.map(\.request),
+                  incremental: job == nil && batch.allSatisfy(\.incremental), lock: lock)
+    }
+
+    private static func importJob(_ batch: [QueuedDeploy]) -> ImportJob? {
+        let imports = batch.filter { $0.importedSnapshots != nil }
+        guard !imports.isEmpty else { return nil }
+        // Repeated imports copy into the same sync folders: merge each snapshot once.
+        var snapshots: [String] = []
+        for name in imports.flatMap({ $0.importedSnapshots ?? [] }) where !snapshots.contains(name) { snapshots.append(name) }
+        return ImportJob(requests: imports.map(\.request), snapshots: snapshots)
+    }
+
+    private func failImport(_ job: ImportJob, message: String) {
+        if !job.snapshots.isEmpty {
+            SquirrelImporter.Report.appendWarning(SquirrelImporter.Report.mergeFailed(job.snapshots.count), paths: paths)
+        }
+        for request in job.requests { postResult(ok: false, request: request, message: message) }
+    }
+
+    /// Called once the running deploy has released the workspace, before anything queued
+    /// starts: the merge must follow this deploy, not lose the lock to the next one.
+    private func finishImport(deployed: Bool) {
+        guard let job = runningImport else { return }
+        runningImport = nil
+        guard deployed else { return failImport(job, message: "部署失败，词频快照未合并，详见日志") }
+        guard !job.snapshots.isEmpty else {
+            for request in job.requests { postResult(ok: true, request: request, message: nil) }
+            return
+        }
+        // Learned frequencies do not depend on the appearance config: merge either way.
+        let frontendFailed = !frontendDeployed
+        syncUserData(requests: frontendFailed ? [] : job.requests, importedSnapshots: job.snapshots)
+        if frontendFailed {
+            for request in job.requests { postResult(ok: false, request: request, message: "配置已导入，但外观配置编译失败，详见日志") }
+        }
     }
 
     private func runDeploy(requests: [String?], incremental: Bool, lock: WorkspaceLock) {
@@ -319,6 +380,10 @@ final class InputEngine {
         } catch {
             // Broken layer: keep the running engine and previous build untouched.
             answer(ok: false, message: String(describing: error))
+            if let job = runningImport {
+                runningImport = nil
+                failImport(job, message: String(describing: error))
+            }
             return drainDeployQueue()
         }
         if incremental, dirty.allSatisfy({ $0 == "aime" }) {
@@ -347,26 +412,47 @@ final class InputEngine {
         // Always a full check: a non-full pass misses targets whose build output was
         // removed by prepareForDeploy (and takes about as long, ~0.3 s).
         if !engine.startMaintenance(fullCheck: true) {
-            // Nothing to rebuild; report the frontend result right away.
-            finishDeploy(ok: frontendDeployed)
+            // Nothing to rebuild; report the frontend result once this call stack (which
+            // still holds `lock`) has unwound, so an import's merge can take the workspace.
+            Task { @MainActor in InputEngine.shared.finishDeploy(ok: InputEngine.shared.frontendDeployed, schemasDeployed: true) }
         }
     }
 
     /// `request` (from Settings) gets its own answer through `finishDeploy`, which
     /// librime's deploy success/failure notification triggers when the sync ends.
     func syncUserData(request: String? = nil) {
+        syncUserData(requests: request.map { [$0] } ?? [], importedSnapshots: [])
+    }
+
+    private func syncUserData(requests: [String?], importedSnapshots: [String]) {
         guard deployLock == nil, let lock = WorkspaceLock.acquire(paths) else {
             showStatus("另一个部署正在进行")
-            if let request { postResult(ok: false, request: request, message: "另一个部署正在进行，请稍后再同步") }
+            if !importedSnapshots.isEmpty {
+                SquirrelImporter.Report.appendWarning(SquirrelImporter.Report.mergeFailed(importedSnapshots.count), paths: paths)
+            }
+            let message = importedSnapshots.isEmpty ? "另一个部署正在进行，请稍后再同步" : "另一个部署正在进行，词频快照未合并，可稍后重新导入"
+            for request in requests { postResult(ok: false, request: request, message: message) }
             return
         }
         deployLock = lock
         syncInProgress = true
-        if let request { pendingRequests.append(request) }
+        pendingRequests.append(contentsOf: requests)
         activeController?.flushBeforeEngineRestart()
         RimeEngine.shared.cleanupAllSessions()
         generation += 1
+        if !importedSnapshots.isEmpty {
+            // The deploy that preceded this may still be winding down its maintenance thread.
+            RimeEngine.shared.joinMaintenance()
+            let restorable = importedSnapshots.prefix(256)
+            let failed = restorable.filter {
+                !RimeEngine.shared.restoreUserDictionary(from: paths.userDataDir.appendingPathComponent("sync/\($0)"))
+            }.count + importedSnapshots.count - restorable.count
+            if failed > 0 { SquirrelImporter.Report.appendWarning(SquirrelImporter.Report.mergeFailed(failed), paths: paths) }
+        }
         if !RimeEngine.shared.syncUserData() {
+            if !importedSnapshots.isEmpty {
+                SquirrelImporter.Report.appendWarning(SquirrelImporter.Report.mergeFailed(importedSnapshots.count), paths: paths)
+            }
             deployLock = nil
             syncInProgress = false
             for request in pendingRequests { postResult(ok: false, request: request, message: "同步未能开始，详见日志") }
@@ -388,7 +474,9 @@ final class InputEngine {
         logger.info("primary schema is now \(primary, privacy: .public)")
     }
 
-    private func finishDeploy(ok: Bool) {
+    /// `schemasDeployed`: librime built the schemas, even if the frontend config failed
+    /// (`ok` is false then); an import still merges its snapshots in that case.
+    private func finishDeploy(ok: Bool, schemasDeployed: Bool? = nil) {
         // Only a deploy that went through prepareForDeploy is acknowledged; a user
         // dictionary sync also ends here and must not clear pending targets.
         if ok, awaitingDeployAck { ConfigLayers(paths: paths).markDeployed() }
@@ -399,6 +487,7 @@ final class InputEngine {
         deployLock = nil
         for request in pendingRequests { postResult(ok: ok, request: request, message: ok ? nil : failure) }
         pendingRequests = []
+        finishImport(deployed: schemasDeployed ?? ok)
         drainDeployQueue()
     }
 
@@ -428,11 +517,7 @@ final class InputEngine {
                 finishDeploy(ok: true)
             } else {
                 showStatus(frontendDeployed ? "部署完成" : "外观配置部署失败")
-                finishDeploy(ok: frontendDeployed)
-            }
-            if mergeSnapshotsAfterDeploy {
-                mergeSnapshotsAfterDeploy = false
-                syncUserData()
+                finishDeploy(ok: frontendDeployed, schemasDeployed: true)
             }
         case .deployFailed:
             showStatus(syncInProgress ? "同步失败" : "部署失败")

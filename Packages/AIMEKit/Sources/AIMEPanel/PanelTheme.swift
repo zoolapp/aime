@@ -167,8 +167,10 @@ public struct PanelTheme: Sendable, Hashable {
         hilitedCornerRadius = aime?["hilited_corner_radius"]?.doubleValue
             ?? max(double("hilited_corner_radius", 6), Self.minimumHilitedCornerRadius)
         configuredHilitedCornerRadius = max(0, value("hilited_corner_radius")?.doubleValue ?? hilitedCornerRadius)
-        borderHeight = double("border_height", 6)
-        borderWidth = double("border_width", 8)
+        // Squirrel accepts negative borders (flat schemes use -5 for edge-to-edge highlights).
+        // As layout insets they would push the first candidate outside the panel (#22).
+        borderHeight = max(0, double("border_height", 6))
+        borderWidth = max(0, double("border_width", 8))
         lineSpacing = double("line_spacing", 4)
         spacing = double("spacing", 8)
         baseOffset = double("base_offset", 0)

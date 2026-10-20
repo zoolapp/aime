@@ -80,6 +80,13 @@ final class DeployService {
         return result.ok ? .success : .failure(Self.summarize(result.output))
     }
 
+    /// After `import-squirrel --no-deploy`: the running input method deploys and merges the
+    /// imported snapshots itself (a second process cannot open its user dictionaries).
+    func deployImportedViaInputMethod() async -> Outcome {
+        await requestViaInputMethod(mode: "import", progress: { _, _ in })
+            ?? .failure("输入法未在 3 分钟内返回导入结果，可能仍在部署；请稍后查看日志 \(paths.logDir.path)")
+    }
+
     /// Validates pending changes in a throwaway copy of the workspace.
     func dryRun() async -> CommandResult { await run(["deploy", "--dry-run"]) }
 

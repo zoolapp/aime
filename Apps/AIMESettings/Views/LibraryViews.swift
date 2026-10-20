@@ -394,7 +394,7 @@ private struct SubscriptionsSection: View {
                     Button("订阅", action: add).buttonStyle(.borderedProminent).disabled(url.isEmpty || !model.canAddSubscription)
                 }
                 .controlSize(.small)
-                Text("支持 RIME dict.yaml、「词条⇥编码⇥权重」表格或每行一个词；拼音自动生成，全拼与小鹤双拼均可打出。")
+                Text("支持 RIME dict.yaml、「词条⇥编码⇥权重」表格或每行一个词；拼音自动生成，全拼、小鹤双拼与自然码双拼均可打出。")
                     .font(.caption).foregroundStyle(.secondary)
             }
             if let activity = model.subscriptionActivity {

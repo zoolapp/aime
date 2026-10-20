@@ -5,10 +5,15 @@ public import Foundation
 public enum DoublePinyin: String, Sendable, CaseIterable {
     /// 小鹤双拼 (double_pinyin_flypy)
     case flypy
+    /// 自然码双拼 (double_pinyin)
+    case ziranma
 
     /// Schema ids that use this layout.
     public var schemaIDs: [String] {
-        switch self { case .flypy: ["double_pinyin_flypy"] }
+        switch self {
+        case .flypy: ["double_pinyin_flypy"]
+        case .ziranma: ["double_pinyin"]
+        }
     }
 
     public static func layout(forSchema id: String) -> DoublePinyin? {
@@ -16,7 +21,9 @@ public enum DoublePinyin: String, Sendable, CaseIterable {
     }
 
     private var initials: [String: String] {
-        switch self { case .flypy: ["zh": "v", "ch": "i", "sh": "u"] }
+        switch self {
+        case .flypy, .ziranma: ["zh": "v", "ch": "i", "sh": "u"]
+        }
     }
 
     private var finals: [String: String] {
@@ -26,6 +33,13 @@ public enum DoublePinyin: String, Sendable, CaseIterable {
             "ie": "p", "ong": "s", "iong": "s", "ai": "d", "en": "f", "eng": "g", "ang": "h", "an": "j",
             "ing": "k", "uai": "k", "iang": "l", "uang": "l", "ou": "z", "ia": "x", "ua": "x", "ao": "c",
             "ui": "v", "v": "v", "in": "b", "iao": "n", "ian": "m",
+        ]
+        case .ziranma: [
+            "iu": "q", "ia": "w", "ua": "w", "uan": "r", "van": "r", "ue": "t", "ve": "t",
+            "ing": "y", "uai": "y", "uo": "o", "un": "p", "vn": "p", "ong": "s", "iong": "s",
+            "iang": "d", "uang": "d", "en": "f", "eng": "g", "ang": "h", "ian": "m", "an": "j",
+            "iao": "c", "ao": "k", "ai": "l", "ei": "z", "ie": "x", "ui": "v", "ou": "b",
+            "in": "n", "v": "v"
         ]
         }
     }
@@ -49,8 +63,9 @@ public enum DoublePinyin: String, Sendable, CaseIterable {
         }
         let initial = String(syllable.first!)
         let rest = String(syllable.dropFirst())
-        // j/q/x/y + u is ü.
-        let normalized = ("jqxy".contains(initial) && rest.hasPrefix("u")) ? "v" + rest.dropFirst() : rest
+        // Flypy uses v for j/q/x/y + ü; Ziranma retains the written u (ju, qu, xu, yu).
+        let normalized = (self == .flypy && "jqxy".contains(initial) && rest.hasPrefix("u"))
+            ? "v" + rest.dropFirst() : rest
         if normalized.count == 1 { return initial + normalized }
         guard let final = finals[normalized] ?? finals[rest] else { return nil }
         return initial + final

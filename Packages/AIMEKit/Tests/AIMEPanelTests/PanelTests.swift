@@ -72,6 +72,20 @@ struct PanelTests {
         #expect(theme.candidateTextColor == ThemeColor(red: 0, green: 0, blue: 0))
     }
 
+    @Test func negativeBordersKeepCandidatesInsideThePanel() throws {
+        let frontend = try ConfigValue.parse(yaml: """
+        style:
+          color_scheme: flat_light
+        preset_color_schemes:
+          flat_light:
+            border_height: -5.0
+            border_width: -5.0
+        """)
+        let theme = PanelTheme(frontend: frontend, dark: false)
+        #expect(theme.borderWidth == 0 && theme.borderHeight == 0)
+        #expect(theme.highlightShape == .filled)
+    }
+
     @Test func legacyHighlightBackgroundIsUsedOnlyWithoutCandidateOverride() throws {
         var frontend = try ConfigValue.parse(yaml: """
         style:
