@@ -174,27 +174,12 @@ Text reaches an AI model only when you run an AI action: Apple's on-device model
 
 ## Contributors
 
-Thanks to everyone who helps build AIME: anyone who has opened a pull request or an issue is listed here.
-
-**Code**
+Thanks to everyone who helps build AIME: anyone who has opened a pull request is listed here.
 
 <p>
 <a href="https://github.com/foru17" title="@foru17"><img src="https://avatars.githubusercontent.com/u/1920586?v=4&s=96" width="48" height="48" alt="@foru17"></a>
 <a href="https://github.com/miantiao-me" title="@miantiao-me"><img src="https://avatars.githubusercontent.com/u/2959393?v=4&s=96" width="48" height="48" alt="@miantiao-me"></a>
-</p>
-
-**Feedback and ideas**
-
-<p>
-<a href="https://github.com/BlackCCCat" title="@BlackCCCat"><img src="https://avatars.githubusercontent.com/u/44139461?v=4&s=96" width="48" height="48" alt="@BlackCCCat"></a>
-<a href="https://github.com/liustar2011-afk" title="@liustar2011-afk"><img src="https://avatars.githubusercontent.com/u/275464398?v=4&s=96" width="48" height="48" alt="@liustar2011-afk"></a>
-<a href="https://github.com/ShingmoYeung" title="@ShingmoYeung"><img src="https://avatars.githubusercontent.com/u/14231553?v=4&s=96" width="48" height="48" alt="@ShingmoYeung"></a>
-<a href="https://github.com/uu-myheart" title="@uu-myheart"><img src="https://avatars.githubusercontent.com/u/18180275?v=4&s=96" width="48" height="48" alt="@uu-myheart"></a>
-<a href="https://github.com/gaoyuanzong" title="@gaoyuanzong"><img src="https://avatars.githubusercontent.com/u/3156656?v=4&s=96" width="48" height="48" alt="@gaoyuanzong"></a>
-<a href="https://github.com/sunpm" title="@sunpm"><img src="https://avatars.githubusercontent.com/u/35005831?v=4&s=96" width="48" height="48" alt="@sunpm"></a>
-<a href="https://github.com/liuhao320" title="@liuhao320"><img src="https://avatars.githubusercontent.com/u/38712559?v=4&s=96" width="48" height="48" alt="@liuhao320"></a>
-<a href="https://github.com/txchen" title="@txchen"><img src="https://avatars.githubusercontent.com/u/713074?v=4&s=96" width="48" height="48" alt="@txchen"></a>
-<a href="https://github.com/morigith" title="@morigith"><img src="https://avatars.githubusercontent.com/u/73282352?v=4&s=96" width="48" height="48" alt="@morigith"></a>
+<a href="https://github.com/takeshi264" title="@takeshi264"><img src="https://avatars.githubusercontent.com/u/11970938?v=4&s=96" width="48" height="48" alt="@takeshi264"></a>
 </p>
 
 ## Acknowledgements
