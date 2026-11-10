@@ -21,7 +21,7 @@
   <a href="https://github.com/zoolapp/aime/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/zoolapp/aime/ci.yml?branch=main&style=flat-square&label=CI" alt="CI"></a>
   <a href="https://github.com/zoolapp/aime/releases"><img src="https://img.shields.io/github/v/release/zoolapp/aime?include_prereleases&style=flat-square&label=release" alt="Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2f855a?style=flat-square" alt="MIT"></a>
-  <img src="https://img.shields.io/badge/macOS-26%2B-111111?style=flat-square&logo=apple" alt="macOS 26+">
+  <img src="https://img.shields.io/badge/macOS-15%2B-111111?style=flat-square&logo=apple" alt="macOS 15+">
   <img src="https://img.shields.io/badge/Swift-6-F05138?style=flat-square&logo=swift&logoColor=white" alt="Swift 6">
   <img src="https://img.shields.io/badge/librime-1.17-B64032?style=flat-square" alt="librime 1.17">
 </p>
@@ -103,7 +103,7 @@ brew install --cask zoolapp/tap/aime
 
 App 支持 Apple 芯片与 Intel 的 Mac；命令行工具 `aime` 目前仅支持 Apple 芯片。
 
-从源码构建需要 macOS 26+、Xcode 26+ 与 [XcodeGen](https://github.com/yonaskolb/XcodeGen)（`brew install xcodegen`）。
+运行需要 macOS 15+（Apple 端侧模型需 macOS 26+）。从源码构建需要 Xcode 26+（macOS 15.6+） 与 [XcodeGen](https://github.com/yonaskolb/XcodeGen)（`brew install xcodegen`）。
 
 ```bash
 git clone https://github.com/zoolapp/aime.git && cd aime

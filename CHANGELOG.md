@@ -11,6 +11,18 @@ AIME 每个版本面向用户的变动都记在这里，官网「更新日志」
 
 ## [Unreleased]
 
+## [0.1.12] - 2026-11-11
+
+> 正式版 · Developer ID 签名 · 公证处理中
+
+### 新增
+
+- 支持 macOS 15 Sequoia（此前要求 macOS 26）。输入、设置与词库功能与新系统一致；Apple 端侧模型仍需 macOS 26，旧系统可在设置 › AI 助手改用自备的 OpenAI 兼容接口。
+
+### 修复
+
+- 在系统版本过低的 Mac 上打开安装包，会直接弹窗说明需要的系统版本，不再停在「选择目的宗卷」页、「继续」按钮灰掉却没有任何提示。
+
 ## [0.1.11] - 2026-11-10
 
 > 正式版 · Developer ID 签名 · 已通过 Apple 公证
@@ -227,7 +239,8 @@ AIME 每个版本面向用户的变动都记在这里，官网「更新日志」
 - 安装包已用 ZOOL LLC 的 Developer ID 签名，Apple 公证仍在处理中；首次打开需在 Finder 中右键 › 打开。
 - 命令行工具 `aime` 目前仅支持 Apple 芯片。
 
-[Unreleased]: https://github.com/zoolapp/aime/compare/v0.1.11...HEAD
+[Unreleased]: https://github.com/zoolapp/aime/compare/v0.1.12...HEAD
+[0.1.12]: https://github.com/zoolapp/aime/compare/v0.1.11...v0.1.12
 [0.1.11]: https://github.com/zoolapp/aime/compare/v0.1.10...v0.1.11
 [0.1.10]: https://github.com/zoolapp/aime/compare/v0.1.6...v0.1.10
 [0.1.6]: https://github.com/zoolapp/aime/compare/v0.1.5...v0.1.6

@@ -33,6 +33,10 @@ COPYFILE_DISABLE=1 pkgbuild --root "$STAGE/root" --install-location / \
   --identifier app.zool.inputmethod.aime.pkg --version "$VERSION" \
   --scripts scripts/pkg/scripts "$STAGE/AIME-component.pkg" >/dev/null
 
+# Keep in sync with project.yml (deploymentTarget), Package.swift (platforms) and
+# scripts/write-update-manifests.sh (minimumSystemVersion).
+MIN_MACOS=15.0
+MIN_MACOS_LABEL="${MIN_MACOS%.0}"   # "15" for user-facing text
 cat > "$STAGE/distribution.xml" <<XML
 <?xml version="1.0" encoding="utf-8"?>
 <installer-gui-script minSpecVersion="2">
@@ -41,7 +45,19 @@ cat > "$STAGE/distribution.xml" <<XML
   <license file="LICENSE"/>
   <conclusion file="conclusion.html" mime-type="text/html"/>
   <options customize="never" require-scripts="false" hostArchitectures="arm64,x86_64"/>
-  <volume-check><allowed-os-versions><os-version min="26.0"/></allowed-os-versions></volume-check>
+  <installation-check script="aimeCheckSystem()"/>
+  <script><![CDATA[
+function aimeCheckSystem() {
+  if (system.compareVersions(system.version.ProductVersion, '$MIN_MACOS') < 0) {
+    my.result.type = 'Fatal';
+    my.result.title = 'AIME 需要 macOS $MIN_MACOS_LABEL 或更高版本';
+    my.result.message = '当前系统是 macOS ' + system.version.ProductVersion + '，请先升级系统再安装。\nAIME requires macOS $MIN_MACOS_LABEL or later.';
+    return false;
+  }
+  return true;
+}
+  ]]></script>
+  <volume-check><allowed-os-versions><os-version min="$MIN_MACOS"/></allowed-os-versions></volume-check>
   <domains enable_localSystem="true"/>
   <choices-outline><line choice="default"><line choice="aime"/></line></choices-outline>
   <choice id="default"/>

@@ -189,9 +189,20 @@ struct AIAssistantView: View {
         return FoundationModelsProvider()
     }
 
+    /// FoundationModels ships with macOS 26; older systems need a custom endpoint.
+    private var onDeviceModelSupported: Bool {
+        if #available(macOS 26, *) { true } else { false }
+    }
+
     var body: some View {
         Form {
-            Section { PaneHeader(title: "AI 助手", subtitle: "用一句话修改配置、从文章里挑出新词。可选功能，默认使用本机端侧模型。", symbol: "wand.and.sparkles") }
+            Section {
+                PaneHeader(title: "AI 助手",
+                           subtitle: onDeviceModelSupported
+                               ? "用一句话修改配置、从文章里挑出新词。可选功能，默认使用本机端侧模型。"
+                               : "用一句话修改配置、从文章里挑出新词。可选功能；本机端侧模型需要 macOS 26，可改用自备接口。",
+                           symbol: "wand.and.sparkles")
+            }
 
 
             Section {
@@ -203,7 +214,7 @@ struct AIAssistantView: View {
 
             Section("模型") {
                 Picker("提供方", selection: $providerID) {
-                    Text("Apple 端侧模型（本机，推荐）").tag("apple")
+                    Text(onDeviceModelSupported ? "Apple 端侧模型（本机，推荐）" : "Apple 端侧模型（需要 macOS 26）").tag("apple")
                     Text("OpenAI 兼容接口（自备 Key）").tag("openai")
                 }
                 if providerID == "openai" {

@@ -124,6 +124,15 @@ import Testing
         release.minimumSystemVersion = nil
         #expect(release.supportsThisSystem(OperatingSystemVersion(majorVersion: 26, minorVersion: 0, patchVersion: 0)))
     }
+
+    /// The shipped manifests say 15.0: Sequoia and newer get updates, Sonoma does not.
+    @Test func macOS15Baseline() {
+        var release = AppRelease(product: "aime", version: "0.2.0", files: [:])
+        release.minimumSystemVersion = "15.0"
+        #expect(!release.supportsThisSystem(OperatingSystemVersion(majorVersion: 14, minorVersion: 7, patchVersion: 6)))
+        #expect(release.supportsThisSystem(OperatingSystemVersion(majorVersion: 15, minorVersion: 0, patchVersion: 0)))
+        #expect(release.supportsThisSystem(OperatingSystemVersion(majorVersion: 26, minorVersion: 1, patchVersion: 0)))
+    }
 }
 
 /// Serves canned responses for update tests (no network).

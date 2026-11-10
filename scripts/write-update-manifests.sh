@@ -20,7 +20,8 @@ def entry(name):
 manifest = {
     "product": "aime", "version": version, "build": int(build),
     "date": datetime.date.today().isoformat(), "prerelease": "-" in version or status != "notarized",
-    "minimumSystemVersion": "26.0", "default": "pkg",
+    # minimumSystemVersion: keep in sync with MIN_MACOS in scripts/package.sh.
+    "minimumSystemVersion": "15.0", "default": "pkg",
     "files": {"pkg": entry(f"AIME-{version}.pkg"), "zip": entry(f"AIME-{version}.zip"),
               "source": entry(f"AIME-{version}-source.tar.gz"), "sums": {"name": "SHA256SUMS.txt"}},
 }

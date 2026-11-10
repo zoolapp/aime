@@ -160,7 +160,7 @@ MD
   echo "AIME 原创代码采用 MIT。安装包包含 GPL-3.0 组件（librime-octagram 插件、雾凇拼音方案与 Lua 脚本），因此安装包整体按 GPL-3.0 条款分发；"
   echo "对应源码见附件 \`AIME-$VERSION-source.tar.gz\`（AIME、librime、三个原生插件与雾凇拼音的固定版本，来源与哈希见包内 SOURCES.txt）。"
   echo
-  echo "最低系统：macOS 26。输入法与设置应用为 universal（Apple Silicon + Intel）；内置的 \`aime\` 命令行工具随构建机架构（当前为 Apple Silicon）。"
+  echo "最低系统：macOS 15（Apple 端侧模型需 macOS 26，旧系统可用自备接口）。输入法与设置应用为 universal（Apple Silicon + Intel）；内置的 \`aime\` 命令行工具随构建机架构（当前为 Apple Silicon）。"
   echo
   echo "## SHA-256"
   echo

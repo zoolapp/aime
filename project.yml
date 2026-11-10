@@ -3,13 +3,13 @@ options:
   bundleIdPrefix: app.zool.aime
   developmentLanguage: zh-Hans
   deploymentTarget:
-    macOS: "26.0"
+    macOS: "15.0"
   createIntermediateGroups: true
   groupSortPosition: top
 settings:
   base:
-    MARKETING_VERSION: "0.1.11"
-    CURRENT_PROJECT_VERSION: "18"
+    MARKETING_VERSION: "0.1.12"
+    CURRENT_PROJECT_VERSION: "19"
     SWIFT_VERSION: "6.0"
     SWIFT_STRICT_CONCURRENCY: complete
     SWIFT_EMIT_LOC_STRINGS: YES

@@ -9,7 +9,7 @@ let strictSwift: [SwiftSetting] = [
 let package = Package(
     name: "AIMEKit",
     defaultLocalization: "zh-Hans",
-    platforms: [.macOS(.v26)],
+    platforms: [.macOS(.v15)],
     products: [
         .library(name: "RimeKit", targets: ["RimeKit"]),
         .library(name: "AIMECore", targets: ["AIMECore"]),

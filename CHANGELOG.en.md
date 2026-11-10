@@ -12,6 +12,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.1.12] - 2026-11-11
+
+> Stable release · Developer ID signed · notarization pending
+
+### Added
+
+- macOS 15 Sequoia is supported (previously macOS 26 was required). Typing, Settings and dictionaries work the same as on newer systems; the Apple on-device model still needs macOS 26, so older systems can switch to your own OpenAI-compatible endpoint in Settings › AI Assistant.
+
+### Fixed
+
+- Opening the installer on a Mac whose macOS is too old now shows an alert naming the required version, instead of stopping at "Select a Destination" with a greyed-out Continue button and no explanation.
+
 ## [0.1.11] - 2026-11-10
 
 > Stable release · Developer ID signed · notarized by Apple
@@ -228,7 +240,8 @@ The first public developer preview.
 - The installer is signed with ZOOL LLC's Developer ID; Apple notarization is still pending, so the first launch needs Control-click › Open in Finder.
 - The `aime` command-line tool supports Apple silicon only.
 
-[Unreleased]: https://github.com/zoolapp/aime/compare/v0.1.11...HEAD
+[Unreleased]: https://github.com/zoolapp/aime/compare/v0.1.12...HEAD
+[0.1.12]: https://github.com/zoolapp/aime/compare/v0.1.11...v0.1.12
 [0.1.11]: https://github.com/zoolapp/aime/compare/v0.1.10...v0.1.11
 [0.1.10]: https://github.com/zoolapp/aime/compare/v0.1.6...v0.1.10
 [0.1.6]: https://github.com/zoolapp/aime/compare/v0.1.5...v0.1.6

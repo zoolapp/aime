@@ -6,7 +6,7 @@ Focused bug reports, documentation fixes, dictionary proposals, and code contrib
 
 ## Development environment
 
-Use macOS 26+, Xcode 26+ with command-line tools selected, and XcodeGen (`brew install xcodegen`). The Swift package requires Swift tools 6.2+ and uses Swift 6 strict concurrency. Install SwiftLint for local lint checks. Scripts also use Git, Bash, curl, Python 3, and Ruby. Record the exact tool versions used; CI selects the latest stable Xcode on `macos-26`.
+Use Xcode 26+ (macOS 15.6+) with command-line tools selected, and XcodeGen (`brew install xcodegen`). The Swift package requires Swift tools 6.2+ and uses Swift 6 strict concurrency. Install SwiftLint for local lint checks. Scripts also use Git, Bash, curl, Python 3, and Ruby. Record the exact tool versions used; CI selects the latest stable Xcode on `macos-26`.
 
 `Packages/AIMEKit` contains `RimeKit`, `AIMECore`, `AIMEPanel`, `AIMEAI`, and the `aime` CLI. `project.yml` defines the two app targets: `AIME.app` (InputMethodKit/AppKit) and `AIME Settings.app` (SwiftUI). See [architecture](docs/architecture.md) and the [decision records](docs/decisions/) for module boundaries.
 

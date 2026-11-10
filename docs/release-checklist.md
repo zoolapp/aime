@@ -14,7 +14,7 @@
 
 ## 本地安装与输入实测
 
-- [ ] 备份现有 AIME 用户配置；在 macOS 26+ 测试机执行下列步骤。`install-dev.sh` 会替换当前用户安装的 AIME 并终止旧进程，须保存正在输入的内容。
+- [ ] 备份现有 AIME 用户配置；在 macOS 26+ 测试机执行下列步骤，并在 macOS 15 测试机（或虚拟机）至少过一遍安装、打字、中英切换与设置页亮/暗截图。`install-dev.sh` 会替换当前用户安装的 AIME 并终止旧进程，须保存正在输入的内容。
 
 ```bash
 bash scripts/fetch-librime.sh

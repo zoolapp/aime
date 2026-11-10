@@ -113,10 +113,10 @@ private struct SchemeGallery: View {
             Text(dark ? "选择深色模式下使用的配色" : "选择浅色模式下使用的配色").font(.callout).foregroundStyle(.secondary)
             ForEach(groups.filter { !$0.items.isEmpty }, id: \.title) { group in
                 VStack(alignment: .leading, spacing: 10) {
-                    HStack(spacing: 6) {
-                        Text(group.title).font(.subheadline.weight(.semibold))
-                        Text("\(group.items.count)").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
-                    }
+                    // One concatenated Text, not an HStack of two: on macOS 15 the first group's
+                    // title in the two-Text HStack rendered as a blank smudge in light mode.
+                    (Text(group.title).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
+                        + Text(verbatim: "  \(group.items.count)").font(.caption.monospacedDigit()).foregroundStyle(.secondary))
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 200), spacing: 12, alignment: .top)], alignment: .leading, spacing: 12) {
                         ForEach(group.items) { entry in
                             SchemeTile(name: entry.name, theme: entry.theme, selected: selected == entry.id) {

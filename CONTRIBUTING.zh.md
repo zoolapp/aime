@@ -6,7 +6,7 @@
 
 ## 开发环境
 
-使用 macOS 26+、已选择命令行工具的 Xcode 26+ 和 XcodeGen（`brew install xcodegen`）。Swift 包要求 Swift tools 6.2+，启用 Swift 6 strict concurrency。安装 SwiftLint 用于本地 lint 检查。脚本还会使用 Git、Bash、curl、Python 3 和 Ruby。记录实际使用的工具版本；CI 在 `macos-26` 上选择最新稳定版 Xcode。
+使用已选择命令行工具的 Xcode 26+（macOS 15.6+） 和 XcodeGen（`brew install xcodegen`）。Swift 包要求 Swift tools 6.2+，启用 Swift 6 strict concurrency。安装 SwiftLint 用于本地 lint 检查。脚本还会使用 Git、Bash、curl、Python 3 和 Ruby。记录实际使用的工具版本；CI 在 `macos-26` 上选择最新稳定版 Xcode。
 
 `Packages/AIMEKit` 包含 `RimeKit`、`AIMECore`、`AIMEPanel`、`AIMEAI` 和 `aime` CLI。`project.yml` 定义两个 App target：`AIME.app`（InputMethodKit/AppKit）和 `AIME Settings.app`（SwiftUI）。模块边界见[架构文档](docs/architecture.md)与[架构决策记录](docs/decisions/)。
 

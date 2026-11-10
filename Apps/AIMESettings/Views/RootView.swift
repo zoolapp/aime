@@ -113,8 +113,13 @@ struct RootView: View {
                     if selection != .about {
                         // Status sits outside the button's glass capsule: text on a tinted
                         // (prominent) capsule is unreadable in both light and dark mode.
-                        ToolbarItem(placement: .primaryAction) { DeployStatus() }
-                            .sharedBackgroundVisibility(.hidden)
+                        // Before macOS 26 toolbar items have no glass capsule to hide.
+                        if #available(macOS 26, *) {
+                            ToolbarItem(placement: .primaryAction) { DeployStatus() }
+                                .sharedBackgroundVisibility(.hidden)
+                        } else {
+                            ToolbarItem(placement: .primaryAction) { DeployStatus() }
+                        }
                         ToolbarItem(placement: .primaryAction) { DeployButton() }
                     }
                 }
