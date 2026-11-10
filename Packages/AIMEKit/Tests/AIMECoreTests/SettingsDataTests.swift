@@ -54,6 +54,44 @@ struct SettingsDataTests {
         #expect(store.appOptions().map(\.bundleID) == ["com.microsoft.VSCode"])
     }
 
+    @Test func appAsciiPunctRoundTrips() throws {
+        defer { try? FileManager.default.removeItem(at: paths.userDataDir.deletingLastPathComponent()) }
+        let store = SettingsStore(paths: paths)
+        var option = SettingsStore.AppOption(bundleID: "org.example.Editor", initialMode: .chinese,
+                                             noInline: true, vimMode: true, asciiPunct: true)
+        try store.setAppOption(option)
+        let yaml = try String(contentsOf: store.layers.generatedURL(.frontend), encoding: .utf8)
+        #expect(yaml.contains("ascii_punct: true"))
+        let patch = try ConfigValue.parse(yaml: yaml)["patch"]
+        #expect(patch?["app_options/org.example.Editor"]?["ascii_punct"]?.boolValue == true)
+        #expect(SettingsStore(paths: paths).appOptions() == [option])
+
+        option.asciiPunct = false
+        try store.setAppOption(option)
+        let disabledYAML = try String(contentsOf: store.layers.generatedURL(.frontend), encoding: .utf8)
+        #expect(!disabledYAML.contains("ascii_punct"))
+        #expect(SettingsStore(paths: paths).appOptions() == [option])
+
+        // A punctuation-only rule must survive without an initial-mode override.
+        option.initialMode = .shared
+        option.noInline = false
+        option.vimMode = false
+        option.asciiPunct = true
+        try store.setAppOption(option)
+        #expect(SettingsStore(paths: paths).appOptions() == [option])
+    }
+
+    @Test func legacyAppOptionsDefaultToNonAsciiPunctuation() throws {
+        defer { try? FileManager.default.removeItem(at: paths.userDataDir.deletingLastPathComponent()) }
+        try "app_options:\n  org.example.Editor:\n    ascii_mode: false\n    vim_mode: true\n".write(
+            to: paths.builtConfig("aime"), atomically: true, encoding: .utf8)
+        let option = try #require(SettingsStore(paths: paths).appOptions().first)
+        #expect(!option.asciiPunct)
+        #expect(option.initialMode == .chinese)
+        #expect(option.vimMode)
+        #expect(!SettingsStore.AppOption(bundleID: "org.example.New").asciiPunct)
+    }
+
     @Test func setsSyncDir() throws {
         try "installation_id: abc\n".write(to: paths.userDataDir.appendingPathComponent("installation.yaml"), atomically: true, encoding: .utf8)
         let store = SettingsStore(paths: paths)

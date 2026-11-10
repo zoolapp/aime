@@ -27,6 +27,18 @@ public struct RimeContextSnapshot: Sendable, Equatable {
             self.selectionEnd = selectionEnd
         }
 
+        /// What an abandoned composition leaves in the document (librime's `commit_code`):
+        /// the keys as typed, or the confirmed text followed by the rest of the preedit
+        /// without syllable separators ("你好shi jie" → "你好shijie").
+        public func textOnLeave(input: String) -> String {
+            let bytes = Array(preedit.utf8)
+            let start = max(0, min(selectionStart, bytes.count))
+            guard start > 0 else { return input }
+            let confirmed = String(decoding: bytes[0..<start], as: UTF8.self)
+            let rest = String(decoding: bytes[start...], as: UTF8.self).filter { !$0.isWhitespace }
+            return confirmed + rest
+        }
+
         /// Converts a UTF-8 byte offset into a UTF-16 offset for AppKit ranges.
         public func utf16Offset(ofUTF8 offset: Int) -> Int {
             let bytes = Array(preedit.utf8)

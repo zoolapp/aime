@@ -1,6 +1,7 @@
 import AIMECore
 import AIMEPanel
 import AppKit
+import Carbon
 import InputMethodKit
 import os
 import RimeKit
@@ -37,6 +38,17 @@ final class InputEngine {
     /// Chinese/English state sharing (global / per app / per window), for the life of
     /// the process. The scope comes from `ascii_state/scope` in aime.yaml.
     var asciiState = AsciiStatePolicy()
+    /// Leaving a field mid-composition puts the typed keys there (`ascii_state/commit_on_leave:
+    /// input_code`, like the system input methods) instead of the highlighted candidate.
+    var commitCodeOnLeave = true
+    /// `ascii_state/reset_on_return`: coming back from another input source starts in Chinese.
+    var resetOnReturn = false
+    /// `style/aime/arrow_keys_follow_layout`: horizontal lists move with ← → and page with ↑ ↓.
+    var arrowKeysFollowLayout = true
+    /// Set when the system switched to an input source other than AIME; the next
+    /// activation consumes it.
+    private var leftForOtherSource = false
+    private var observingInputSources = false
 
     private var statusHideTask: Task<Void, Never>?
     /// Held from the start of a deploy until librime reports its outcome.
@@ -91,6 +103,7 @@ final class InputEngine {
 
         let engine = RimeEngine.shared
         engine.notificationHandler = { [weak self] in self?.handle($0) }
+        observeInputSourceChanges()
         // Never block startup on the lock: if a CLI deploy is running, just load what
         // is already built and skip our own maintenance pass.
         deployLock = WorkspaceLock.acquire(paths)
@@ -269,6 +282,31 @@ final class InputEngine {
         }
     }
 
+    /// Watches the selected input source (registered once for the life of the process)
+    /// so an activation can tell "switched back from another input method" apart from
+    /// "switched apps" — IMK reports both as activateServer.
+    private func observeInputSourceChanges() {
+        guard !observingInputSources else { return }
+        observingInputSources = true
+        DistributedNotificationCenter.default().addObserver(
+            forName: Notification.Name(kTISNotifySelectedKeyboardInputSourceChanged as String), object: nil, queue: .main
+        ) { _ in
+            MainActor.assumeIsolated {
+                let source = TISCopyCurrentKeyboardInputSource().takeRetainedValue()
+                let id = TISGetInputSourceProperty(source, kTISPropertyInputSourceID)
+                    .map { Unmanaged<CFString>.fromOpaque($0).takeUnretainedValue() as String }
+                if let id, !InputSourceReturn.isAIME(id) { InputEngine.shared.leftForOtherSource = true }
+            }
+        }
+    }
+
+    /// True once after the user came back from another input source with the reset
+    /// setting on. Always clears the mark.
+    func consumeReturnReset() -> Bool {
+        defer { leftForOtherSource = false }
+        return resetOnReturn && leftForOtherSource
+    }
+
     private func observeReloadRequests() {
         DistributedNotificationCenter.default().addObserver(
             forName: Self.reloadNotification, object: nil, queue: .main
@@ -401,6 +439,7 @@ final class InputEngine {
         awaitingDeployAck = true
         pendingRequests = requests
         activeController?.cancelPolish()
+        activeController?.closeMenu() // or it stays open, invisible, and takes the next keys
         activeController?.flushBeforeEngineRestart()
         panel.hide()
         let engine = RimeEngine.shared
@@ -564,6 +603,9 @@ final class InputEngine {
         }
         frontend = loaded
         asciiState.scope = frontend.value(at: "ascii_state/scope")?.stringValue.flatMap(AsciiStateScope.init(rawValue:)) ?? .global
+        commitCodeOnLeave = frontend.value(at: "ascii_state/commit_on_leave")?.stringValue != "candidate"
+        resetOnReturn = frontend.value(at: "ascii_state/reset_on_return")?.boolValue ?? false
+        arrowKeysFollowLayout = frontend.value(at: "style/aime/arrow_keys_follow_layout")?.boolValue ?? true
         refreshTheme(force: true)
     }
 
@@ -572,6 +614,7 @@ final class InputEngine {
         guard force || dark != isDark else { return }
         isDark = dark
         panel.theme = PanelTheme(frontend: frontend, dark: dark)
+        activeController?.applyArrowKeyLayout()
     }
 
     struct AppOptions {

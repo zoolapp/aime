@@ -202,6 +202,21 @@
       "step": 0.1
     },
     {
+      "id": "vocabulary.subscription_priority",
+      "group": "general",
+      "title": "订阅词优先级",
+      "description": "补充：订阅词库只补充新词，不抢常用词的首选；优先：订阅词排在常用词前面",
+      "file": "frontend",
+      "keypath": "vocabulary/subscription_priority",
+      "type": "enum",
+      "options": [
+        { "value": "supplement", "title": "补充新词（推荐）" },
+        { "value": "prefer", "title": "订阅词优先" }
+      ],
+      "default": "supplement",
+      "doc": "#订阅词库优先级"
+    },
+    {
       "id": "translator.contextual_suggestions",
       "group": "general",
       "title": "跨句上下文建议",
@@ -246,6 +261,38 @@
         }
       ],
       "default": "global",
+      "doc": "#ascii_state"
+    },
+    {
+      "id": "ascii_state.reset_on_return",
+      "group": "switching",
+      "title": "从其他输入法切回时用中文",
+      "description": "从 ABC 等其他输入法切回艾么时，总是回到中文输入；只切换应用不受影响。",
+      "file": "frontend",
+      "keypath": "ascii_state/reset_on_return",
+      "type": "bool",
+      "default": false,
+      "doc": "#ascii_state"
+    },
+    {
+      "id": "ascii_state.commit_on_leave",
+      "group": "switching",
+      "title": "打字中途离开时",
+      "description": "还没选词就切换输入法、点击别处或切换应用时，输入框里留下什么。",
+      "file": "frontend",
+      "keypath": "ascii_state/commit_on_leave",
+      "type": "enum",
+      "options": [
+        {
+          "value": "input_code",
+          "title": "保留已打的字母（推荐）"
+        },
+        {
+          "value": "candidate",
+          "title": "上屏当前候选"
+        }
+      ],
+      "default": "input_code",
       "doc": "#ascii_state"
     },
     {
@@ -613,6 +660,17 @@
       "keypath": "key_binder/select_last_character",
       "type": "hotkey",
       "default": "bracketright",
+      "doc": "#key_binder"
+    },
+    {
+      "id": "keys.arrow_keys_follow_layout",
+      "group": "keys",
+      "title": "方向键跟随候选排列",
+      "description": "横排候选时，← → 在当前页移动，↑ ↓ 翻页；竖排时 ↑ ↓ 移动",
+      "file": "frontend",
+      "keypath": "style/aime/arrow_keys_follow_layout",
+      "type": "bool",
+      "default": true,
       "doc": "#key_binder"
     },
     {
@@ -1430,7 +1488,7 @@
       "id": "advanced.app_options",
       "group": "advanced",
       "title": "应用级选项",
-      "description": "按 App 覆盖行为，每项格式 bundleId:ascii_mode=true,vim_mode=true（可用键 ascii_mode/ascii_punct/inline/no_inline/vim_mode）。",
+      "description": "在「设置 › 应用」按 App 覆盖行为，可开关英文标点（ascii_punct，默认关闭）。每项格式 bundleId:ascii_mode=true,ascii_punct=true,vim_mode=true（可用键 ascii_mode/ascii_punct/inline/no_inline/vim_mode）。",
       "file": "frontend",
       "keypath": "app_options",
       "type": "custom",

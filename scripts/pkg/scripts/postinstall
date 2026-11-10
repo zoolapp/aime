@@ -10,6 +10,16 @@ if [[ ! -x "$app/Contents/MacOS/AIME" ]]; then
   exit 1
 fi
 if [[ -n "$login_user" && "$login_user" != "root" ]]; then
+  # A leftover ~/Library/Input Methods/AIME.app duplicates AIME in Input Sources (#32).
+  # dscl prints "NFSHomeDirectory: /Users/x", or the value on the next line when it has spaces.
+  login_home="$(/usr/bin/dscl . -read "/Users/$login_user" NFSHomeDirectory 2>/dev/null \
+    | /usr/bin/sed -e '1s/^NFSHomeDirectory:[[:space:]]*//' -e 's/^[[:space:]]*//' | /usr/bin/tr -d '\n')"
+  if [[ -n "$login_home" ]]; then
+    # Root reads the helper and the user's shell runs it: the Installer's script folder
+    # need not be readable by the user.
+    # shellcheck disable=SC2024 # root opening the file is the point
+    /usr/bin/sudo -u "$login_user" /bin/bash -s "$login_home" "$app" < "$(dirname "$0")/retire-user-copy" || true
+  fi
   /usr/bin/sudo -u "$login_user" "$app/Contents/MacOS/AIME" --install || true
   # An upgrade replaces the bundle, but the old IMK process may still be alive.
   # Stop only this user's instance; imklaunchagent starts the installed version

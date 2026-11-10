@@ -10,12 +10,8 @@ enum Locations {
            FileManager.default.fileExists(atPath: embedding.appendingPathComponent("Contents/Helpers/aime").path) {
             return embedding
         }
-        // Per-user dev install first, then the system-wide .pkg location.
-        let candidates = [
-            FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Input Methods/AIME.app"),
-            URL(fileURLWithPath: "/Library/Input Methods/AIME.app"),
-        ]
-        return candidates.first { FileManager.default.fileExists(atPath: $0.path) }
+        // With a leftover per-user copy next to the .pkg install, use the newer one (#32).
+        return AIMEInstallations().preferred?.url
     }
 
     static var cli: URL? { inputMethodApp?.appendingPathComponent("Contents/Helpers/aime") }
@@ -128,7 +124,7 @@ final class DeployService {
     /// Runs the bundled `aime` CLI off the main thread.
     func run(_ arguments: [String]) async -> CommandResult {
         guard let cli = Locations.cli else {
-            return CommandResult(ok: false, output: "未找到 AIME 输入法（~/Library/Input Methods/AIME.app），请先安装。")
+            return CommandResult(ok: false, output: "未找到 AIME 输入法（/Library/Input Methods/AIME.app），请先安装。")
         }
         let userDir = paths.userDataDir.path
         return await Task.detached(priority: .userInitiated) {

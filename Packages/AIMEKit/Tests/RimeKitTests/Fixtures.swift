@@ -69,6 +69,12 @@ enum Fixtures {
     你\tni\t100
     好\thao\t100
     你好\tni hao\t1000
+    拟好\tni hao\t900
+    泥好\tni hao\t800
+    逆好\tni hao\t700
+    妮好\tni hao\t600
+    倪好\tni hao\t500
+    霓好\tni hao\t400
     世界\tshi jie\t800
     是\tshi\t500
     界\tjie\t50

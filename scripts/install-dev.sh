@@ -22,6 +22,7 @@ if [[ -d "/Library/Input Methods/AIME.app" ]]; then
   echo "         Two copies share one bundle id; remove one, e.g.:" >&2
   echo "         sudo rm -rf '/Library/Input Methods/AIME.app' '/Applications/AIME Settings.app'" >&2
 fi
+echo "note: installing an AIME .pkg later moves this per-user copy to the Trash (#32)." >&2
 echo "==> done. If AIME is not selectable yet, add it in System Settings › Keyboard ›"
 echo "    Input Sources (log out and back in once after the first install)."
 echo "    CLI: \"$DEST/AIME.app/Contents/Helpers/aime\" doctor"

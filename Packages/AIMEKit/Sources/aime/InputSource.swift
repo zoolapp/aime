@@ -1,3 +1,4 @@
+import AIMECore
 import Carbon
 import Foundation
 import RimeKit
@@ -5,11 +6,8 @@ import RimeKit
 enum AIMEIdentity {
     static let bundleID = "app.zool.inputmethod.aime"
     static let inputModeID = "app.zool.inputmethod.aime.hans"
-    static var installedApp: URL {
-        let user = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Input Methods/AIME.app")
-        let system = URL(fileURLWithPath: "/Library/Input Methods/AIME.app")
-        return FileManager.default.fileExists(atPath: user.path) || !FileManager.default.fileExists(atPath: system.path) ? user : system
-    }
+    /// The copy in charge (newer build; the system-wide one on a tie), else the per-user path.
+    static var installedApp: URL { AIMEInstallations().preferred?.url ?? AIMEInstallations.userURL() }
 }
 
 /// Text Input Sources registration (what System Settings › Keyboard › Input Sources lists).

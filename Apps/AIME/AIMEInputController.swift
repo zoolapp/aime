@@ -48,10 +48,14 @@ final class AIMEInputController: IMKInputController {
     private func ensureSession() -> RimeSession? {
         let rime = RimeEngine.shared
         guard rime.isInitialized, !rime.isMaintaining else { return nil }
-        if let session, sessionGeneration == engine.generation, session.isAlive { return session }
+        if let session, sessionGeneration == engine.generation, session.isAlive {
+            applyArrowKeyLayout()
+            return session
+        }
         session = try? rime.createSession()
         sessionGeneration = engine.generation
         applyAppOptions(newSession: true)
+        applyArrowKeyLayout()
         applyScriptOption()
         applyPunctOption()
         return session
@@ -89,6 +93,13 @@ final class AIMEInputController: IMKInputController {
         guard let session = liveSession else { return }
         let traditional = engine.features.traditional
         if session.option("traditionalization") != traditional { session.setOption("traditionalization", traditional) }
+    }
+
+    /// Private Rime options are not persisted; synchronize new and reused sessions.
+    func applyArrowKeyLayout() {
+        guard let session = liveSession else { return }
+        let horizontal = engine.arrowKeysFollowLayout && engine.panel.theme.layout == .linear
+        if session.option("_horizontal") != horizontal { session.setOption("_horizontal", horizontal) }
     }
 
     /// Chinese/English punctuation: the app's own setting, else the state shared by all apps.
@@ -136,6 +147,10 @@ final class AIMEInputController: IMKInputController {
 
     private func activate(client: (any IMKTextInput)?) {
         DebugLog.write("activate client=\(client?.bundleIdentifier() ?? "?")")
+        // IMK may activate the next field before deactivating the last one (switching
+        // apps). By then the old field no longer owns the panel and its deactivate cannot
+        // hide it, so a quick menu opened there stayed on screen over the new app.
+        if let previous = engine.activeController, previous !== self { previous.yieldPanel() }
         engine.activeController = self
         engine.refreshTheme()
         bundleID = client?.bundleIdentifier()
@@ -147,10 +162,29 @@ final class AIMEInputController: IMKInputController {
         // Nothing here may call back into the client: it is blocked until activateServer
         // returns. A reused session may be stale if another window of the same app
         // switched Chinese/English meanwhile, so re-apply the remembered state.
+        // Back from another input method with "reset to Chinese" on (#25): Chinese, and
+        // remembered where this field's state lives so the next app does not undo it.
+        let reset = engine.consumeReturnReset()
+        if reset { engine.asciiState.record(false, app: bundleID, appDefault: appOptions.asciiMode) }
         if ensureSession() != nil {
             applyAppOptions(newSession: false)
             applyPunctOption()
+            if reset, let session = liveSession, session.option("ascii_mode") {
+                DebugLog.write("ascii reset on return from another input source")
+                session.setOption("ascii_mode", false)
+            }
         }
+    }
+
+    /// Another field is taking over before this one was deactivated: drop the menu and any
+    /// action result while this one still owns the panel, then clear the panel.
+    /// State only: no sync, nothing sent to the old client while IMK is activating the new one.
+    func yieldPanel() {
+        menuHold.cancel()
+        quickMenu = nil
+        polish?.task?.cancel()
+        polish = nil
+        engine.panel.hide()
     }
 
     nonisolated override func deactivateServer(_ sender: Any!) {
@@ -192,6 +226,23 @@ final class AIMEInputController: IMKInputController {
 
     private func commitPending(_ client: (any IMKTextInput)?) {
         if let session = liveSession, isComposing {
+            if engine.commitCodeOnLeave {
+                // Switching input source or clicking away: the keys typed stay as typed (#20).
+                let code = session.context().composition.textOnLeave(input: session.input)
+                session.clearComposition()
+                isComposing = false
+                let target = client ?? textClient
+                flushDraft(client: target)
+                if !code.isEmpty {
+                    DebugLog.write("commit-code length=\(code.count)")
+                    target?.insertText(code, replacementRange: NSRange(location: NSNotFound, length: 0))
+                    recentText.append(code)
+                    hasMarkedText = false
+                }
+                if hasMarkedText { clearMarkedText(target) }
+                if ownsPanel { engine.panel.hide() }
+                return
+            }
             session.commitComposition()
             sync(client: client ?? textClient)
         }
@@ -283,6 +334,7 @@ final class AIMEInputController: IMKInputController {
             }
             engine.cancelStatus()
             forwardedToRime = true
+            let wasComposing = isComposing
             handled = session.processKey(keysym, modifiers: mask)
             // IMK never delivers key-ups. Report the release of each real press (not
             // auto-repeats), as Weasel and fcitx do, so schemas can tell taps from a held
@@ -295,11 +347,27 @@ final class AIMEInputController: IMKInputController {
                 // layer on they join the draft; otherwise they go to the app and are
                 // remembered as recently typed text.
                 let typed = Self.printableText(event)
+                // English punctuation while composing: librime commits the candidate and
+                // leaves the key alone. The commit goes first, and the key is inserted
+                // here rather than handed back: the app's own insertion races ours and
+                // replaces the preedit, losing the committed text.
+                if typed != nil, wasComposing {
+                    lastCommitted = ""
+                    sync(client: client)
+                }
+                let committedFirst = wasComposing && (!lastCommitted.isEmpty || !isComposing)
                 // A draft opens on words only (letters typed in English mode); a space,
                 // digits or punctuation join an open draft and otherwise go to the app.
                 if let typed, draftLayerActive, !draft.isEmpty || DraftBuffer.opensDraft(typed) {
                     appendToDraft(typed, client: client)
                     sync(client: client)
+                    rememberAsciiMode()
+                    return true
+                }
+                if let typed, committedFirst {
+                    client?.insertText(typed, replacementRange: NSRange(location: NSNotFound, length: 0))
+                    hasMarkedText = false
+                    recentText.append(typed)
                     rememberAsciiMode()
                     return true
                 }
@@ -555,11 +623,15 @@ final class AIMEInputController: IMKInputController {
         // the shared panel belonging to the newly active field.
         guard ownsPanel else { return }
         scheduleDraftAutoCommit()
+        // The quick menu or an action's result list owns the panel until it closes. A
+        // modifier release (⌃⌥P lets go of ⌃ and ⌥) also lands here, and must not hide
+        // or redraw over it (#31).
+        guard quickMenu == nil, polish == nil else { return }
         guard isComposing else {
             // A pending draft shows a small hint under it (what the layer is waiting for).
             if draft.isEmpty {
                 engine.panel.hide()
-            } else if quickMenu == nil, polish == nil {
+            } else {
                 engine.panel.show(draftHint, at: cursorRect(client: client))
             }
             return

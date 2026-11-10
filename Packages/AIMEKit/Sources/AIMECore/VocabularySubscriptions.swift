@@ -488,6 +488,17 @@ public struct SubscriptionManager: Sendable {
         layout.map { "\(tableName)_\($0.rawValue).txt" } ?? "\(tableName).txt"
     }
 
+    /// Unknown or missing preferences retain the conservative default.
+    static func subscriptionQuality(for priority: String?) -> Int {
+        priority == "prefer" ? 6 : 1
+    }
+
+    private var subscriptionQuality: Int {
+        let patch = try? ConfigLayers(paths: paths).composedPatch(.frontend)
+        let priority = patch?.last { $0.key == "vocabulary/subscription_priority" }?.value.stringValue
+        return Self.subscriptionQuality(for: priority)
+    }
+
     /// Writes the per-layout tables and mounts them into `schemas` via the generated
     /// layer. Returns the number of entries written.
     @discardableResult
@@ -533,6 +544,7 @@ public struct SubscriptionManager: Sendable {
                 }
             }
         }
+        let quality = subscriptionQuality
         for schema in schemas where Self.canMount(schema) {
             let file = Self.tableFileName(for: DoublePinyin.layout(forSchema: schema))
             try layers.updateGenerated(.schema(schema)) { patch in
@@ -540,7 +552,7 @@ public struct SubscriptionManager: Sendable {
                 patch.append(.init(Self.tableName, .map([
                     .init("dictionary", ""), .init("user_dict", .string(String(file.dropLast(4)))), .init("db_class", "stabledb"),
                     .init("enable_completion", false), .init("enable_sentence", false),
-                    .init("initial_quality", 6), .init("comment_format", .list([])),
+                    .init("initial_quality", .int(quality)), .init("comment_format", .list([])),
                 ])))
                 let translator = ConfigValue.string("table_translator@\(Self.tableName)")
                 if !patch.contains(where: { $0.key == "engine/translators/+" && ($0.value.listValue ?? []).contains(translator) }) {
@@ -611,7 +623,7 @@ public struct SubscriptionManager: Sendable {
 
     func tableSignature(schemas: [String], items: [VocabularySubscription]) -> String {
         func digest(_ url: URL) -> String { (try? PackageManager.sha256(of: url)) ?? "missing" }
-        var parts = ["v3", schemas.sorted().joined(separator: ",")]
+        var parts = ["v4", schemas.sorted().joined(separator: ","), "quality=\(subscriptionQuality)"]
         if let shipped = paths.sharedDataDir?.appendingPathComponent("aime/aime_tech.tsv") { parts.append(digest(shipped)) }
         for item in items.sorted(by: { $0.id < $1.id }) { parts.append("\(item.id)=\(digest(cacheURL(item.id)))") }
         return parts.joined(separator: "|")

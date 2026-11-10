@@ -10,7 +10,7 @@ struct AppOptionsView: View {
 
     var body: some View {
         Form {
-            Section { PaneHeader(title: "应用", subtitle: "为编程类等应用设置默认英文（首次进入为英文，之后记住你在该应用里的选择，不影响其他应用）、关闭内联预编辑或启用 Vim 模式。", symbol: "square.grid.2x2") }
+            Section { PaneHeader(title: "应用", subtitle: "为编程类等应用设置默认英文（首次进入为英文，之后记住你在该应用里的选择，不影响其他应用）、使用英文标点、关闭内联预编辑或启用 Vim 模式。", symbol: "square.grid.2x2") }
 
             Section { SmartSetupCard() }
 
@@ -194,6 +194,7 @@ struct SuggestionRow: View {
         var parts: [String] = []
         if suggestion.option.vimMode { parts.append("Vim 模式") }
         if suggestion.option.noInline { parts.append("不内联") }
+        if suggestion.option.asciiPunct { parts.append("英文标点") }
         return parts.joined(separator: " · ")
     }
 }
@@ -246,6 +247,8 @@ private struct AppOptionRow: View {
                 }
                 .labelsHidden()
                 .fixedSize()
+                Toggle("英文标点", isOn: binding(\.asciiPunct))
+                    .help("在这个 App 里打中文时也输出英文标点")
                 Toggle("不内联", isOn: binding(\.noInline))
                 Toggle("Vim", isOn: binding(\.vimMode))
             }
@@ -383,6 +386,9 @@ private struct SubscriptionsSection: View {
 
     var body: some View {
         Section {
+            if let setting = model.setting("vocabulary.subscription_priority") {
+                SettingRow(setting: setting)
+            }
             ForEach(model.subscriptions) { item in SubscriptionRow(item: item) }
             if adding {
                 HStack {

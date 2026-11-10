@@ -79,13 +79,15 @@ extension SettingsStore {
         public var initialMode: InitialMode
         public var noInline: Bool
         public var vimMode: Bool
+        public var asciiPunct: Bool
         public var id: String { bundleID }
 
-        public init(bundleID: String, initialMode: InitialMode = .english, noInline: Bool = false, vimMode: Bool = false) {
+        public init(bundleID: String, initialMode: InitialMode = .english, noInline: Bool = false, vimMode: Bool = false, asciiPunct: Bool = false) {
             self.bundleID = bundleID
             self.initialMode = initialMode
             self.noInline = noInline
             self.vimMode = vimMode
+            self.asciiPunct = asciiPunct
         }
 
         var configValue: ConfigValue {
@@ -97,6 +99,7 @@ extension SettingsStore {
             }
             if noInline { entries.append(.init("no_inline", true)) }
             if vimMode { entries.append(.init("vim_mode", true)) }
+            if asciiPunct { entries.append(.init("ascii_punct", true)) }
             return .map(entries)
         }
     }
@@ -110,7 +113,8 @@ extension SettingsStore {
                 bundleID: entry.key,
                 initialMode: entry.value["ascii_mode"]?.boolValue.map { $0 ? .english : .chinese } ?? .shared,
                 noInline: entry.value["no_inline"]?.boolValue ?? false,
-                vimMode: entry.value["vim_mode"]?.boolValue ?? false
+                vimMode: entry.value["vim_mode"]?.boolValue ?? false,
+                asciiPunct: entry.value["ascii_punct"]?.boolValue ?? false
             )
         }
     }

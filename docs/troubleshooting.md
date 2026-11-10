@@ -6,11 +6,16 @@
 在终端运行 `pkill -x AIME`，然后切回艾么输入法并输入，由系统 imklaunchagent 自动拉起。
 首次添加输入法后仍不能使用，可注销并重新登录。不要删除用户词库来尝试修复。
 
-## 图标还是旧的
+## 输入源列表出现多个 AIME，或图标还是旧的
 
 检查 `~/Library/Input Methods/AIME.app` 与 `/Library/Input Methods/AIME.app` 是否同时存在。
-诊断报告会将这种情况标为“重复安装”。确认要保留的版本后，退出输入法并把多余的 App 移至备份位置；不要动 Rime 数据目录。
-随后注销并重新登录刷新输入法注册和图标缓存；不要通过手动启动输入法刷新图标。
+两份 App 的 Bundle ID 相同，系统会为每一份各登记一组输入源，系统设置 › 键盘 › 文本输入里就会出现好几个同名的「AIME」，
+较旧的那份还可能继续响应（#32）。诊断报告会将这种情况标为“重复安装”。
+
+官方安装包、Homebrew 与应用内更新都装在 `/Library/Input Methods`；`~/Library/Input Methods` 下的通常是源码构建或手动复制留下的。
+从 0.1.11 起，安装包会把 `~/Library/Input Methods/AIME.app` 移到废纸篓（文件名形如 `AIME 0.1.8 (14) from Input Methods.app`），
+重新运行一次安装包即可处理。也可以手动把多余的 App 移至废纸篓；不要动 Rime 数据目录（`~/Library/Rime`、`~/Library/AIME`）。
+两种方式之后都需要注销并重新登录，系统才会刷新输入源列表和图标缓存；不要通过手动启动输入法来刷新。
 
 ## 候选窗不出现
 

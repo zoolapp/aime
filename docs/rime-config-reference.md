@@ -237,6 +237,20 @@ catalog: recognizer.punct_prefix
 AIME 可视化：部分已收录（主翻译器参数）。
 catalog: translator.enable_word_completion, translator.spelling_hints, translator.always_show_comments, translator.initial_quality, translator.contextual_suggestions
 
+## 订阅词库优先级
+
+「输入习惯」和「词库 → 已添加词库」共用 `vocabulary.subscription_priority` 设置，保存后自动部署。
+设置写入 frontend 的 `vocabulary/subscription_priority`，generated 层覆盖 defaults。
+
+- `supplement`（默认）：「补充新词（推荐）」，订阅表 `aime_online` 的 `initial_quality` 为 1，补充新词而不抢常用词首选。
+- `prefer`：「订阅词优先」，`initial_quality` 为 6，让订阅词优先。
+- 缺省或未知值按 `supplement` 处理；该设置也作用于同表挂载的内置专题词库。
+
+这是订阅翻译器与主翻译器之间的相对权重，不修改词条权重或用户词频。
+切换设置会在下一次部署重建订阅表；v4 签名使旧版本的权重 6 在升级后首次部署时更新。
+
+catalog: vocabulary.subscription_priority
+
 ## translators 常用参数
 
 `script_translator` / `table_translator` 支持的常用参数（以雾凇实际配置为例）：
@@ -367,8 +381,10 @@ key_binder:
 - **以词定字**：`key_binder/select_first_character: bracketleft`、`select_last_character: bracketright`，由 lua_processor@select_character 消费；它排在 key_binder 之前，所以与「用 [ ] 翻页」只能二选一：设置页里后改的一项生效，另一项自动让位（清空以词定字键或关闭 [ ] 翻页）。快捷键可清除为空字符串。
 - 出厂预设集中在 `key_bindings.yaml`：emacs_editing、paging_with_minus_equal、paging_with_comma_period、paging_with_brackets、numbered_mode_switch、windows_compatible_mode_switch 等，用 `bindings/__patch: key_bindings:/xxx` 引入。
 
-AIME 可视化：已收录（翻页方式、以词定字、开关切换热键）。
-catalog: key_binder.select_first_character, key_binder.select_last_character, keys.paging_minus_equal, keys.paging_comma_period, keys.paging_brackets, keys.toggle_ascii_punct, keys.toggle_traditionalization, keys.tab_move_by_word
+- **方向键跟随候选排列**：`aime.yaml` 的 `style/aime/arrow_keys_follow_layout`（默认 `true`）。按 PanelTheme 解析后的有效 `candidate_list_layout`，`linear` 时设置会话 `_horizontal=true`：← → 在当前页移动，↑ ↓ 翻页；竖排或关闭此设置时为 `false`，↑ ↓ 移动候选。该私有选项不持久化，AIME 在新建/复用会话及主题、配置刷新时同步。
+
+AIME 可视化：已收录（方向键跟随候选排列、翻页方式、以词定字、开关切换热键）。
+catalog: keys.arrow_keys_follow_layout, key_binder.select_first_character, key_binder.select_last_character, keys.paging_minus_equal, keys.paging_comma_period, keys.paging_brackets, keys.toggle_ascii_punct, keys.toggle_traditionalization, keys.tab_move_by_word
 
 设置 › 快捷键 › 快捷菜单：长按触发键（Option / Control / Command / 关闭，约 0.35 秒）保存到 `aime/features.json` 的 `menuHoldKey`，即时通知输入法读取，不写 RIME 按键绑定。固定组合键为 ⌃⌥M；候选窗菜单按钮是否显示仍在外观设置。设置 › 快捷键 › 方案选单：`switcher.hotkeys`（原来位于输入习惯），ID、默认值与 `switcher/hotkeys` 写入方式保持不变。
 
@@ -615,11 +631,12 @@ app_options:
     no_inline: true         # 禁用内联预编辑（终端兼容）
   com.google.Chrome:
     inline: true            # 强制内联（规避 squirrel#435 双上屏）
+    ascii_punct: true       # 中文模式下也输出英文标点
 ```
 
 可用键：`ascii_mode`、`ascii_punct`、`inline` / `no_inline`（互斥）、`vim_mode`。
 
-AIME 可视化：部分已收录（计划做 App 列表编辑器）。
+AIME 可视化：`ascii_punct` 现已可在「设置 › 应用」里通过「英文标点」开关设置；开启后，在这个 App 里打中文时也输出英文标点。旧配置未设置此键时，开关默认为关闭。
 catalog: advanced.app_options
 
 ## Lua 扩展机制与雾凇常用脚本
@@ -682,6 +699,13 @@ catalog: menu.page_size
 `app_options/<bundle id>/ascii_mode: true` 的应用在任何范围下都单独记忆：首次进入为英文，之后保持用户在该应用中的选择，且不影响其他应用。
 
 catalog: ascii_state.scope
+
+| 键 | 默认 | 说明 |
+|---|---|---|
+| `ascii_state/commit_on_leave` | `input_code` | 组字中切换输入法、点击别处或切换应用时留下什么：`input_code` 上屏已打的按键（已选定的字保留，其余去掉音节分隔，同系统输入法与 librime `commit_code`）；`candidate` 上屏当前高亮候选（0.1.10 及以前的行为）。AI 动作与引擎重启前的提交不受影响 |
+| `ascii_state/reset_on_return` | `false` | 从其他输入源（ABC、系统拼音等）切回 AIME 时总是回到中文，并写回上面的共享范围，下一个应用也是中文；只切换应用不触发。输入法进程监听系统的「当前输入源改变」通知来区分两者 |
+
+catalog: ascii_state.commit_on_leave, ascii_state.reset_on_return
 
 
 ## 更新通道（AIME 应用设置）

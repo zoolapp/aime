@@ -1,0 +1,40 @@
+#!/bin/bash
+# Moves a leftover per-user AIME (~/Library/Input Methods/AIME.app, from a source build
+# or a hand copy) to the Trash once the .pkg has installed the system-wide copy. Both
+# carry the same bundle ID, and together they make System Settings list AIME several
+# times and leave the per-user copy answering for the new version (#32).
+#
+# Runs as the logged-in user (postinstall uses sudo -u). Usage:
+#   retire-user-copy <home> <system AIME.app>
+# Never deletes, never touches ~/Library/Rime or ~/Library/AIME. Always exits 0: a
+# leftover copy is a warning, not a failed install.
+home="$1"
+system_app="$2"
+bundle_id="app.zool.inputmethod.aime"
+copy="$home/Library/Input Methods/AIME.app"
+plist_value() { /usr/libexec/PlistBuddy -c "Print :$2" "$1/Contents/Info.plist" 2>/dev/null; }
+
+[[ -n "$home" && -d "$copy" ]] || exit 0
+[[ "$(plist_value "$copy" CFBundleIdentifier)" == "$bundle_id" ]] || exit 0
+# Only after the system-wide copy is in place: never leave the user with no AIME.
+[[ "$(plist_value "$system_app" CFBundleIdentifier)" == "$bundle_id" ]] || exit 0
+[[ "$(cd "$copy" && pwd -P)" != "$(cd "$system_app" && pwd -P)" ]] || exit 0
+
+version="$(plist_value "$copy" CFBundleShortVersionString)"
+build="$(plist_value "$copy" CFBundleVersion)"
+trash="$home/.Trash"
+dest="$trash/AIME ${version:-old} (${build:-0}) from Input Methods.app"
+[[ -e "$dest" ]] && dest="$trash/AIME ${version:-old} (${build:-0}) from Input Methods $(date +%Y%m%d-%H%M%S).app"
+
+lsregister="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
+[[ -x "$lsregister" ]] && "$lsregister" -u "$copy" >/dev/null 2>&1
+# The old copy's process would otherwise keep serving input until the next login.
+/usr/bin/pkill -f "$copy/Contents/MacOS/AIME" 2>/dev/null
+
+mkdir -p "$trash" 2>/dev/null
+if /bin/mv "$copy" "$dest" 2>/dev/null; then
+  echo "AIME: moved leftover per-user copy ${version:-?} (${build:-?}) from $copy to $dest" >&2
+else
+  echo "AIME: warning: could not move leftover per-user copy at $copy; remove it and log out and back in" >&2
+fi
+exit 0

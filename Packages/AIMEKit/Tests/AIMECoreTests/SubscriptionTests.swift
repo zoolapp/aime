@@ -15,6 +15,82 @@ struct SubscriptionTests {
             to: paths.sharedDataDir!.appendingPathComponent("aime/aime_tech.tsv"), atomically: true, encoding: .utf8)
     }
 
+    @Test func subscriptionPriorityMapping() {
+        #expect(SubscriptionManager.subscriptionQuality(for: nil) == 1)
+        #expect(SubscriptionManager.subscriptionQuality(for: "unknown") == 1)
+        #expect(SubscriptionManager.subscriptionQuality(for: "supplement") == 1)
+        #expect(SubscriptionManager.subscriptionQuality(for: "prefer") == 6)
+    }
+
+    @Test func priorityChangesRebuildTablesThroughDeploy() throws {
+        defer { try? FileManager.default.removeItem(at: root) }
+        try "schema_list:\n  - schema: rime_ice\n  - schema: double_pinyin_flypy\n".write(
+            to: paths.sharedDataDir!.appendingPathComponent("default.yaml"), atomically: true, encoding: .utf8)
+        let manager = SubscriptionManager(paths: paths)
+        let layers = ConfigLayers(paths: paths)
+        let setting = try #require(SettingCatalog.bundled.setting("vocabulary.subscription_priority"))
+        let store = SettingsStore(paths: paths)
+        func expectQuality(_ quality: Int) {
+            for schema in ["rime_ice", "double_pinyin_flypy"] {
+                #expect(layers.generatedValue(.schema(schema), keypath: "aime_online")?["initial_quality"]?.intValue == quality)
+            }
+        }
+
+        #expect(try manager.ensureTables())
+        expectQuality(1)
+        #expect(try manager.ensureTables() == false)
+
+        // A real v3 signature had no quality component; its mounts used 6.
+        let signatureURL = paths.aimeDir.appendingPathComponent("subscriptions/.signature")
+        let signature = manager.tableSignature(schemas: manager.mountSchemas(), items: [])
+        #expect(signature.hasPrefix("v4|"))
+        let oldSignature = signature.split(separator: "|").filter { !$0.hasPrefix("quality=") }.dropFirst()
+        try (["v3"] + oldSignature.map(String.init)).joined(separator: "|").write(
+            to: signatureURL, atomically: true, encoding: .utf8)
+        try layers.updateGenerated(.schema("rime_ice")) { patch in
+            patch.removeAll { $0.key == "aime_online" }
+            patch.append(.init("aime_online", .map([.init("initial_quality", 6)])))
+        }
+        #expect(try manager.ensureTables())
+        expectQuality(1)
+        #expect(try manager.ensureTables() == false)
+
+        try store.set("prefer", for: setting)
+        #expect(try manager.ensureTables())
+        expectQuality(6)
+        #expect(try manager.ensureTables() == false)
+        try store.set("supplement", for: setting)
+        #expect(try manager.ensureTables())
+        expectQuality(1)
+        #expect(try manager.ensureTables() == false)
+
+        // Frontend edits must also dirty the mounted schemas before deployment.
+        _ = try layers.prepareForDeploy()
+        layers.markDeployed()
+        try store.set("prefer", for: setting)
+        let dirty = try layers.prepareForDeploy()
+        #expect(dirty.contains("rime_ice.schema"))
+        expectQuality(6)
+        #expect(try manager.ensureTables() == false)
+    }
+
+    @Test func subscriptionPriorityUsesDefaultsAndGeneratedOverride() throws {
+        defer { try? FileManager.default.removeItem(at: root) }
+        let defaults = paths.sharedDataDir!.appendingPathComponent("aime/defaults/aime.yaml")
+        try FileManager.default.createDirectory(at: defaults.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try "patch:\n  vocabulary/subscription_priority: prefer\n".write(to: defaults, atomically: true, encoding: .utf8)
+        let manager = SubscriptionManager(paths: paths)
+        let layers = ConfigLayers(paths: paths)
+        try manager.rebuild(schemas: ["rime_ice"])
+        #expect(layers.generatedValue(.schema("rime_ice"), keypath: "aime_online")?["initial_quality"] == 6)
+        let setting = try #require(SettingCatalog.bundled.setting("vocabulary.subscription_priority"))
+        for priority in ["supplement", "unknown"] {
+            try SettingsStore(paths: paths).set(.string(priority), for: setting)
+            try manager.rebuild(schemas: ["rime_ice"])
+            #expect(layers.generatedValue(.schema("rime_ice"), keypath: "aime_online")?["initial_quality"] == 1)
+        }
+    }
+
     @Test func parsesDictYamlTablesAndWordLists() {
         let yaml = "---\nname: demo\nversion: \"1\"\n...\n具身智能\tju shen zhi neng\t80\n"
         #expect(VocabularyParser.parse(yaml).first == VocabularyEntry(text: "具身智能", pinyin: "ju shen zhi neng", weight: 80))

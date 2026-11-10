@@ -12,6 +12,27 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.1.11] - 2026-11-06
+
+> Stable release · Developer ID signed · notarization pending
+
+### Added
+
+- Settings › Apps: each app has an "英文标点" (English punctuation) switch. When on, typing Chinese in that app produces English punctuation (handy for code and Markdown) while other apps keep Chinese punctuation (#26).
+- Settings › 中英切换 › 从其他输入法切回时用中文: when on, coming back to AIME from ABC or another input method always starts in Chinese; switching apps is not affected. Off by default (#25).
+
+### Changed
+
+- Switching input methods with ⌃Space, clicking elsewhere or switching apps before picking a candidate now leaves the letters you typed (keeping characters already chosen), like the system input methods, instead of committing the highlighted candidate. The old behaviour is available under Settings › 中英切换 › 打字中途离开时 › 上屏当前候选 (#20).
+- Subscribed online vocabularies (such as 互联网品牌与热词) now only add words and no longer take common words' first place: `jike` puts 即可 first again, and 极氪 is still among the candidates. To put subscribed words first, set 订阅词优先级 to 订阅词优先 in Settings › 词库 or 输入习惯. Takes effect on the next deployment after upgrading (thanks @takeshi264, #29).
+- With a horizontal candidate list, ← → move within the page and ↑ ↓ turn pages (← → no longer move the cursor within the typed code); vertical lists are unchanged. Turn it off in Settings › 快捷键 › 方向键跟随候选排列 (#30).
+
+### Fixed
+
+- Opening the AI actions menu with ⌃⌥P on selected text, or the quick menu with ⌃⌥M, made it vanish as soon as the keys were released; the menu now stays until you pick an item or press Esc (#31).
+- Switching to another app while the quick menu was open no longer leaves the menu on screen over the new window (#31).
+- System Settings › Keyboard › Text Input listed AIME several times when an old copy in `~/Library/Input Methods` (from a source build or a hand copy) sat next to the installer's copy in `/Library/Input Methods`. The installer now moves that old copy to the Trash, and after logging out and back in the list shows AIME once; Settings and the `aime` CLI no longer prefer the older copy either (#32).
+
 ## [0.1.10] - 2026-10-20
 
 > Stable release · Developer ID signed · notarized by Apple
@@ -207,7 +228,8 @@ The first public developer preview.
 - The installer is signed with ZOOL LLC's Developer ID; Apple notarization is still pending, so the first launch needs Control-click › Open in Finder.
 - The `aime` command-line tool supports Apple silicon only.
 
-[Unreleased]: https://github.com/zoolapp/aime/compare/v0.1.10...HEAD
+[Unreleased]: https://github.com/zoolapp/aime/compare/v0.1.11...HEAD
+[0.1.11]: https://github.com/zoolapp/aime/compare/v0.1.10...v0.1.11
 [0.1.10]: https://github.com/zoolapp/aime/compare/v0.1.6...v0.1.10
 [0.1.6]: https://github.com/zoolapp/aime/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/zoolapp/aime/compare/v0.1.4...v0.1.5

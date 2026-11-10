@@ -45,6 +45,44 @@ struct RimeKitTests {
         #expect(session.context().isComposing == false)
     }
 
+    @Test func arrowKeysFollowHorizontalOption() throws {
+        let session = try RimeEngine.shared.createSession()
+        session.setOption("ascii_mode", false)
+        session.setOption("_horizontal", true)
+        session.simulate(keySequence: "nihao")
+        #expect(session.context().highlightedIndex == 0)
+        #expect(session.context().pageNumber == 0)
+        #expect(session.processKey(0xff53)) // Right: next candidate on this page.
+        #expect(session.context().highlightedIndex == 1)
+        #expect(session.context().pageNumber == 0)
+        #expect(session.processKey(0xff54)) // Down: next page.
+        #expect(session.context().pageNumber == 1)
+        #expect(session.processKey(0xff52)) // Up: previous page.
+        #expect(session.context().pageNumber == 0)
+        session.clearComposition()
+        session.setOption("_horizontal", false)
+        session.simulate(keySequence: "nihao")
+        #expect(session.context().highlightedIndex == 0)
+        #expect(session.processKey(0xff54))
+        #expect(session.context().highlightedIndex == 1)
+        #expect(session.context().pageNumber == 0)
+    }
+
+    /// Leaving mid-composition keeps the keys as typed (#20): all of them when nothing is
+    /// confirmed, otherwise the confirmed text and the rest without syllable separators.
+    @Test func abandonedCompositionLeavesTheTypedKeys() throws {
+        let session = try RimeEngine.shared.createSession()
+        defer { session.clearComposition() }
+        for key in "nihao".unicodeScalars { session.processKey(RimeKey.keysym(forCharacter: key)) }
+        #expect(session.context().composition.textOnLeave(input: session.input) == "nihao")
+
+        typealias Composition = RimeContextSnapshot.Composition
+        #expect(Composition(preedit: "ni hao shi jie", selectionStart: 0, selectionEnd: 14).textOnLeave(input: "nihaoshijie") == "nihaoshijie")
+        let partial = Composition(preedit: "你好shi jie", selectionStart: 6, selectionEnd: 13)
+        #expect(partial.textOnLeave(input: "nihaoshijie") == "你好shijie")
+        #expect(Composition(preedit: "", selectionStart: 3).textOnLeave(input: "abc") == "abc")
+    }
+
     /// The frontend forwards every key with its real modifiers and returns librime's
     /// verdict. ⌘ shortcuts are then left to the app by librime itself (all built-in
     /// processors skip Super), while bindings from the deployed config still apply.
