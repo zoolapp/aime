@@ -12,6 +12,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Changed
+
+- In Settings › AI Assistant, custom action prompts now have a multiline editor. Press Return to start a new paragraph and scroll within the editor to review longer prompts (#35).
+
 ## [0.1.12] - 2026-11-11
 
 > Stable release · Developer ID signed · notarized by Apple

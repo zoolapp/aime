@@ -31,12 +31,11 @@ private struct CustomActionsSection: View {
                         } label: { Image(systemName: "trash") }
                             .buttonStyle(.borderless)
                     }
-                    CommitTextField(value: action.prompt, placeholder: "提示词：告诉 AI 怎么处理这段文字", maxWidth: .infinity) { prompt in
+                    ActionPromptEditor(value: action.prompt) { prompt in
                         model.updateFeatures { features in
                             if let index = features.aiActions.firstIndex(where: { $0.id == action.id }) { features.aiActions[index].prompt = prompt }
                         }
                     }
-                    .frame(maxWidth: .infinity)
                 }
             }
             Menu {
@@ -54,6 +53,42 @@ private struct CustomActionsSection: View {
         } footer: {
             Text("自定义动作会出现在快捷菜单的「AI 处理」里，排在「翻译」「润色」之后，用数字键选择。")
         }
+    }
+}
+
+private struct ActionPromptEditor: View {
+    let value: String
+    let commit: (String) -> Void
+    @State private var draft = ""
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        TextEditor(text: $draft)
+            .font(.body)
+            .focused($focused)
+            .frame(maxWidth: .infinity)
+            .frame(height: 96)
+            .overlay(alignment: .topLeading) {
+                if draft.isEmpty {
+                    Text("提示词：告诉 AI 怎么处理这段文字")
+                        .foregroundStyle(.tertiary)
+                        .padding(.horizontal, 5)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+            }
+            .accessibilityLabel("提示词")
+            .onChange(of: value, initial: true) { _, new in
+                if !focused { draft = new }
+            }
+            .onChange(of: focused) { _, isFocused in
+                if !isFocused { saveChanges() }
+            }
+            .onDisappear(perform: saveChanges)
+    }
+
+    private func saveChanges() {
+        if draft != value { commit(draft) }
     }
 }
 
