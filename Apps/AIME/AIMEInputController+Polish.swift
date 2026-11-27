@@ -24,6 +24,10 @@ struct PolishSession {
     var variants: [TextPolisher.Variant] = []
     var highlighted = 0
     var task: Task<Void, Never>?
+    /// Started by the draft's own action (Return or the auto-commit delay): cancelling
+    /// or failing puts the draft in as typed instead of going back to it, so the delay
+    /// cannot start the same request again.
+    var commitsDraftOnCancel = false
 }
 
 /// AI actions (润色 / 翻译 / the user's own prompts) on explicit request only. They work on,
@@ -69,6 +73,33 @@ extension AIMEInputController {
         }
         guard let action = textAction(for: kind) else { return }
         startAction(action, client: client, committed: commitForAction(client: client))
+    }
+
+    /// Name of the action Return runs on a pending draft, if one is set.
+    var draftAutoActionTitle: String? {
+        let features = InputEngine.shared.features
+        guard let key = features.activeDraftAutoAction else { return nil }
+        switch key {
+        case AIMEFeatures.ActionHotkey.translate: return TextAction.translate.title
+        case AIMEFeatures.ActionHotkey.polish: return TextAction.polish.title
+        default: return features.aiActions.first { $0.id.uuidString == key }?.name
+        }
+    }
+
+    /// Runs the draft's own action on the pending draft. False when none is set or it
+    /// could not start (the caller then commits the draft as typed).
+    func runDraftAutoAction(client: (any IMKTextInput)?) -> Bool {
+        guard !draft.isEmpty, !isComposing, polish == nil,
+              let key = InputEngine.shared.features.activeDraftAutoAction else { return false }
+        runBoundAction(key, client: client)
+        guard polish != nil else {
+            // Could not start (no consent, too long…): the reason is on screen; the
+            // draft goes in as typed.
+            flushDraft(client: client, keepPanel: true)
+            return true
+        }
+        polish?.commitsDraftOnCancel = true
+        return true
     }
 
     /// Maps a quick-menu choice to the action (custom ones come from features.json).
@@ -227,6 +258,9 @@ extension AIMEInputController {
         guard let request = polish else { return }
         request.task?.cancel()
         polish = nil
+        if request.commitsDraftOnCancel, case .draft = request.target {
+            flushDraft(client: self.client() as? (any IMKTextInput), keepPanel: message != nil)
+        }
         guard ownsPanel else { return }
         if let message {
             InputEngine.shared.showStatus(message)
@@ -247,7 +281,8 @@ extension AIMEInputController {
         panel.view.onPage = { _ in }
         let verb: String = if case .draft = request.target { "上屏" } else { "替换" }
         var state = PanelState(candidates: candidates, highlightedIndex: request.highlighted,
-                               title: "\(request.title)   ↩ \(verb) · C 复制 · Esc 取消", presentation: .paragraphs)
+                               title: "\(request.title)   ↩ \(verb) · C 复制 · Esc \(request.commitsDraftOnCancel ? "原文上屏" : "取消")",
+                               presentation: .paragraphs)
         state.glow = true
         panel.show(state, at: cursorRect(client: client), transition: transition)
     }

@@ -52,3 +52,34 @@ struct ActionHotkeyTests {
         #expect(features.action(forHotkey: "Control+Alt+x") == nil)
     }
 }
+
+struct DraftAutoActionTests {
+    @Test func offUnlessChosenAndBothFeaturesAreOn() throws {
+        var features = try JSONDecoder().decode(AIMEFeatures.self, from: Data(#"{"aiPolish":true,"draftLayer":true}"#.utf8))
+        #expect(features.activeDraftAutoAction == nil)
+        features.draftAutoAction = AIMEFeatures.ActionHotkey.translate
+        #expect(features.activeDraftAutoAction == AIMEFeatures.ActionHotkey.translate)
+        let decoded = try JSONDecoder().decode(AIMEFeatures.self, from: JSONEncoder().encode(features))
+        #expect(decoded.activeDraftAutoAction == AIMEFeatures.ActionHotkey.translate)
+        features.aiPolish = false
+        #expect(features.activeDraftAutoAction == nil)
+        features.aiPolish = true
+        features.draftLayer = false
+        #expect(features.activeDraftAutoAction == nil)
+    }
+
+    @Test func deletedCustomActionTurnsItOff() {
+        var features = AIMEFeatures()
+        features.aiPolish = true
+        features.draftLayer = true
+        let action = AIMEFeatures.AIAction(name: "粤语", prompt: "改成粤语")
+        features.aiActions = [action]
+        features.draftAutoAction = action.id.uuidString
+        #expect(features.activeDraftAutoAction == action.id.uuidString)
+        features.aiActions = []
+        #expect(features.activeDraftAutoAction == nil)
+        // 简繁转换 is not an AI action and cannot be chosen here.
+        features.draftAutoAction = AIMEFeatures.ActionHotkey.convertScript
+        #expect(features.activeDraftAutoAction == nil)
+    }
+}

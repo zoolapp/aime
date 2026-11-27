@@ -455,6 +455,27 @@ struct AIAssistantView: View {
                                 .font(.caption).foregroundStyle(.secondary)
                         }
                     }
+                    if features.aiPolish {
+                        LabeledContent {
+                            Picker("", selection: Binding(get: { features.activeDraftAutoAction ?? "" },
+                                                          set: { value in model.updateFeatures { $0.draftAutoAction = value } })) {
+                                Text("无").tag("")
+                                Text("翻译").tag(AIMEFeatures.ActionHotkey.translate)
+                                Text("润色").tag(AIMEFeatures.ActionHotkey.polish)
+                                ForEach(features.aiActions) { action in
+                                    Text(action.name.isEmpty ? "未命名动作" : action.name).tag(action.id.uuidString)
+                                }
+                            }
+                            .labelsHidden().fixedSize()
+                        } label: {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("上屏前执行动作")
+                                Text("按回车或到了自动上屏的时间，先对草稿执行这个动作，结果列出来由你选：回车用结果上屏，Esc 按原文上屏。"
+                                     + "开启后，停止打字到时间就会把草稿交给所选模型，不需要再按键。")
+                                    .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                    }
                 }
             } header: {
                 Text("输入图层")

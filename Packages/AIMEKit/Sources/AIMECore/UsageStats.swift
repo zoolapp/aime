@@ -37,6 +37,10 @@ public struct AIMEFeatures: Sendable, Codable, Equatable {
     /// Shortcuts that run one action directly, skipping the quick menu: action key
     /// (see `ActionHotkey`) → Rime key notation such as `Control+Alt+t`. None by default.
     public var actionHotkeys: [String: String] = [:]
+    /// 输入图层: the AI action (an `ActionHotkey` key: translate, polish or a custom
+    /// action's id) run on the draft when Return is pressed or the auto-commit delay
+    /// passes, instead of committing it as typed. Empty (the default) means none.
+    public var draftAutoAction = ""
 
     public struct AIAction: Sendable, Codable, Equatable, Identifiable {
         public var id: UUID
@@ -70,6 +74,7 @@ public struct AIMEFeatures: Sendable, Codable, Equatable {
         traditional = try container.decodeIfPresent(Bool.self, forKey: .traditional) ?? defaults.traditional
         asciiPunct = try container.decodeIfPresent(Bool.self, forKey: .asciiPunct) ?? defaults.asciiPunct
         actionHotkeys = try container.decodeIfPresent([String: String].self, forKey: .actionHotkeys) ?? defaults.actionHotkeys
+        draftAutoAction = try container.decodeIfPresent(String.self, forKey: .draftAutoAction) ?? defaults.draftAutoAction
     }
 
     /// Keys of `actionHotkeys`: the built-in actions, or a custom action's `id.uuidString`.
@@ -100,6 +105,14 @@ public struct AIMEFeatures: Sendable, Codable, Equatable {
         return actionHotkeys
             .filter { $0.value == rime && (builtIn.contains($0.key) || custom.contains($0.key)) }
             .map(\.key).min()
+    }
+
+    /// The action to run on a pending draft, or nil: none chosen, AI actions or the
+    /// draft layer off, or the chosen custom action no longer exists.
+    public var activeDraftAutoAction: String? {
+        guard aiPolish, draftLayer, !draftAutoAction.isEmpty else { return nil }
+        let known = [ActionHotkey.translate, ActionHotkey.polish] + aiActions.map(\.id.uuidString)
+        return known.contains(draftAutoAction) ? draftAutoAction : nil
     }
 
     /// Binds `rime` to one action (nil or empty clears it). A shortcut belongs to one

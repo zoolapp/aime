@@ -330,6 +330,9 @@ final class AIMEInputController: IMKInputController {
                 let flags = event.modifierFlags
                 switch DraftBuffer.decision(keyCode: event.keyCode, command: flags.contains(.command), control: flags.contains(.control)) {
                 case .commit:
+                    // Return runs the draft's own action when one is set; Esc always
+                    // puts the draft in as typed.
+                    if event.keyCode != 53, runDraftAutoAction(client: client) { return true }
                     flushDraft(client: client)
                     return true
                 case .commitAndPass:
@@ -484,6 +487,7 @@ final class AIMEInputController: IMKInputController {
         case .off: "⌃⌥M 动作"
         }
         var state = PanelState(status: "↩ 上屏   \(hold)")
+        if let title = draftAutoActionTitle { state = PanelState(status: "↩ \(title)   Esc 上屏   \(hold)") }
         state.statusBadge = liveSession?.option("ascii_mode") == true ? "英" : "中"
         return state
     }
@@ -517,14 +521,14 @@ final class AIMEInputController: IMKInputController {
     }
 
     /// Puts the draft into the app (replacing the marked text that showed it).
-    func flushDraft(client: (any IMKTextInput)?) {
+    func flushDraft(client: (any IMKTextInput)?, keepPanel: Bool = false) {
         draftTimer?.cancel()
         guard !draft.isEmpty else { return }
         let text = draft.take()
         (client ?? textClient)?.insertText(text, replacementRange: NSRange(location: NSNotFound, length: 0))
         hasMarkedText = false
         recentText.append(text)
-        if ownsPanel, !isComposing, quickMenu == nil, polish == nil { engine.panel.hide() }
+        if !keepPanel, ownsPanel, !isComposing, quickMenu == nil, polish == nil { engine.panel.hide() }
     }
 
     /// Restarts the auto-commit countdown; it only runs while a draft is pending and
@@ -536,7 +540,7 @@ final class AIMEInputController: IMKInputController {
         draftTimer = Task { @MainActor [weak self] in
             try? await Task.sleep(for: .seconds(delay))
             guard !Task.isCancelled, let self, !self.isComposing, self.quickMenu == nil, self.polish == nil else { return }
-            self.flushDraft(client: nil)
+            if !self.runDraftAutoAction(client: nil) { self.flushDraft(client: nil) }
         }
     }
 
