@@ -36,6 +36,41 @@ extension AIMEInputController {
         return event.keyCode == 35 && flags == [.control, .option] // ⌃⌥P
     }
 
+    /// The action bound to this key press in 设置 › AI 助手 (`AIMEFeatures.actionHotkeys`).
+    func boundAction(for event: NSEvent) -> String? {
+        let features = InputEngine.shared.features
+        guard !features.actionHotkeys.isEmpty else { return nil }
+        let flags = event.modifierFlags
+        var modifiers: HotkeyFormatter.Modifiers = []
+        if flags.contains(.control) { modifiers.insert(.control) }
+        if flags.contains(.option) { modifiers.insert(.alt) }
+        if flags.contains(.shift) { modifiers.insert(.shift) }
+        if flags.contains(.command) { modifiers.insert(.command) }
+        guard let name = HotkeyFormatter.rimeName(keyCode: event.keyCode, character: event.charactersIgnoringModifiers,
+                                                  modifiers: modifiers) else { return nil }
+        return features.action(forHotkey: name)
+    }
+
+    /// Runs a bound action straight away, as if it had been chosen in the AI menu.
+    func runBoundAction(_ key: String, client: (any IMKTextInput)?) {
+        guard hasActionTarget(client: client) else {
+            return InputEngine.shared.showStatus("没有可处理的文字：先打一段字，或选中一段文字")
+        }
+        typealias Key = AIMEFeatures.ActionHotkey
+        let kind: QuickMenu.TextActionKind
+        switch key {
+        case Key.translate: kind = .translate
+        case Key.polish: kind = .polish
+        case Key.convertScript:
+            return startConversion(client: client, committed: commitForAction(client: client))
+        default:
+            guard let index = InputEngine.shared.features.aiActions.firstIndex(where: { $0.id.uuidString == key }) else { return }
+            kind = .custom(index)
+        }
+        guard let action = textAction(for: kind) else { return }
+        startAction(action, client: client, committed: commitForAction(client: client))
+    }
+
     /// Maps a quick-menu choice to the action (custom ones come from features.json).
     func textAction(for kind: QuickMenu.TextActionKind) -> TextAction? {
         switch kind {

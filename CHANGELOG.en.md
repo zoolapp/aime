@@ -12,6 +12,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added
+
+- Settings › AI Assistant has a new 动作快捷键 (action shortcuts) list: give translate, polish, simplified/traditional conversion and each custom action its own shortcut to run it directly, without opening the menu first.
+
 ## [0.1.13] - 2026-11-27
 
 > Stable release · Developer ID signed · notarization pending
