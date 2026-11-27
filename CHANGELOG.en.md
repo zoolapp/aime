@@ -15,7 +15,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 ### Added
 
 - Settings › AI Assistant has a new 动作快捷键 (action shortcuts) list: give translate, polish, simplified/traditional conversion and each custom action its own shortcut to run it directly, without opening the menu first.
-- The draft layer has a new 上屏前执行动作 (run an action before committing) option under Settings › AI Assistant, off by default: with translate, polish or a custom action chosen, Return or the auto-commit delay runs it on the draft and lists the results. Return commits a result, Esc commits the text as typed.
+- The draft layer has a new 上屏前执行动作 (run an action before committing) option under Settings › AI Assistant, off by default: with translate, polish or a custom action chosen, its key (Return or Space, your choice) or the auto-commit delay runs it on the draft and lists the results. Return commits a result, Esc commits the text as typed.
 
 ## [0.1.13] - 2026-11-27
 

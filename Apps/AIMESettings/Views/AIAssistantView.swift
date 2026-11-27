@@ -470,9 +470,25 @@ struct AIAssistantView: View {
                         } label: {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("上屏前执行动作")
-                                Text("按回车或到了自动上屏的时间，先对草稿执行这个动作，结果列出来由你选：回车用结果上屏，Esc 按原文上屏。"
+                                Text("按触发键或到了自动上屏的时间，先对草稿执行这个动作，结果列出来由你选：回车用结果上屏，Esc 按原文上屏。"
                                      + "开启后，停止打字到时间就会把草稿交给所选模型，不需要再按键。")
                                     .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                        if features.activeDraftAutoAction != nil {
+                            LabeledContent {
+                                Picker("", selection: Binding(get: { features.draftAutoActionKey },
+                                                              set: { value in model.updateFeatures { $0.draftAutoActionKey = value } })) {
+                                    Text("回车").tag(AIMEFeatures.DraftActionKey.return)
+                                    Text("空格").tag(AIMEFeatures.DraftActionKey.space)
+                                }
+                                .labelsHidden().fixedSize()
+                            } label: {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("触发键")
+                                    Text("回车：回车执行动作，Esc 按原文上屏。空格：空格执行动作，回车照常按原文上屏；草稿以英文字母或数字结尾时，空格仍然输入空格。")
+                                        .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                                }
                             }
                         }
                     }

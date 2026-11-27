@@ -328,11 +328,13 @@ final class AIMEInputController: IMKInputController {
             // it, navigation and shortcuts confirm it and then reach the app.
             if !draft.isEmpty, !isComposing {
                 let flags = event.modifierFlags
+                // The draft's own action, on its key (Return or Space); Esc always puts
+                // the draft in as typed.
+                let modified = !flags.intersection([.command, .control, .option, .shift]).isEmpty
+                if engine.features.runsDraftAutoAction(keyCode: event.keyCode, modified: modified, draft: draft.text),
+                   runDraftAutoAction(client: client) { return true }
                 switch DraftBuffer.decision(keyCode: event.keyCode, command: flags.contains(.command), control: flags.contains(.control)) {
                 case .commit:
-                    // Return runs the draft's own action when one is set; Esc always
-                    // puts the draft in as typed.
-                    if event.keyCode != 53, runDraftAutoAction(client: client) { return true }
                     flushDraft(client: client)
                     return true
                 case .commitAndPass:
@@ -487,7 +489,10 @@ final class AIMEInputController: IMKInputController {
         case .off: "⌃⌥M 动作"
         }
         var state = PanelState(status: "↩ 上屏   \(hold)")
-        if let title = draftAutoActionTitle { state = PanelState(status: "↩ \(title)   Esc 上屏   \(hold)") }
+        if let title = draftAutoActionTitle {
+            let keys = engine.features.draftAutoActionKey == .space ? "空格 \(title)   ↩ 上屏" : "↩ \(title)   Esc 上屏"
+            state = PanelState(status: "\(keys)   \(hold)")
+        }
         state.statusBadge = liveSession?.option("ascii_mode") == true ? "英" : "中"
         return state
     }

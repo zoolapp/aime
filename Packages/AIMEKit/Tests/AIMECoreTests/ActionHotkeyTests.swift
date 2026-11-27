@@ -83,3 +83,28 @@ struct DraftAutoActionTests {
         #expect(features.activeDraftAutoAction == nil)
     }
 }
+
+extension DraftAutoActionTests {
+    @Test func triggerKeyIsReturnOrSpace() throws {
+        var features = AIMEFeatures()
+        features.aiPolish = true
+        features.draftLayer = true
+        #expect(!features.runsDraftAutoAction(keyCode: 36, modified: false, draft: "你好")) // no action chosen
+        features.draftAutoAction = AIMEFeatures.ActionHotkey.translate
+        #expect(features.runsDraftAutoAction(keyCode: 36, modified: false, draft: "你好"))
+        #expect(!features.runsDraftAutoAction(keyCode: 36, modified: true, draft: "你好"))
+        #expect(!features.runsDraftAutoAction(keyCode: 49, modified: false, draft: "你好"))
+        #expect(!features.runsDraftAutoAction(keyCode: 53, modified: false, draft: "你好")) // Esc commits as typed
+        features.draftAutoActionKey = .space
+        #expect(features.runsDraftAutoAction(keyCode: 49, modified: false, draft: "你好"))
+        #expect(features.runsDraftAutoAction(keyCode: 49, modified: false, draft: "你好。"))
+        #expect(!features.runsDraftAutoAction(keyCode: 36, modified: false, draft: "你好"))
+        // English in the draft: Space still types a space.
+        #expect(!features.runsDraftAutoAction(keyCode: 49, modified: false, draft: "你好 hello"))
+        #expect(!features.runsDraftAutoAction(keyCode: 49, modified: false, draft: "v2"))
+        let decoded = try JSONDecoder().decode(AIMEFeatures.self, from: JSONEncoder().encode(features))
+        #expect(decoded.draftAutoActionKey == .space)
+        let odd = try JSONDecoder().decode(AIMEFeatures.self, from: Data(#"{"draftAutoActionKey":"tab"}"#.utf8))
+        #expect(odd.draftAutoActionKey == .return)
+    }
+}

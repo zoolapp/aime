@@ -41,6 +41,13 @@ public struct AIMEFeatures: Sendable, Codable, Equatable {
     /// action's id) run on the draft when Return is pressed or the auto-commit delay
     /// passes, instead of committing it as typed. Empty (the default) means none.
     public var draftAutoAction = ""
+    /// The key that runs `draftAutoAction` at once: Return (then Esc commits as typed)
+    /// or Space (then Return commits as typed, as without an action).
+    public var draftAutoActionKey = DraftActionKey.return
+
+    public enum DraftActionKey: String, Sendable, Codable, CaseIterable {
+        case `return`, space
+    }
 
     public struct AIAction: Sendable, Codable, Equatable, Identifiable {
         public var id: UUID
@@ -75,6 +82,7 @@ public struct AIMEFeatures: Sendable, Codable, Equatable {
         asciiPunct = try container.decodeIfPresent(Bool.self, forKey: .asciiPunct) ?? defaults.asciiPunct
         actionHotkeys = try container.decodeIfPresent([String: String].self, forKey: .actionHotkeys) ?? defaults.actionHotkeys
         draftAutoAction = try container.decodeIfPresent(String.self, forKey: .draftAutoAction) ?? defaults.draftAutoAction
+        draftAutoActionKey = (try? container.decodeIfPresent(DraftActionKey.self, forKey: .draftAutoActionKey)) ?? defaults.draftAutoActionKey
     }
 
     /// Keys of `actionHotkeys`: the built-in actions, or a custom action's `id.uuidString`.
@@ -113,6 +121,19 @@ public struct AIMEFeatures: Sendable, Codable, Equatable {
         guard aiPolish, draftLayer, !draftAutoAction.isEmpty else { return nil }
         let known = [ActionHotkey.translate, ActionHotkey.polish] + aiActions.map(\.id.uuidString)
         return known.contains(draftAutoAction) ? draftAutoAction : nil
+    }
+
+    /// Whether this key press on a pending draft `draft` runs the draft's action now.
+    /// Space only does after text that does not end in a Latin letter or digit: in
+    /// "hello" it still types the space of "hello world".
+    public func runsDraftAutoAction(keyCode: UInt16, modified: Bool, draft: String) -> Bool {
+        guard activeDraftAutoAction != nil, !modified else { return false }
+        switch draftAutoActionKey {
+        case .return: return keyCode == 36 || keyCode == 76
+        case .space:
+            guard keyCode == 49, let last = draft.unicodeScalars.last else { return false }
+            return !(last.isASCII && (last.properties.isAlphabetic || (0x30...0x39).contains(last.value)))
+        }
     }
 
     /// Binds `rime` to one action (nil or empty clears it). A shortcut belongs to one
