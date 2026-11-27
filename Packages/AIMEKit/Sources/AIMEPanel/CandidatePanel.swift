@@ -26,10 +26,12 @@ public final class CandidatePanel {
     /// Visible frames of the screens, fetched when the panel appears: asking AppKit on
     /// every keystroke round-trips to the window server.
     private var screenFrames: [(frame: NSRect, visible: NSRect)] = []
-    /// The cursor line the panel last had to go above (no room below). While it is shown
-    /// for that line it stays above, so content whose height hovers around the room left
-    /// below does not flip it up and down on every key.
-    private var aboveLine: CGFloat?
+    /// The cursor line the panel last had to go above (no room below), and when. While
+    /// typing goes on in that line it stays above — also across a hide, since every word
+    /// starts a new panel — so content whose height hovers around the room left below
+    /// (one row of candidates fits, two do not) does not flip it up and down.
+    private var aboveLine: (y: CGFloat, at: Date)?
+    static let aboveLineMemory: TimeInterval = 5
     private var contentFrame: NSRect = .zero
 
     /// Motion is on unless the user asked to reduce it. Tests switch it off.
@@ -438,21 +440,21 @@ public final class CandidatePanel {
         heroGlow.hide()
         pendingTransition = nil
         contentFrame = .zero
-        aboveLine = nil
         if window.isVisible { window.orderOut(nil) }
     }
 
     /// Content rectangle below the cursor, flipped above when it would leave the
     /// screen, clamped horizontally.
-    func position(for size: NSSize, cursor: NSRect) -> NSRect {
+    func position(for size: NSSize, cursor: NSRect, now: Date = Date()) -> NSRect {
         let screens = screenFrames.isEmpty ? NSScreen.screens.map { ($0.frame, $0.visibleFrame) } : screenFrames
         let visible = (screens.first { $0.0.contains(cursor.origin) } ?? screens.first)?.1
             ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
         // The content's left edge lines up with the cursor, inside the border.
         let anchor = cursor.offsetBy(dx: -(theme.borderWidth + 4), dy: 0)
+        let remembered = aboveLine.map { $0.y == cursor.minY && now.timeIntervalSince($0.at) < Self.aboveLineMemory } ?? false
         let placed = Self.place(size, cursor: anchor, visible: visible, gap: 4 + theme.baseOffset,
-                                stayAbove: aboveLine == cursor.minY)
-        aboveLine = placed.above ? cursor.minY : nil
+                                stayAbove: remembered)
+        aboveLine = placed.above ? (cursor.minY, now) : nil
         return placed.frame
     }
 

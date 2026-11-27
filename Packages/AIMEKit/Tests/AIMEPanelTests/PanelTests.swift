@@ -533,3 +533,23 @@ extension PanelTests {
         #expect(!fresh.above && fresh.frame.maxY == cursor.minY - 4)
     }
 }
+
+extension PanelTests {
+    /// The line is remembered across a hide (each word starts a new panel) but not forever.
+    @MainActor
+    @Test func panelRemembersTheLineItWentAboveFor() {
+        let panel = CandidatePanel()
+        panel.animationsEnabled = false
+        panel.theme = PanelTheme(frontend: Self.frontend, dark: false)
+        guard let visible = NSScreen.screens.first?.visibleFrame else { return }
+        let cursor = NSRect(x: visible.minX + 100, y: visible.minY + 50, width: 1, height: 19)
+        let start = Date()
+        let tall = panel.position(for: NSSize(width: 300, height: 84), cursor: cursor, now: start)
+        #expect(tall.minY > cursor.maxY)
+        panel.hide()
+        let short = NSSize(width: 300, height: 40)
+        #expect(panel.position(for: short, cursor: cursor, now: start.addingTimeInterval(1)).minY > cursor.maxY)
+        let later = start.addingTimeInterval(1 + CandidatePanel.aboveLineMemory + 1)
+        #expect(panel.position(for: short, cursor: cursor, now: later).maxY < cursor.minY)
+    }
+}
