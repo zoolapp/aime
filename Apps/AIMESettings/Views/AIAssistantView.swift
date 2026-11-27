@@ -94,6 +94,8 @@ private struct WritingJournalSection: View {
             Text("写作记录")
         }
         .task(id: model.features.writingJournal) { refresh() }
+        // The input method adds entries while this window is in the background.
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in refresh() }
         .alert("开启写作记录？", isPresented: $confirmEnable) {
             Button("同意并开启") { model.updateFeatures { $0.writingJournal = true } }
             Button("取消", role: .cancel) {}
