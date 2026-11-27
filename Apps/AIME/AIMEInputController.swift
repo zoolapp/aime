@@ -506,20 +506,30 @@ final class AIMEInputController: IMKInputController {
         if let overflow = draft.append(text) {
             // Too long for one marked run: the older part goes into the app.
             client?.insertText(overflow, replacementRange: NSRange(location: NSNotFound, length: 0))
+            recordWriting(overflow)
             hasMarkedText = false
             recentText.append(overflow)
         }
     }
 
     /// Puts the draft into the app (replacing the marked text that showed it).
-    func flushDraft(client: (any IMKTextInput)?) {
+    func flushDraft(client: (any IMKTextInput)?, journal: Bool = true) {
         draftTimer?.cancel()
         guard !draft.isEmpty else { return }
         let text = draft.take()
+        if journal { recordWriting(text) }
         (client ?? textClient)?.insertText(text, replacementRange: NSRange(location: NSNotFound, length: 0))
         hasMarkedText = false
         recentText.append(text)
         if ownsPanel, !isComposing, quickMenu == nil, polish == nil { engine.panel.hide() }
+    }
+
+    /// Adds to the user's writing journal when they turned it on: text that went in
+    /// through the draft layer, or an AI action with the result that was applied.
+    func recordWriting(_ text: String, action: String? = nil, result: String? = nil) {
+        guard engine.features.writingJournal else { return }
+        WritingJournal().record(.init(app: bundleID ?? "", kind: action == nil ? .typed : .action,
+                                      text: text, action: action, result: result))
     }
 
     /// Restarts the auto-commit countdown; it only runs while a draft is pending and
