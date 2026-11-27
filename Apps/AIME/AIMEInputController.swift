@@ -333,6 +333,10 @@ final class AIMEInputController: IMKInputController {
                 let modified = !flags.intersection([.command, .control, .option, .shift]).isEmpty
                 if engine.features.runsDraftAutoAction(keyCode: event.keyCode, modified: modified, draft: draft.text),
                    runDraftAutoAction(client: client) { return true }
+                if engine.features.spaceCommitsDraft(keyCode: event.keyCode, modified: modified, draft: draft.text) {
+                    flushDraft(client: client)
+                    return true
+                }
                 switch DraftBuffer.decision(keyCode: event.keyCode, command: flags.contains(.command), control: flags.contains(.control)) {
                 case .commit:
                     flushDraft(client: client)
@@ -490,7 +494,9 @@ final class AIMEInputController: IMKInputController {
         }
         var state = PanelState(status: "↩ 上屏   \(hold)")
         if let title = draftAutoActionTitle {
-            let keys = engine.features.draftAutoActionKey == .space ? "空格 \(title)   ↩ 上屏" : "↩ \(title)   Esc 上屏"
+            let features = engine.features
+            let keys = features.draftAutoActionKey == .space ? "空格 \(title)   ↩ 上屏"
+                : "↩ \(title)   \(features.draftSpaceCommits ? "空格" : "Esc") 上屏"
             state = PanelState(status: "\(keys)   \(hold)")
         }
         state.statusBadge = liveSession?.option("ascii_mode") == true ? "英" : "中"

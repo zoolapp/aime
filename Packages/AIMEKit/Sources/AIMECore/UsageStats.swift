@@ -45,6 +45,10 @@ public struct AIMEFeatures: Sendable, Codable, Equatable {
     /// or Space (then Return commits as typed, as without an action).
     public var draftAutoActionKey = DraftActionKey.return
 
+    /// With Return as the action's key: Space also commits the draft as typed (Esc
+    /// always does). Has no effect when Space is the action's key.
+    public var draftSpaceCommits = false
+
     public enum DraftActionKey: String, Sendable, Codable, CaseIterable {
         case `return`, space
     }
@@ -82,6 +86,7 @@ public struct AIMEFeatures: Sendable, Codable, Equatable {
         asciiPunct = try container.decodeIfPresent(Bool.self, forKey: .asciiPunct) ?? defaults.asciiPunct
         actionHotkeys = try container.decodeIfPresent([String: String].self, forKey: .actionHotkeys) ?? defaults.actionHotkeys
         draftAutoAction = try container.decodeIfPresent(String.self, forKey: .draftAutoAction) ?? defaults.draftAutoAction
+        draftSpaceCommits = try container.decodeIfPresent(Bool.self, forKey: .draftSpaceCommits) ?? defaults.draftSpaceCommits
         draftAutoActionKey = (try? container.decodeIfPresent(DraftActionKey.self, forKey: .draftAutoActionKey)) ?? defaults.draftAutoActionKey
     }
 
@@ -130,10 +135,21 @@ public struct AIMEFeatures: Sendable, Codable, Equatable {
         guard activeDraftAutoAction != nil, !modified else { return false }
         switch draftAutoActionKey {
         case .return: return keyCode == 36 || keyCode == 76
-        case .space:
-            guard keyCode == 49, let last = draft.unicodeScalars.last else { return false }
-            return !(last.isASCII && (last.properties.isAlphabetic || (0x30...0x39).contains(last.value)))
+        case .space: return keyCode == 49 && Self.spaceIsFree(after: draft)
         }
+    }
+
+    /// Whether Space on a pending draft commits it as typed: chosen for it, and Return
+    /// is the action's key.
+    public func spaceCommitsDraft(keyCode: UInt16, modified: Bool, draft: String) -> Bool {
+        guard activeDraftAutoAction != nil, !modified, draftAutoActionKey == .return, draftSpaceCommits else { return false }
+        return keyCode == 49 && Self.spaceIsFree(after: draft)
+    }
+
+    /// Space is only taken over after text that does not end in a Latin letter or digit.
+    static func spaceIsFree(after draft: String) -> Bool {
+        guard let last = draft.unicodeScalars.last else { return false }
+        return !(last.isASCII && (last.properties.isAlphabetic || (0x30...0x39).contains(last.value)))
     }
 
     /// Binds `rime` to one action (nil or empty clears it). A shortcut belongs to one

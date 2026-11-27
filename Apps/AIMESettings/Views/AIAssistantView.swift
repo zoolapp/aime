@@ -485,9 +485,27 @@ struct AIAssistantView: View {
                                 .labelsHidden().fixedSize()
                             } label: {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text("触发键")
-                                    Text("回车：回车执行动作，Esc 按原文上屏。空格：空格执行动作，回车照常按原文上屏；草稿以英文字母或数字结尾时，空格仍然输入空格。")
+                                    Text("执行动作的键")
+                                    Text("草稿以英文字母或数字结尾时，空格仍然输入空格。")
                                         .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                            LabeledContent {
+                                if features.draftAutoActionKey == .space {
+                                    Text("回车或 Esc").foregroundStyle(.secondary)
+                                } else {
+                                    Picker("", selection: Binding(get: { features.draftSpaceCommits },
+                                                                  set: { value in model.updateFeatures { $0.draftSpaceCommits = value } })) {
+                                        Text("Esc").tag(false)
+                                        Text("空格或 Esc").tag(true)
+                                    }
+                                    .labelsHidden().fixedSize()
+                                }
+                            } label: {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("原文上屏的键")
+                                    Text("不执行动作，草稿按打出来的样子进入应用。")
+                                        .font(.caption).foregroundStyle(.secondary)
                                 }
                             }
                         }

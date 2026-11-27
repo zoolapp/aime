@@ -108,3 +108,25 @@ extension DraftAutoActionTests {
         #expect(odd.draftAutoActionKey == .return)
     }
 }
+
+extension DraftAutoActionTests {
+    @Test func spaceCanCommitAsTypedWhenReturnRunsTheAction() throws {
+        var features = AIMEFeatures()
+        features.aiPolish = true
+        features.draftLayer = true
+        features.draftAutoAction = AIMEFeatures.ActionHotkey.translate
+        #expect(!features.spaceCommitsDraft(keyCode: 49, modified: false, draft: "你好")) // off by default
+        features.draftSpaceCommits = true
+        #expect(features.spaceCommitsDraft(keyCode: 49, modified: false, draft: "你好"))
+        #expect(!features.spaceCommitsDraft(keyCode: 49, modified: false, draft: "hello"))
+        #expect(!features.spaceCommitsDraft(keyCode: 49, modified: true, draft: "你好"))
+        #expect(!features.spaceCommitsDraft(keyCode: 36, modified: false, draft: "你好"))
+        #expect(try JSONDecoder().decode(AIMEFeatures.self, from: JSONEncoder().encode(features)).draftSpaceCommits)
+        // Space cannot do both: as the action's key it never commits as typed.
+        features.draftAutoActionKey = .space
+        #expect(!features.spaceCommitsDraft(keyCode: 49, modified: false, draft: "你好"))
+        features.draftAutoActionKey = .return
+        features.draftAutoAction = ""
+        #expect(!features.spaceCommitsDraft(keyCode: 49, modified: false, draft: "你好"))
+    }
+}
