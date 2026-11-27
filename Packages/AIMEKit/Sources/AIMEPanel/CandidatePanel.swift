@@ -32,6 +32,10 @@ public final class CandidatePanel {
     /// (one row of candidates fits, two do not) does not flip it up and down.
     private var aboveLine: (y: CGFloat, at: Date)?
     static let aboveLineMemory: TimeInterval = 5
+    /// Tallest candidate panel shown with this theme (a row that wrapped, or one with a
+    /// second line). Room for it is kept below the cursor from the start, so the panel
+    /// does not begin below and move above when the row grows.
+    private var tallestCandidates: CGFloat = 0
     private var contentFrame: NSRect = .zero
 
     /// Motion is on unless the user asked to reduce it. Tests switch it off.
@@ -48,6 +52,7 @@ public final class CandidatePanel {
         get { view.theme }
         set {
             view.theme = newValue
+            tallestCandidates = 0
             effect.isHidden = !newValue.translucency
         }
     }
@@ -110,6 +115,7 @@ public final class CandidatePanel {
         view.maxRowWidth = floor(screenWidth * 0.9)
         view.state = state
         let size = view.fittingContentSize
+        if state.presentation == .candidates { tallestCandidates = max(tallestCandidates, size.height) }
         let margin = Self.margin
 
         // Grow the window in steps; keep it while visible.
@@ -452,8 +458,9 @@ public final class CandidatePanel {
         // The content's left edge lines up with the cursor, inside the border.
         let anchor = cursor.offsetBy(dx: -(theme.borderWidth + 4), dy: 0)
         let remembered = aboveLine.map { $0.y == cursor.minY && now.timeIntervalSince($0.at) < Self.aboveLineMemory } ?? false
-        let placed = Self.place(size, cursor: anchor, visible: visible, gap: 4 + theme.baseOffset,
-                                stayAbove: remembered)
+        let gap = 4 + theme.baseOffset
+        let noRoomForTallest = cursor.minY - tallestCandidates - gap < visible.minY
+        let placed = Self.place(size, cursor: anchor, visible: visible, gap: gap, stayAbove: remembered || noRoomForTallest)
         aboveLine = placed.above ? (cursor.minY, now) : nil
         return placed.frame
     }

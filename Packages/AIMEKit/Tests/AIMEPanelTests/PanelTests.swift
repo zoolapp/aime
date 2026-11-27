@@ -553,3 +553,22 @@ extension PanelTests {
         #expect(panel.position(for: short, cursor: cursor, now: later).maxY < cursor.minY)
     }
 }
+
+extension PanelTests {
+    /// After a tall candidate row was shown once, a short one near the bottom of the
+    /// screen starts above the cursor too: there would be no room when it grows.
+    @MainActor
+    @Test func panelKeepsRoomForTheTallestCandidateRow() {
+        let panel = CandidatePanel()
+        panel.animationsEnabled = false
+        panel.theme = PanelTheme(frontend: Self.frontend, dark: false)
+        guard let visible = NSScreen.screens.first?.visibleFrame else { return }
+        panel.show(.sample, at: NSRect(x: visible.midX, y: visible.midY, width: 1, height: 19))
+        let height = panel.frameSize.height
+        panel.hide()
+        // Half of that height fits below this cursor; the full height does not.
+        let cursor = NSRect(x: visible.minX + 100, y: visible.minY + height * 0.75 + 4, width: 1, height: 19)
+        let later = Date().addingTimeInterval(CandidatePanel.aboveLineMemory + 1)
+        #expect(panel.position(for: NSSize(width: 200, height: height / 2), cursor: cursor, now: later).minY > cursor.maxY)
+    }
+}
