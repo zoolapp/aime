@@ -319,6 +319,11 @@ final class AIMEInputController: IMKInputController {
                 else { engine.showStatus("没有可处理的文字：先打一段字，或选中一段文字") }
                 return true
             }
+            // A shortcut bound to one action runs it without the menu.
+            if let bound = boundAction(for: event) {
+                runBoundAction(bound, client: client)
+                return true
+            }
             // A pending draft (nothing being composed): Return / Esc confirm it, ⌫ edits
             // it, navigation and shortcuts confirm it and then reach the app.
             if !draft.isEmpty, !isComposing {
