@@ -512,3 +512,24 @@ extension PanelTests {
         }
     }
 }
+
+extension PanelTests {
+    /// Near the bottom of a screen the panel goes above the cursor when it does not fit
+    /// below, and stays there for that line even when the content gets short enough.
+    @Test func panelStaysAboveOnceItHadNoRoomBelow() {
+        let visible = NSRect(x: 0, y: 1329, width: 3440, height: 1440)
+        let cursor = NSRect(x: 135, y: 1382, width: 1, height: 19)
+        func place(_ height: CGFloat, stayAbove: Bool) -> (frame: NSRect, above: Bool) {
+            CandidatePanel.place(NSSize(width: 300, height: height), cursor: cursor, visible: visible,
+                                 gap: 4, stayAbove: stayAbove)
+        }
+        let tall = place(60, stayAbove: false)
+        #expect(tall.above && tall.frame.minY == cursor.maxY + 4)
+        // Short content would fit below, but the panel already went above for this line.
+        let short = place(30, stayAbove: tall.above)
+        #expect(short.above && short.frame.minY == cursor.maxY + 4)
+        // A fresh panel with room below goes below as before.
+        let fresh = place(30, stayAbove: false)
+        #expect(!fresh.above && fresh.frame.maxY == cursor.minY - 4)
+    }
+}

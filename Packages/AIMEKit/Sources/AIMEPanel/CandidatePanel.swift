@@ -26,6 +26,10 @@ public final class CandidatePanel {
     /// Visible frames of the screens, fetched when the panel appears: asking AppKit on
     /// every keystroke round-trips to the window server.
     private var screenFrames: [(frame: NSRect, visible: NSRect)] = []
+    /// The cursor line the panel last had to go above (no room below). While it is shown
+    /// for that line it stays above, so content whose height hovers around the room left
+    /// below does not flip it up and down on every key.
+    private var aboveLine: CGFloat?
     private var contentFrame: NSRect = .zero
 
     /// Motion is on unless the user asked to reduce it. Tests switch it off.
@@ -434,6 +438,7 @@ public final class CandidatePanel {
         heroGlow.hide()
         pendingTransition = nil
         contentFrame = .zero
+        aboveLine = nil
         if window.isVisible { window.orderOut(nil) }
     }
 
@@ -443,12 +448,24 @@ public final class CandidatePanel {
         let screens = screenFrames.isEmpty ? NSScreen.screens.map { ($0.frame, $0.visibleFrame) } : screenFrames
         let visible = (screens.first { $0.0.contains(cursor.origin) } ?? screens.first)?.1
             ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
-        let gap = 4 + theme.baseOffset
-        var origin = NSPoint(x: cursor.minX - theme.borderWidth - 4, y: cursor.minY - size.height - gap)
-        if origin.y < visible.minY { origin.y = cursor.maxY + gap }
+        // The content's left edge lines up with the cursor, inside the border.
+        let anchor = cursor.offsetBy(dx: -(theme.borderWidth + 4), dy: 0)
+        let placed = Self.place(size, cursor: anchor, visible: visible, gap: 4 + theme.baseOffset,
+                                stayAbove: aboveLine == cursor.minY)
+        aboveLine = placed.above ? cursor.minY : nil
+        return placed.frame
+    }
+
+    /// Below the cursor when it fits, otherwise above; `stayAbove` keeps it above once it
+    /// went there for this line. Kept on screen either way.
+    nonisolated static func place(_ size: NSSize, cursor: NSRect, visible: NSRect, gap: CGFloat,
+                                  stayAbove: Bool) -> (frame: NSRect, above: Bool) {
+        var origin = NSPoint(x: cursor.minX, y: cursor.minY - size.height - gap)
+        let above = stayAbove || origin.y < visible.minY
+        if above { origin.y = cursor.maxY + gap }
         if origin.y + size.height > visible.maxY { origin.y = visible.maxY - size.height }
         origin.x = min(max(origin.x, visible.minX), visible.maxX - size.width)
-        return NSRect(origin: origin, size: size)
+        return (NSRect(origin: origin, size: size), above)
     }
 }
 
