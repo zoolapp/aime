@@ -156,8 +156,11 @@ public final class CandidatePanel {
         CATransaction.setDisableActions(true)
         styleBackground(radius: radius)
         if animate {
-            // Start from the previous shape, anchored at the same top-left corner.
-            let start = NSRect(x: margin, y: contentFrame.maxY - previous.height, width: previous.width, height: previous.height)
+            // Start from the previous shape, anchored at the corner that stays put on
+            // screen: top-left below the cursor, bottom-left above it (there the window
+            // moves with the height, and a top anchor would make the shape jump).
+            let startY = aboveLine != nil ? contentFrame.minY : contentFrame.maxY - previous.height
+            let start = NSRect(x: margin, y: startY, width: previous.width, height: previous.height)
             place(start, radius: min(theme.cornerRadius, previous.height / 2))
         }
         CATransaction.commit()
