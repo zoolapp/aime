@@ -26,6 +26,16 @@ public final class CandidatePanel {
     /// Visible frames of the screens, fetched when the panel appears: asking AppKit on
     /// every keystroke round-trips to the window server.
     private var screenFrames: [(frame: NSRect, visible: NSRect)] = []
+    /// The cursor line the panel last had to go above (no room below), and when. While
+    /// typing goes on in that line it stays above — also across a hide, since every word
+    /// starts a new panel — so content whose height hovers around the room left below
+    /// (one row of candidates fits, two do not) does not flip it up and down.
+    private var aboveLine: (y: CGFloat, at: Date)?
+    static let aboveLineMemory: TimeInterval = 5
+    /// Tallest candidate panel shown with this theme (a row that wrapped, or one with a
+    /// second line). Room for it is kept below the cursor from the start, so the panel
+    /// does not begin below and move above when the row grows.
+    private var tallestCandidates: CGFloat = 0
     private var contentFrame: NSRect = .zero
 
     /// Motion is on unless the user asked to reduce it. Tests switch it off.
@@ -42,6 +52,7 @@ public final class CandidatePanel {
         get { view.theme }
         set {
             view.theme = newValue
+            tallestCandidates = 0
             effect.isHidden = !newValue.translucency
         }
     }
@@ -104,6 +115,7 @@ public final class CandidatePanel {
         view.maxRowWidth = floor(screenWidth * 0.9)
         view.state = state
         let size = view.fittingContentSize
+        if state.presentation == .candidates { tallestCandidates = max(tallestCandidates, size.height) }
         let margin = Self.margin
 
         // Grow the window in steps; keep it while visible.
@@ -144,8 +156,11 @@ public final class CandidatePanel {
         CATransaction.setDisableActions(true)
         styleBackground(radius: radius)
         if animate {
-            // Start from the previous shape, anchored at the same top-left corner.
-            let start = NSRect(x: margin, y: contentFrame.maxY - previous.height, width: previous.width, height: previous.height)
+            // Start from the previous shape, anchored at the corner that stays put on
+            // screen: top-left below the cursor, bottom-left above it (there the window
+            // moves with the height, and a top anchor would make the shape jump).
+            let startY = aboveLine != nil ? contentFrame.minY : contentFrame.maxY - previous.height
+            let start = NSRect(x: margin, y: startY, width: previous.width, height: previous.height)
             place(start, radius: min(theme.cornerRadius, previous.height / 2))
         }
         CATransaction.commit()
@@ -439,16 +454,30 @@ public final class CandidatePanel {
 
     /// Content rectangle below the cursor, flipped above when it would leave the
     /// screen, clamped horizontally.
-    func position(for size: NSSize, cursor: NSRect) -> NSRect {
+    func position(for size: NSSize, cursor: NSRect, now: Date = Date()) -> NSRect {
         let screens = screenFrames.isEmpty ? NSScreen.screens.map { ($0.frame, $0.visibleFrame) } : screenFrames
         let visible = (screens.first { $0.0.contains(cursor.origin) } ?? screens.first)?.1
             ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
+        // The content's left edge lines up with the cursor, inside the border.
+        let anchor = cursor.offsetBy(dx: -(theme.borderWidth + 4), dy: 0)
+        let remembered = aboveLine.map { $0.y == cursor.minY && now.timeIntervalSince($0.at) < Self.aboveLineMemory } ?? false
         let gap = 4 + theme.baseOffset
-        var origin = NSPoint(x: cursor.minX - theme.borderWidth - 4, y: cursor.minY - size.height - gap)
-        if origin.y < visible.minY { origin.y = cursor.maxY + gap }
+        let noRoomForTallest = cursor.minY - tallestCandidates - gap < visible.minY
+        let placed = Self.place(size, cursor: anchor, visible: visible, gap: gap, stayAbove: remembered || noRoomForTallest)
+        aboveLine = placed.above ? (cursor.minY, now) : nil
+        return placed.frame
+    }
+
+    /// Below the cursor when it fits, otherwise above; `stayAbove` keeps it above once it
+    /// went there for this line. Kept on screen either way.
+    nonisolated static func place(_ size: NSSize, cursor: NSRect, visible: NSRect, gap: CGFloat,
+                                  stayAbove: Bool) -> (frame: NSRect, above: Bool) {
+        var origin = NSPoint(x: cursor.minX, y: cursor.minY - size.height - gap)
+        let above = stayAbove || origin.y < visible.minY
+        if above { origin.y = cursor.maxY + gap }
         if origin.y + size.height > visible.maxY { origin.y = visible.maxY - size.height }
         origin.x = min(max(origin.x, visible.minX), visible.maxX - size.width)
-        return NSRect(origin: origin, size: size)
+        return (NSRect(origin: origin, size: size), above)
     }
 }
 

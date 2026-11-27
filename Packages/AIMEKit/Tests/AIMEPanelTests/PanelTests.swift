@@ -512,3 +512,63 @@ extension PanelTests {
         }
     }
 }
+
+extension PanelTests {
+    /// Near the bottom of a screen the panel goes above the cursor when it does not fit
+    /// below, and stays there for that line even when the content gets short enough.
+    @Test func panelStaysAboveOnceItHadNoRoomBelow() {
+        let visible = NSRect(x: 0, y: 1329, width: 3440, height: 1440)
+        let cursor = NSRect(x: 135, y: 1382, width: 1, height: 19)
+        func place(_ height: CGFloat, stayAbove: Bool) -> (frame: NSRect, above: Bool) {
+            CandidatePanel.place(NSSize(width: 300, height: height), cursor: cursor, visible: visible,
+                                 gap: 4, stayAbove: stayAbove)
+        }
+        let tall = place(60, stayAbove: false)
+        #expect(tall.above && tall.frame.minY == cursor.maxY + 4)
+        // Short content would fit below, but the panel already went above for this line.
+        let short = place(30, stayAbove: tall.above)
+        #expect(short.above && short.frame.minY == cursor.maxY + 4)
+        // A fresh panel with room below goes below as before.
+        let fresh = place(30, stayAbove: false)
+        #expect(!fresh.above && fresh.frame.maxY == cursor.minY - 4)
+    }
+}
+
+extension PanelTests {
+    /// The line is remembered across a hide (each word starts a new panel) but not forever.
+    @MainActor
+    @Test func panelRemembersTheLineItWentAboveFor() {
+        let panel = CandidatePanel()
+        panel.animationsEnabled = false
+        panel.theme = PanelTheme(frontend: Self.frontend, dark: false)
+        guard let visible = NSScreen.screens.first?.visibleFrame else { return }
+        let cursor = NSRect(x: visible.minX + 100, y: visible.minY + 50, width: 1, height: 19)
+        let start = Date()
+        let tall = panel.position(for: NSSize(width: 300, height: 84), cursor: cursor, now: start)
+        #expect(tall.minY > cursor.maxY)
+        panel.hide()
+        let short = NSSize(width: 300, height: 40)
+        #expect(panel.position(for: short, cursor: cursor, now: start.addingTimeInterval(1)).minY > cursor.maxY)
+        let later = start.addingTimeInterval(1 + CandidatePanel.aboveLineMemory + 1)
+        #expect(panel.position(for: short, cursor: cursor, now: later).maxY < cursor.minY)
+    }
+}
+
+extension PanelTests {
+    /// After a tall candidate row was shown once, a short one near the bottom of the
+    /// screen starts above the cursor too: there would be no room when it grows.
+    @MainActor
+    @Test func panelKeepsRoomForTheTallestCandidateRow() {
+        let panel = CandidatePanel()
+        panel.animationsEnabled = false
+        panel.theme = PanelTheme(frontend: Self.frontend, dark: false)
+        guard let visible = NSScreen.screens.first?.visibleFrame else { return }
+        panel.show(.sample, at: NSRect(x: visible.midX, y: visible.midY, width: 1, height: 19))
+        let height = panel.frameSize.height
+        panel.hide()
+        // Half of that height fits below this cursor; the full height does not.
+        let cursor = NSRect(x: visible.minX + 100, y: visible.minY + height * 0.75 + 4, width: 1, height: 19)
+        let later = Date().addingTimeInterval(CandidatePanel.aboveLineMemory + 1)
+        #expect(panel.position(for: NSSize(width: 200, height: height / 2), cursor: cursor, now: later).minY > cursor.maxY)
+    }
+}
