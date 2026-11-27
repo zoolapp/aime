@@ -319,10 +319,24 @@ final class AIMEInputController: IMKInputController {
                 else { engine.showStatus("没有可处理的文字：先打一段字，或选中一段文字") }
                 return true
             }
+            // A shortcut bound to one action runs it without the menu.
+            if let bound = boundAction(for: event) {
+                runBoundAction(bound, client: client)
+                return true
+            }
             // A pending draft (nothing being composed): Return / Esc confirm it, ⌫ edits
             // it, navigation and shortcuts confirm it and then reach the app.
             if !draft.isEmpty, !isComposing {
                 let flags = event.modifierFlags
+                // The draft's own action, on its key (Return or Space); Esc always puts
+                // the draft in as typed.
+                let modified = !flags.intersection([.command, .control, .option, .shift]).isEmpty
+                if engine.features.runsDraftAutoAction(keyCode: event.keyCode, modified: modified, draft: draft.text),
+                   runDraftAutoAction(client: client) { return true }
+                if engine.features.spaceCommitsDraft(keyCode: event.keyCode, modified: modified, draft: draft.text) {
+                    flushDraft(client: client)
+                    return true
+                }
                 switch DraftBuffer.decision(keyCode: event.keyCode, command: flags.contains(.command), control: flags.contains(.control)) {
                 case .commit:
                     flushDraft(client: client)
@@ -479,6 +493,12 @@ final class AIMEInputController: IMKInputController {
         case .off: "⌃⌥M 动作"
         }
         var state = PanelState(status: "↩ 上屏   \(hold)")
+        if let title = draftAutoActionTitle {
+            let features = engine.features
+            let keys = features.draftAutoActionKey == .space ? "空格 \(title)   ↩ 上屏"
+                : "↩ \(title)   \(features.draftSpaceCommits ? "空格" : "Esc") 上屏"
+            state = PanelState(status: "\(keys)   \(hold)")
+        }
         state.statusBadge = liveSession?.option("ascii_mode") == true ? "英" : "中"
         return state
     }
@@ -512,14 +532,14 @@ final class AIMEInputController: IMKInputController {
     }
 
     /// Puts the draft into the app (replacing the marked text that showed it).
-    func flushDraft(client: (any IMKTextInput)?) {
+    func flushDraft(client: (any IMKTextInput)?, keepPanel: Bool = false) {
         draftTimer?.cancel()
         guard !draft.isEmpty else { return }
         let text = draft.take()
         (client ?? textClient)?.insertText(text, replacementRange: NSRange(location: NSNotFound, length: 0))
         hasMarkedText = false
         recentText.append(text)
-        if ownsPanel, !isComposing, quickMenu == nil, polish == nil { engine.panel.hide() }
+        if !keepPanel, ownsPanel, !isComposing, quickMenu == nil, polish == nil { engine.panel.hide() }
     }
 
     /// Restarts the auto-commit countdown; it only runs while a draft is pending and
@@ -531,7 +551,7 @@ final class AIMEInputController: IMKInputController {
         draftTimer = Task { @MainActor [weak self] in
             try? await Task.sleep(for: .seconds(delay))
             guard !Task.isCancelled, let self, !self.isComposing, self.quickMenu == nil, self.polish == nil else { return }
-            self.flushDraft(client: nil)
+            if !self.runDraftAutoAction(client: nil) { self.flushDraft(client: nil) }
         }
     }
 

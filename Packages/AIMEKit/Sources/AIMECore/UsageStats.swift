@@ -34,6 +34,24 @@ public struct AIMEFeatures: Sendable, Codable, Equatable {
     /// English punctuation by default (librime's `ascii_punct` switch). The state is
     /// shared by all apps: ⌃⇧3 in one app switches the others too (#10).
     public var asciiPunct = false
+    /// Shortcuts that run one action directly, skipping the quick menu: action key
+    /// (see `ActionHotkey`) → Rime key notation such as `Control+Alt+t`. None by default.
+    public var actionHotkeys: [String: String] = [:]
+    /// 输入图层: the AI action (an `ActionHotkey` key: translate, polish or a custom
+    /// action's id) run on the draft when Return is pressed or the auto-commit delay
+    /// passes, instead of committing it as typed. Empty (the default) means none.
+    public var draftAutoAction = ""
+    /// The key that runs `draftAutoAction` at once: Return (then Esc commits as typed)
+    /// or Space (then Return commits as typed, as without an action).
+    public var draftAutoActionKey = DraftActionKey.return
+
+    /// With Return as the action's key: Space also commits the draft as typed (Esc
+    /// always does). Has no effect when Space is the action's key.
+    public var draftSpaceCommits = false
+
+    public enum DraftActionKey: String, Sendable, Codable, CaseIterable {
+        case `return`, space
+    }
 
     public struct AIAction: Sendable, Codable, Equatable, Identifiable {
         public var id: UUID
@@ -66,6 +84,80 @@ public struct AIMEFeatures: Sendable, Codable, Equatable {
         draftAutoCommit = try container.decodeIfPresent(Int.self, forKey: .draftAutoCommit) ?? defaults.draftAutoCommit
         traditional = try container.decodeIfPresent(Bool.self, forKey: .traditional) ?? defaults.traditional
         asciiPunct = try container.decodeIfPresent(Bool.self, forKey: .asciiPunct) ?? defaults.asciiPunct
+        actionHotkeys = try container.decodeIfPresent([String: String].self, forKey: .actionHotkeys) ?? defaults.actionHotkeys
+        draftAutoAction = try container.decodeIfPresent(String.self, forKey: .draftAutoAction) ?? defaults.draftAutoAction
+        draftSpaceCommits = try container.decodeIfPresent(Bool.self, forKey: .draftSpaceCommits) ?? defaults.draftSpaceCommits
+        draftAutoActionKey = (try? container.decodeIfPresent(DraftActionKey.self, forKey: .draftAutoActionKey)) ?? defaults.draftAutoActionKey
+    }
+
+    /// Keys of `actionHotkeys`: the built-in actions, or a custom action's `id.uuidString`.
+    public enum ActionHotkey {
+        public static let translate = "translate"
+        public static let polish = "polish"
+        public static let convertScript = "convertScript"
+        /// Taken by the input method itself (⌃⌥P AI menu, ⌃⌥M quick menu).
+        public static let reserved: Set<String> = ["Control+Alt+p", "Control+Alt+m"]
+
+        /// A shortcut must not be something people type: it needs ⌃, ⌥ or ⌘, or is a
+        /// function key, and it is not one of the input method's own.
+        public static func isUsable(_ rime: String) -> Bool {
+            guard !rime.isEmpty, !reserved.contains(rime) else { return false }
+            var parts = rime.split(separator: "+").map(String.init)
+            let key = parts.popLast() ?? ""
+            if parts.contains(where: { ["Control", "Alt", "Super"].contains($0) }) { return true }
+            return key.count > 1 && key.hasPrefix("F") && Int(key.dropFirst()) != nil
+        }
+    }
+
+    /// The action bound to a key press (Rime notation), skipping bindings that are not
+    /// usable or whose custom action has been deleted.
+    public func action(forHotkey rime: String) -> String? {
+        guard ActionHotkey.isUsable(rime) else { return nil }
+        let builtIn: Set<String> = [ActionHotkey.translate, ActionHotkey.polish, ActionHotkey.convertScript]
+        let custom = Set(aiActions.map(\.id.uuidString))
+        return actionHotkeys
+            .filter { $0.value == rime && (builtIn.contains($0.key) || custom.contains($0.key)) }
+            .map(\.key).min()
+    }
+
+    /// The action to run on a pending draft, or nil: none chosen, AI actions or the
+    /// draft layer off, or the chosen custom action no longer exists.
+    public var activeDraftAutoAction: String? {
+        guard aiPolish, draftLayer, !draftAutoAction.isEmpty else { return nil }
+        let known = [ActionHotkey.translate, ActionHotkey.polish] + aiActions.map(\.id.uuidString)
+        return known.contains(draftAutoAction) ? draftAutoAction : nil
+    }
+
+    /// Whether this key press on a pending draft `draft` runs the draft's action now.
+    /// Space only does after text that does not end in a Latin letter or digit: in
+    /// "hello" it still types the space of "hello world".
+    public func runsDraftAutoAction(keyCode: UInt16, modified: Bool, draft: String) -> Bool {
+        guard activeDraftAutoAction != nil, !modified else { return false }
+        switch draftAutoActionKey {
+        case .return: return keyCode == 36 || keyCode == 76
+        case .space: return keyCode == 49 && Self.spaceIsFree(after: draft)
+        }
+    }
+
+    /// Whether Space on a pending draft commits it as typed: chosen for it, and Return
+    /// is the action's key.
+    public func spaceCommitsDraft(keyCode: UInt16, modified: Bool, draft: String) -> Bool {
+        guard activeDraftAutoAction != nil, !modified, draftAutoActionKey == .return, draftSpaceCommits else { return false }
+        return keyCode == 49 && Self.spaceIsFree(after: draft)
+    }
+
+    /// Space is only taken over after text that does not end in a Latin letter or digit.
+    static func spaceIsFree(after draft: String) -> Bool {
+        guard let last = draft.unicodeScalars.last else { return false }
+        return !(last.isASCII && (last.properties.isAlphabetic || (0x30...0x39).contains(last.value)))
+    }
+
+    /// Binds `rime` to one action (nil or empty clears it). A shortcut belongs to one
+    /// action only: binding it here takes it from any other.
+    public mutating func setActionHotkey(_ rime: String?, for action: String) {
+        guard let rime, !rime.isEmpty else { actionHotkeys[action] = nil; return }
+        actionHotkeys = actionHotkeys.filter { $0.value != rime }
+        actionHotkeys[action] = rime
     }
 
     public static let changedNotification = Notification.Name("app.zool.aime.features")

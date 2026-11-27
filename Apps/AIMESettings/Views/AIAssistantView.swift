@@ -27,7 +27,10 @@ private struct CustomActionsSection: View {
                         .frame(width: 220)
                         Spacer()
                         Button(role: .destructive) {
-                            model.updateFeatures { $0.aiActions.removeAll { $0.id == action.id } }
+                            model.updateFeatures {
+                                $0.aiActions.removeAll { $0.id == action.id }
+                                $0.setActionHotkey(nil, for: action.id.uuidString)
+                            }
                         } label: { Image(systemName: "trash") }
                             .buttonStyle(.borderless)
                     }
@@ -52,6 +55,58 @@ private struct CustomActionsSection: View {
             Text("自定义动作")
         } footer: {
             Text("自定义动作会出现在快捷菜单的「AI 处理」里，排在「翻译」「润色」之后，用数字键选择。")
+        }
+    }
+}
+
+/// One shortcut per action, so an action runs without going through the AI menu.
+private struct ActionHotkeysSection: View {
+    private typealias Key = AIMEFeatures.ActionHotkey
+    @Environment(SettingsModel.self) private var model
+    @State private var warning: String?
+
+    var body: some View {
+        Section {
+            let features = model.features
+            row("翻译", key: Key.translate, features: features)
+            row("润色", key: Key.polish, features: features)
+            row("简繁转换", key: Key.convertScript, features: features)
+            ForEach(features.aiActions) { action in
+                row(action.name.isEmpty ? "未命名动作" : action.name, key: action.id.uuidString, features: features)
+            }
+            if let warning {
+                Label(warning, systemImage: "exclamationmark.triangle")
+                    .font(.caption).foregroundStyle(Theme.warning)
+            }
+        } header: {
+            Text("动作快捷键")
+        } footer: {
+            Text("按下快捷键直接执行该动作，不用先打开菜单再选；处理对象与 ⌃⌥P 相同。需要包含 ⌃、⌥ 或 ⌘（或使用 F1–F12），一个快捷键只对应一个动作。")
+        }
+    }
+
+    private func row(_ title: String, key: String, features: AIMEFeatures) -> some View {
+        LabeledContent(title) {
+            HStack(spacing: 6) {
+                KeyRecorder(value: features.actionHotkeys[key] ?? "") { rime in
+                    guard AIMEFeatures.ActionHotkey.isUsable(rime) else {
+                        warning = AIMEFeatures.ActionHotkey.reserved.contains(rime)
+                            ? "\(HotkeyFormatter.display(rime)) 已用于打开菜单，请换一个。"
+                            : "\(HotkeyFormatter.display(rime)) 会被当作打字，请加上 ⌃、⌥ 或 ⌘。"
+                        return
+                    }
+                    warning = nil
+                    model.updateFeatures { $0.setActionHotkey(rime, for: key) }
+                }
+                if features.actionHotkeys[key] != nil {
+                    Button {
+                        model.updateFeatures { $0.setActionHotkey(nil, for: key) }
+                    } label: { Image(systemName: "xmark.circle.fill") }
+                        .buttonStyle(.borderless)
+                        .foregroundStyle(.secondary)
+                        .help("清除快捷键")
+                }
+            }
         }
     }
 }
@@ -349,7 +404,8 @@ struct AIAssistantView: View {
                             Text("⌃⌥P").font(.caption.monospaced()).padding(.horizontal, 5).padding(.vertical, 1)
                                 .background(.quaternary, in: RoundedRectangle(cornerRadius: 4))
                         }
-                        Text("按 ⌃⌥P，或长按呼出键打开快捷菜单后按空格，进入「AI 处理」，再按数字选择动作：1 翻译、2 润色，之后是你的自定义动作。正在选字时执行，会先把高亮的候选上屏再处理它；否则处理对象依次是：输入图层里的草稿、你选中的文字、刚在这个输入框里打的字。结果列在候选窗里，回车或数字应用，C 复制，Esc 取消；替换前会核对原文没有变化。")
+                        Text("按 ⌃⌥P，或长按呼出键打开快捷菜单后按空格，进入「AI 处理」，再按数字选择动作：1 翻译、2 润色，之后是你的自定义动作；也可以在下方「动作快捷键」给常用动作单独设快捷键。"
+                             + "正在选字时执行，会先把高亮的候选上屏再处理它；否则处理对象依次是：输入图层里的草稿、你选中的文字、刚在这个输入框里打的字。结果列在候选窗里，回车或数字应用，C 复制，Esc 取消；替换前会核对原文没有变化。")
                             .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -372,6 +428,7 @@ struct AIAssistantView: View {
 
             if model.features.aiPolish {
                 CustomActionsSection()
+                ActionHotkeysSection()
             }
 
             Section {
@@ -396,6 +453,61 @@ struct AIAssistantView: View {
                             Text("自动上屏")
                             Text("停止打字这么久之后，草稿自动进入应用。正在选词、选择动作或等待 AI 结果时不计时。")
                                 .font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    if features.aiPolish {
+                        LabeledContent {
+                            Picker("", selection: Binding(get: { features.activeDraftAutoAction ?? "" },
+                                                          set: { value in model.updateFeatures { $0.draftAutoAction = value } })) {
+                                Text("无").tag("")
+                                Text("翻译").tag(AIMEFeatures.ActionHotkey.translate)
+                                Text("润色").tag(AIMEFeatures.ActionHotkey.polish)
+                                ForEach(features.aiActions) { action in
+                                    Text(action.name.isEmpty ? "未命名动作" : action.name).tag(action.id.uuidString)
+                                }
+                            }
+                            .labelsHidden().fixedSize()
+                        } label: {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("上屏前执行动作")
+                                Text("按触发键或到了自动上屏的时间，先对草稿执行这个动作，结果列出来由你选：回车用结果上屏，Esc 按原文上屏。"
+                                     + "开启后，停止打字到时间就会把草稿交给所选模型，不需要再按键。")
+                                    .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                        if features.activeDraftAutoAction != nil {
+                            LabeledContent {
+                                Picker("", selection: Binding(get: { features.draftAutoActionKey },
+                                                              set: { value in model.updateFeatures { $0.draftAutoActionKey = value } })) {
+                                    Text("回车").tag(AIMEFeatures.DraftActionKey.return)
+                                    Text("空格").tag(AIMEFeatures.DraftActionKey.space)
+                                }
+                                .labelsHidden().fixedSize()
+                            } label: {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("执行动作的键")
+                                    Text("草稿以英文字母或数字结尾时，空格仍然输入空格。")
+                                        .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                            LabeledContent {
+                                if features.draftAutoActionKey == .space {
+                                    Text("回车或 Esc").foregroundStyle(.secondary)
+                                } else {
+                                    Picker("", selection: Binding(get: { features.draftSpaceCommits },
+                                                                  set: { value in model.updateFeatures { $0.draftSpaceCommits = value } })) {
+                                        Text("Esc").tag(false)
+                                        Text("空格或 Esc").tag(true)
+                                    }
+                                    .labelsHidden().fixedSize()
+                                }
+                            } label: {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("原文上屏的键")
+                                    Text("不执行动作，草稿按打出来的样子进入应用。")
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
+                            }
                         }
                     }
                 }
