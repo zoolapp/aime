@@ -12,6 +12,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Fixed
+
+- With 输入图层 (draft layer) on, the candidate panel no longer jumps between the caret and the start of the draft in Electron apps such as Claude and Slack.
+
 ## [0.1.13] - 2026-11-27
 
 > Stable release · Developer ID signed · notarization pending
