@@ -716,7 +716,7 @@ final class AIMEInputController: IMKInputController {
             draftEndRect = .zero // a new draft may start somewhere else
             return place(0) ?? .zero
         }
-        if let rect = place(anchor) ?? place(anchor - 1) {
+        if let rect = place(anchor) ?? beforeEnd(anchor, place) {
             draftEndRect = rect
             return rect
         }
@@ -725,6 +725,18 @@ final class AIMEInputController: IMKInputController {
         // than jumping back to the start of the draft and forth again on the next key.
         if draftEndRect != .zero { return draftEndRect }
         return place(0) ?? .zero
+    }
+
+    /// The draft's end worked out from its last character, for apps that cannot place
+    /// the end itself yet: that character's rect is its leading edge, so it is moved on
+    /// by the advance of the character before it (same line). Without this the panel
+    /// sits one character short and steps forward when the app catches up.
+    private func beforeEnd(_ anchor: Int, _ place: (Int) -> NSRect?) -> NSRect? {
+        guard var rect = place(anchor - 1) else { return nil }
+        if anchor >= 2, let before = place(anchor - 2), before.minY == rect.minY, rect.minX > before.minX {
+            rect.origin.x += rect.minX - before.minX
+        }
+        return rect
     }
 
     // MARK: - Menu
