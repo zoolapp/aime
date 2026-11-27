@@ -12,6 +12,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.1.13] - 2026-11-27
+
+> Stable release · Developer ID signed · notarization pending
+
+### Changed
+
+- In Settings › AI Assistant, custom action prompts now have a multiline editor. Press Return to start a new paragraph and scroll within the editor to review longer prompts (#35).
+- Settings › Dictionaries: the AI Companies & Products, AI & Developer Terms and Internet Brands & Slang topic dictionaries are updated to the 2026-11-26 edition, adding 63 entries such as GPT-6.2, Claude Opus 5.5, Gemini 4, iPhone 18 Pro, Huawei Mate 90 and recent internet slang. Existing subscriptions pick it up on their usual schedule.
+
+### Fixed
+
+- After choosing English punctuation in Settings › Typing › Punctuation, a restart (of the Mac or the input method) brought Chinese punctuation back; the setting now applies at launch. When Remembered switches includes English punctuation, ⌃⇧3 and the Settings switch are really remembered for the next launch (#33).
+- Holding the quick-menu key (⌥ by default) where nothing can be typed (the desktop, Finder's file list, ⌥-clicking a menu bar icon) opened the quick menu; it now opens only where you can type, and ⌃⌥M there just says there is no insertion point.
+
 ## [0.1.12] - 2026-11-11
 
 > Stable release · Developer ID signed · notarized by Apple

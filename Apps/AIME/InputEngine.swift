@@ -170,13 +170,24 @@ final class InputEngine {
         Task.detached(priority: .background) { UsageStatsStore().prune() }
     }
 
+    /// The first load at launch is not a Settings change (#33 review): treating it as one
+    /// overwrote the remembered punctuation whenever the setting was English.
+    private var featuresLoaded = false
+
     private func reloadFeatures() {
+        let initialLoad = !featuresLoaded
+        featuresLoaded = true
         let wasTraditional = features.traditional, wasAsciiPunct = features.asciiPunct
         features = AIMEFeatures.load(paths)
         if features.traditional != wasTraditional { activeController?.applyScriptOption() }
-        if features.asciiPunct != wasAsciiPunct, asciiPunct != nil {
-            asciiPunct = features.asciiPunct
-            activeController?.applyPunctOption()
+        if !initialLoad, features.asciiPunct != wasAsciiPunct {
+            // A state recorded earlier (⌃⇧3) must not win over this choice at the next launch,
+            // even when no session has started yet.
+            PunctMemory().record(features.asciiPunct, setting: features.asciiPunct)
+            if asciiPunct != nil {
+                asciiPunct = features.asciiPunct
+                activeController?.applyPunctOption()
+            }
         }
         usage.isEnabled = features.usageStats
         if !features.aiPolish { activeController?.cancelPolish() }

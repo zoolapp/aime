@@ -180,6 +180,7 @@ Thanks to everyone who helps build AIME: anyone who has opened a pull request is
 <a href="https://github.com/foru17" title="@foru17"><img src="https://avatars.githubusercontent.com/u/1920586?v=4&s=96" width="48" height="48" alt="@foru17"></a>
 <a href="https://github.com/miantiao-me" title="@miantiao-me"><img src="https://avatars.githubusercontent.com/u/2959393?v=4&s=96" width="48" height="48" alt="@miantiao-me"></a>
 <a href="https://github.com/takeshi264" title="@takeshi264"><img src="https://avatars.githubusercontent.com/u/11970938?v=4&s=96" width="48" height="48" alt="@takeshi264"></a>
+<a href="https://github.com/zo-no" title="@zo-no"><img src="https://avatars.githubusercontent.com/u/97882316?v=4&s=96" width="48" height="48" alt="@zo-no"></a>
 </p>
 
 ## Acknowledgements

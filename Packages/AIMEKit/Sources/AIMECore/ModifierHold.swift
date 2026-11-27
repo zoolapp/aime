@@ -151,6 +151,24 @@ public struct ModifierHold: Sendable, Equatable {
         return true
     }
 
+    /// Whether the quick menu may open here. It belongs to typing: while composing, with a
+    /// pending draft, or when the field has an insertion point. Apps also hand modifier
+    /// events to the input method where nothing can be typed (Finder's file list, a menu
+    /// bar ⌥-click); a menu there has nowhere to appear or insert.
+    public static func allowsMenu(composing: Bool, hasDraft: Bool, menuOpen: Bool, hasInsertionPoint: Bool) -> Bool {
+        composing || hasDraft || menuOpen || hasInsertionPoint
+    }
+
+    /// AppKit's marker on views that take keys without being text: they ask for the floating
+    /// input window instead of inline marked text (Finder's desktop and file lists, for
+    /// type-to-select). Such a view still reports a selection and a caret rect.
+    public static let floatingInputMarker = "__NSUsesFloatingInputWindow"
+
+    /// Whether a client with a placed caret is somewhere text actually goes.
+    public static func isTextField(hasCaret: Bool, markedTextAttributes: [String]) -> Bool {
+        hasCaret && !markedTextAttributes.contains(floatingInputMarker)
+    }
+
     /// Modifier flags with the held key removed: digits pressed while it is still down
     /// count as plain digits in the menu. Input is the same unmasked raw value.
     public func withoutHoldKey(_ flags: UInt) -> UInt {

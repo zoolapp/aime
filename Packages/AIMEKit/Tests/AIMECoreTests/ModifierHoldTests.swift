@@ -27,6 +27,36 @@ struct ModifierHoldTests {
         #expect(!hold.isFired)
     }
 
+    /// The quick menu belongs to typing: no insertion point (Finder's file list, a
+    /// menu bar ⌥-click) means no menu, unless something is being typed already.
+    @Test func floatingInputViewsAreNotTextFields() {
+        let textView = ["NSFont", "NSMarkedClauseSegment", "NSUnderline"]
+        #expect(ModifierHold.isTextField(hasCaret: true, markedTextAttributes: textView))
+        #expect(!ModifierHold.isTextField(hasCaret: false, markedTextAttributes: textView))
+        // Finder's desktop: caret rect and selection reported, but only the floating window.
+        #expect(!ModifierHold.isTextField(hasCaret: true, markedTextAttributes: textView + [ModifierHold.floatingInputMarker]))
+    }
+
+    @Test func menuOnlyWhereTypingHappens() {
+        #expect(!ModifierHold.allowsMenu(composing: false, hasDraft: false, menuOpen: false, hasInsertionPoint: false))
+        #expect(ModifierHold.allowsMenu(composing: false, hasDraft: false, menuOpen: false, hasInsertionPoint: true))
+        #expect(ModifierHold.allowsMenu(composing: true, hasDraft: false, menuOpen: false, hasInsertionPoint: false))
+        #expect(ModifierHold.allowsMenu(composing: false, hasDraft: true, menuOpen: false, hasInsertionPoint: false))
+        #expect(ModifierHold.allowsMenu(composing: false, hasDraft: false, menuOpen: true, hasInsertionPoint: false))
+    }
+
+    /// A hold refused for lack of an insertion point leaves no stale timer and no
+    /// swallowed release behind.
+    @Test func cancelledHoldNeitherFiresNorSwallowsTheRelease() {
+        var hold = ModifierHold(key: .option)
+        let token = hold.modifiersChanged(option) ?? -1
+        hold.cancel()
+        let fired = hold.fire(token: token)
+        #expect(!fired)
+        let swallowed = hold.consumeRelease(0)
+        #expect(!swallowed)
+    }
+
     @Test func shortcutsAndQuickTapsDoNotFire() {
         var hold = ModifierHold(key: .option)
         var token = hold.modifiersChanged(option) ?? -1

@@ -18,6 +18,8 @@ final class AIMEInputController: IMKInputController {
     private var appOptions = InputEngine.AppOptions()
     private var bundleID: String?
     private var hasMarkedText = false
+    /// The session's punctuation when the current key event arrived (nil between events).
+    private var punctAtEventStart: Bool?
     private(set) var isComposing = false
     /// Active ⌃⌥P rewrite of the selected text (see AIMEInputController+Polish.swift).
     var polish: PolishSession?
@@ -106,20 +108,33 @@ final class AIMEInputController: IMKInputController {
     func applyPunctOption() {
         guard let session = liveSession else { return }
         if engine.asciiPunct == nil {
-            let remembered = (try? RimeEngine.shared.openConfig("default").stringList("switcher/save_options"))?
-                .contains("ascii_punct") == true
-            engine.asciiPunct = remembered ? session.option("ascii_punct") : engine.features.asciiPunct
+            // Settings › 输入习惯 › 标点 decides at launch; the last state only when 记忆的开关
+            // includes it (#33). See PunctMemory for why AIME keeps that state itself.
+            engine.asciiPunct = PunctMemory().launchValue(setting: engine.features.asciiPunct, remembers: Self.remembersPunct)
         }
         let desired = appOptions.asciiPunct ?? engine.asciiPunct ?? false
         if session.option("ascii_punct") != desired { session.setOption("ascii_punct", desired) }
+    }
+
+    /// 记忆的开关 (`switcher/save_options`) includes English punctuation.
+    static var remembersPunct: Bool {
+        (try? RimeEngine.shared.openConfig("default").stringList("switcher/save_options"))?.contains("ascii_punct") == true
     }
 
     /// Records the current Chinese/English state (shared, or this app's own), and the
     /// punctuation state unless this app pins its own.
     private func rememberAsciiMode() {
         guard let session = liveSession else { return }
-        if appOptions.asciiPunct == nil, engine.activeController === self {
-            engine.asciiPunct = session.option("ascii_punct")
+        // While composing — including librime's schema menu (F4), whose own context reads
+        // every unset option as off — the session's punctuation is not the user's choice.
+        if appOptions.asciiPunct == nil, engine.activeController === self, !isComposing {
+            let punct = session.option("ascii_punct")
+            // Only a change made by this very key (⌃⇧3) is the user's: a controller that
+            // never went through activate may hold an older state.
+            if engine.asciiPunct != nil, engine.asciiPunct != punct, let before = punctAtEventStart, before != punct {
+                PunctMemory().record(punct, setting: engine.features.asciiPunct)
+            }
+            engine.asciiPunct = punct
         }
         DebugLog.write("ascii record app=\(bundleID ?? "?") appDefault=\(appOptions.asciiMode.map(String.init) ?? "nil") ascii=\(session.option("ascii_mode"))")
         engine.asciiState.record(session.option("ascii_mode"), app: bundleID, appDefault: appOptions.asciiMode,
@@ -276,6 +291,8 @@ final class AIMEInputController: IMKInputController {
             return false
         }
         engine.activeController = self
+        punctAtEventStart = session.option("ascii_punct")
+        defer { punctAtEventStart = nil }
         var handled = false
 
         switch event.type {
@@ -290,7 +307,8 @@ final class AIMEInputController: IMKInputController {
             menuHold.keyPressed() // a key while the modifier is down is a shortcut, not a hold
             if quickMenu != nil, handleMenuKey(event, client: client) { return true }
             if isMenuHotkey(event) {
-                openMenu(client: client)
+                if menuAllowedHere(client: client) { openMenu(client: client) }
+                else { engine.showStatus("这里没有输入位置：先点一下输入框") }
                 return true
             }
             // Keys the polish flow does not consume go on to librime as usual.
@@ -402,7 +420,11 @@ final class AIMEInputController: IMKInputController {
                 return true
             }
             if let token = menuHold.modifiersChanged(deviceFlags) {
-                scheduleMenuHold(token: token)
+                if menuAllowedHere(client: client) {
+                    scheduleMenuHold(token: token)
+                } else {
+                    menuHold.cancel() // no insertion point: a held ⌥ here is not for AIME
+                }
             } else if !menuHold.isArmed {
                 engine.panel.hideHoldCue(animated: true) // let go early, or another modifier joined
             }

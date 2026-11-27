@@ -12,6 +12,24 @@ extension AIMEInputController {
         return event.keyCode == 46 && flags == [.control, .option] // ⌃⌥M
     }
 
+    /// The quick menu belongs to typing: see `ModifierHold.allowsMenu`. Logs only whether
+    /// an insertion point exists, never text.
+    func menuAllowedHere(client: (any IMKTextInput)?) -> Bool {
+        if isComposing || !draft.isEmpty || quickMenu != nil { return true }
+        guard let client = client ?? (self.client() as? (any IMKTextInput)) else { return false }
+        // The caret's place is what counts, in a view that takes text. A selection alone is
+        // not enough (terminals built on winit place a caret while answering {NSNotFound, 0}),
+        // and Finder's desktop and file lists report both a selection and a caret for
+        // type-to-select: they give themselves away by asking for the floating input window.
+        let hasCaret = cursorRect(client: client) != .zero
+        let attributes = (client.validAttributesForMarkedText() as? [String]) ?? []
+        let textField = ModifierHold.isTextField(hasCaret: hasCaret, markedTextAttributes: attributes)
+        let allowed = ModifierHold.allowsMenu(composing: false, hasDraft: false, menuOpen: false,
+                                              hasInsertionPoint: textField)
+        DebugLog.write("menu gate allowed=\(allowed) caret=\(hasCaret) floating=\(attributes.contains(ModifierHold.floatingInputMarker))")
+        return allowed
+    }
+
     /// Starts the hold timer; when the modifier is still held on its own afterwards, the
     /// menu opens (or closes, if it is already open).
     func scheduleMenuHold(token: Int) {
