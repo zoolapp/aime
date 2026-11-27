@@ -234,8 +234,9 @@ extension AIMEInputController {
         switch request.target {
         case .draft:
             polish = nil
+            recordWriting(request.target.text, action: request.title, result: result)
             draft.replace(with: result)
-            flushDraft(client: client)
+            flushDraft(client: client, journal: false)
             InputEngine.shared.panel.hide()
         case let .range(range, original):
             guard client.attributedSubstring(from: range)?.string == original else {
@@ -244,6 +245,7 @@ extension AIMEInputController {
             polish = nil
             InputEngine.shared.panel.hide()
             client.insertText(result, replacementRange: range)
+            recordWriting(original, action: request.title, result: result)
             recentText.reset()
             recentText.append(result)
         }

@@ -56,6 +56,77 @@ private struct CustomActionsSection: View {
     }
 }
 
+/// Opt-in local record of what was written, with export and clear.
+private struct WritingJournalSection: View {
+    @Environment(SettingsModel.self) private var model
+    @State private var recorded = 0
+    @State private var note: String?
+    @State private var confirmClear = false
+    @State private var confirmEnable = false
+
+    static let privacyURL = URL(string: "https://github.com/zoolapp/aime/blob/main/docs/privacy.md")
+
+    var body: some View {
+        Section {
+            let features = model.features
+            // Turning it on asks first: this is the one place the typed text is kept.
+            Toggle(isOn: Binding(get: { features.writingJournal }, set: { on in
+                if on { confirmEnable = true } else { model.updateFeatures { $0.writingJournal = false } }
+            })) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("写作记录")
+                    Text("把经输入图层上屏的文字，以及 AI 动作的原文和你选用的结果，记录在这台 Mac 上，供你日后导出、分析自己的常用语和表达。"
+                         + "只存在本机（仅你可读，不进备份），密码管理器里不记录；关闭后不再新增，已有记录保留到你清空。")
+                        .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            LabeledContent("已记录 \(recorded) 条") {
+                HStack(spacing: 8) {
+                    if let note { Text(note).font(.caption).foregroundStyle(.secondary) }
+                    Button("导出…") { export() }.disabled(recorded < 1)
+                    Button("清空…", role: .destructive) { confirmClear = true }.disabled(recorded < 1)
+                }
+            }
+            if let url = Self.privacyURL {
+                Link("隐私说明：记录什么、存在哪里、如何删除", destination: url).font(.caption)
+            }
+        } header: {
+            Text("写作记录")
+        }
+        .task(id: model.features.writingJournal) { refresh() }
+        .alert("开启写作记录？", isPresented: $confirmEnable) {
+            Button("同意并开启") { model.updateFeatures { $0.writingJournal = true } }
+            Button("取消", role: .cancel) {}
+        } message: {
+            Text("开启后，输入法会把你经输入图层上屏的文字、AI 动作的原文和你选用的结果，连同时间和所在应用，以明文保存在这台 Mac 上（~/Library/Application Support/AIME/Journal）。\n\n"
+                 + "这些记录不会上传，也不会交给 AI；密码管理器里不记录。能以你的身份读取文件的程序可以读到它们。你可以随时关闭、导出或清空。")
+        }
+        .confirmationDialog("清空全部写作记录？此操作无法撤销。", isPresented: $confirmClear) {
+            Button("清空", role: .destructive) {
+                WritingJournal().clear()
+                note = "已清空"
+                refresh()
+            }
+        }
+    }
+
+    private func refresh() { recorded = WritingJournal().count }
+
+    private func export() {
+        refresh()
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = "AIME-写作记录.jsonl"
+        panel.message = "导出的文件包含你记录下来的全部文字，请妥善保管。"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            try WritingJournal().export(to: url)
+            note = "已导出 \(recorded) 条"
+        } catch {
+            note = "导出失败：\(error.localizedDescription)"
+        }
+    }
+}
+
 private struct ActionPromptEditor: View {
     let value: String
     let commit: (String) -> Void
@@ -402,6 +473,8 @@ struct AIAssistantView: View {
             } header: {
                 Text("输入图层")
             }
+
+            WritingJournalSection()
 
             Section("用一句话修改配置") {
                 TextField("例如：候选改成 7 个，开启 zh/z 模糊音", text: $request, axis: .vertical)

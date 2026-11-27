@@ -12,6 +12,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added
+
+- Settings › AI Assistant has a new 写作记录 (writing journal), off by default and confirmed before it turns on: text committed through the draft layer, and the source and chosen result of AI actions, are kept on this Mac and can be exported as JSON Lines or cleared.
+
 ## [0.1.13] - 2026-11-27
 
 > Stable release · Developer ID signed · notarization pending
