@@ -31,6 +31,10 @@ final class AIMEInputController: IMKInputController {
     private var capsSwitch = CapsLockSourceSwitch()
     /// 输入图层: committed text waiting at the cursor (underlined) until it is confirmed.
     var draft = DraftBuffer()
+    /// Where the end of the pending draft last was. Chromium-based apps cannot place
+    /// text put in a moment ago; the panel stays here then instead of jumping back to
+    /// the draft's start.
+    private var draftEndRect: NSRect = .zero
     /// What was just inserted into this field, so AI actions can work on "what I just
     /// typed" without a selection. Memory only; verified against the app before use.
     var recentText = RecentText()
@@ -162,6 +166,7 @@ final class AIMEInputController: IMKInputController {
 
     private func activate(client: (any IMKTextInput)?) {
         DebugLog.write("activate client=\(client?.bundleIdentifier() ?? "?")")
+        draftEndRect = .zero
         // IMK may activate the next field before deactivating the last one (switching
         // apps). By then the old field no longer owns the panel and its deactivate cannot
         // hide it, so a quick menu opened there stayed on screen over the new app.
@@ -211,6 +216,7 @@ final class AIMEInputController: IMKInputController {
             this.menuHold.cancel()
             this.liveSession?.cancelModifierTap()
             this.recentText.reset()
+            this.draftEndRect = .zero
             this.lastModifiers = []
             this.lastDeviceFlags = 0
             this.closeMenu()
@@ -699,14 +705,26 @@ final class AIMEInputController: IMKInputController {
         // its first character: a draft that wraps over several lines would otherwise be
         // covered by the panel sitting under its first line.
         let anchor = draft.isEmpty ? 0 : draft.text.utf16.count
-        for index in Set([anchor, max(0, anchor - 1), 0]).sorted(by: >) {
+        func place(_ index: Int) -> NSRect? {
             var rect = NSRect.zero
             client.attributes(forCharacterIndex: index, lineHeightRectangle: &rect)
             // Some apps answer an index they cannot place with an empty rect at the
             // screen origin: try the next candidate then.
-            if rect != .zero, rect.origin != .zero { return rect }
+            return rect != .zero && rect.origin != .zero ? rect : nil
         }
-        return .zero
+        guard anchor > 0 else {
+            draftEndRect = .zero // a new draft may start somewhere else
+            return place(0) ?? .zero
+        }
+        if let rect = place(anchor) ?? place(anchor - 1) {
+            draftEndRect = rect
+            return rect
+        }
+        // Electron/Chromium has not laid out what was just put in the draft yet (it
+        // answers empty for its end until the next key): keep the last end found rather
+        // than jumping back to the start of the draft and forth again on the next key.
+        if draftEndRect != .zero { return draftEndRect }
+        return place(0) ?? .zero
     }
 
     // MARK: - Menu
